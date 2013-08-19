@@ -1,0 +1,10 @@
+{
+    "name": "expense_tracker",
+    "version": "0.0.1",
+    "dependencies": {
+        "express": "*",
+        "helenus": "*",
+        "q": "*",
+        "node-uuid": "*"
+    }
+}
