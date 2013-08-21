@@ -5,6 +5,7 @@
         "express": "*",
         "helenus": "*",
         "q": "*",
-        "node-uuid": "*"
+        "node-uuid": "*",
+        "node-cassandra-cql": "*"
     }
 }
