@@ -125,8 +125,6 @@ function store_image(image_data) {
     thumbnail_map[size_string] = thumbnail_ids[i];
   });
 
-  console.log('thumbnail_map', thumbnail_map);
-
   // Store the image
   var image_p = extract_metadata(image_data).then(function(metadata) {
     return execute_cql('INSERT INTO images' +
