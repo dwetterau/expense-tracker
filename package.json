@@ -3,9 +3,9 @@
     "version": "0.0.1",
     "dependencies": {
         "express": "*",
-        "helenus": "*",
         "q": "*",
         "node-uuid": "*",
-        "node-cassandra-cql": "*"
+        "node-cassandra-cql": "*",
+        "exif": "*"
     }
 }

@@ -9,41 +9,71 @@ var cql_client = new Client({hosts: ['localhost:9042'],
                              keyspace: 'expense_tracker',
                              version: '3.0.0',
                              getAConnectionTimeout: 1000});
+var ExifImage = require('exif').ExifImage;
 
-cql_client.on('log', function(level, message) {
+/*cql_client.on('log', function(level, message) {
     console.log('log event %s - %j', level, message);
 });
 
 cql_client.on('error', function(error) {
     console.error(error);
-});
+});*/
 
-function execute_cql() {
-    var cql_args = arguments;
-    console.log('args: ', cql_args);
-    console.log('Executing');
-    return Q.npost(cql_client, 'execute', cql_args);
+var execute_cql = Q.nbind(cql_client.execute, cql_client);
+
+function extract_metadata(image_data) {
+    // This api is really stupid, replace this with something more sane
+    var deferred = Q.defer();
+    try {
+        new ExifImage({image: image_data}, function(err, data) {
+            if (err) {
+                deferred.reject(err);
+            } else {
+                deferred.resolve(data);
+            }
+        });
+    } catch (err) {
+        deferred.reject(err);
+    }
+    return deferred.promise;
 }
 
 function create_image_table() {
     execute_cql('CREATE TABLE images ( image_id timeuuid PRIMARY KEY,' +
                 'image_data blob,' +
                 'thumbnails map<text, blob>,' +
-                'metadata map<text, blob>)').then(function() {
+                'metadata map<text, text>)').then(function() {
                     console.log('successful');
                 }, function(err) {
                     console.error('not successful', err);
                 });
 }
 
-function store_image(image_data, metadata, thumbnails) {
-    execute_cql('INSERT INTO images (image_id, image_data, metadata, thumbnails)' +
-                ' VALUES (now(), ?, ?, ?)', [image_data, metadata, thumbnails]).then(
-                    function(retval) {
-                        console.log('done!', retval);
-                    }, function(err) {
-                        console.error('error: ', err);
-                    });
+function store_image(image_data, thumbnails) {
+    return extract_metadata(image_data).then(function(full_metadata) {
+        var location = '';
+        if (full_metadata.gps) {
+            var full_latitude = full_metadata.gps.GPSLatitude;
+            var latitude = full_latitude[0] + full_latitude[1] / 60 + full_latitude[2] / 3600;
+            var full_longitude = full_metadata.gps.GPSLongitude;
+            var longitude = full_longitude[0] + full_longitude[1] / 60 + full_longitude[2] / 3600;
+            location = latitude + ',' + longitude;
+        }
+        return {'location': location};
+    }, function(err) {
+        console.error('Metadata extraction failed', err);
+        return {};
+    }).then(function(metadata) {
+        console.log('metadata: ', metadata);
+        return execute_cql('INSERT INTO images' +
+                           '(image_id, image_data, metadata, thumbnails)' +
+                           ' VALUES (now(), ?, ?, ?)', [image_data, metadata, thumbnails]);
+    }).then(
+        function(retval) {
+            console.log('done!', retval);
+        }, function(err) {
+            console.error('error: ', err);
+        });
 }
 
 function testing() {
