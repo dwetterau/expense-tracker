@@ -116,7 +116,9 @@ function store_image(image_data) {
     console.error('Could not save image: ', err);
   });
 
-  return Q.all([thumbnails_p, image_p]);
+  return Q.all([thumbnails_p, image_p]).then(function() {
+    return image_id;
+  });
 }
 
 function get_image(image_id) {
