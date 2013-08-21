@@ -1,11 +1,12 @@
 {
-    "name": "expense_tracker",
-    "version": "0.0.1",
-    "dependencies": {
-        "express": "*",
-        "q": "*",
-        "node-uuid": "*",
-        "node-cassandra-cql": "*",
-        "exif": "*"
-    }
+  "name": "expense_tracker",
+  "version": "0.0.1",
+  "dependencies": {
+    "express": "*",
+    "q": "*",
+    "node-uuid": "*",
+    "node-cassandra-cql": "*",
+    "exif": "*",
+    "imagemagick": "*"
+  }
 }

@@ -1,3 +1,4 @@
 {
-    "globals": { "exports": false }
+    "globals": { "exports": false,
+                 "Buffer": false }
 }
