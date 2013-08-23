@@ -1,4 +1,5 @@
 {
     "globals": { "exports": false,
-                 "Buffer": false }
+                 "Buffer": false,
+                 "console": false }
 }

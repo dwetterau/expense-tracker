@@ -23,7 +23,7 @@ app.post('/make_account', function(req, res) {
   var new_user = {
     email: email,
     password: password
-  }
+  };
   users.make_user(new_user).then(function(user_id) {
     res.redirect('/user/' + user_id);
   }, function(err) {
@@ -88,6 +88,6 @@ app.get('/upload_image', function(req, res) {
 
 
 var port = process.env.PORT || 3000;
-server.listen(port, function() {
+app.listen(port, function() {
   console.log("Listening on", port);
 });
