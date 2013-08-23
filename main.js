@@ -83,4 +83,11 @@ app.get('/upload_image', function(req, res) {
            '</form> </body> </html>');
 });
 
-app.listen(3000);
+//users.create_user_tables();
+//images.create_image_tables();
+
+
+var port = process.env.PORT || 3000;
+server.listen(port, function() {
+  console.log("Listening on", port);
+});

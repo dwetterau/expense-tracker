@@ -30,10 +30,12 @@ function hash_password(password, salt) {
 
 function create_user_tables() {
   return Q.all([
-    execute_cql('CREATE COLUMNFAMILY users ( ' +
+    execute_cql('CREATE TABLE users ( ' +
                 'email varchar PRIMARY KEY,' +
                 'password varchar,' +
-                'user_id uuid)')
+                'user_id uuid)'),
+    execute_cql('CREATE INDEX users_user_id ' +
+                'ON users (user_id)')
   ]); 
 }
 
@@ -47,17 +49,28 @@ function get_user(user_id) {
 
 function make_user(user) {
   var salt = generateSalt(128);
-  return hash_password(user.password, salt).then(function(hashed_password) {
-    var user_id = uuid.v4();
-    return execute_cql(
-        'INSERT INTO users' + 
-        '(email, password, user_id)' +
-        'VALUES (?, ?, ?)',
-        [user.email, hashed_password, user_id]).then(function(result) {
-      return user_id;
+  return hash_password(user.password, salt)
+    .then(function(hashed_password) {
+      var user_id = uuid.v4();
+      return execute_cql(
+          'SELECT email FROM users WHERE email=?', 
+          [user.email])
+        .then(function(email_search) {
+          if (email_search.rows.length > 0) {
+            throw new Error('Email already in use');
+          }
+          return execute_cql(
+              'INSERT INTO users' + 
+              '(email, password, user_id)' +
+              'VALUES (?, ?, ?)',
+              [user.email, hashed_password, user_id])
+            .then(function(result) {
+              return user_id;
+            });
+        });
     });
-  });
 }
 
 exports.get_user = get_user;
-exports.make_user = make_user;     
+exports.make_user = make_user;
+exports.create_user_tables = create_user_tables;
