@@ -6,6 +6,7 @@ var users = require('./users');
 var Q = require('q');
 var fs = require('fs');
 var exphbs = require('express3-handlebars');
+var expenses = require('./expenses');
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
@@ -86,6 +87,32 @@ app.post('/upload_image', function(req, res) {
 
 app.get('/upload_image', function(req, res) {
   res.render('upload_image');
+});
+
+// Expenses routes
+app.get('/create_expense', function(req, res) {
+  res.render('create_expense');
+});
+
+app.post('/create_expense', function(req, res) {
+  var value = req.body.value;
+  var participants = req.body.participants.split(',');
+  expenses.store_expense({ value: value,
+                           participants: participants })
+  .then(function(expense_id) {
+    res.redirect('/expense/' + expense_id);
+  }, function(err) {
+    send_error(res, 'An error occured making the expense: ' + err);
+  });
+});
+
+app.get('/expense/:expense_id', function(req, res) {
+  var expense_id = req.params.expense_id;
+  expenses.get_expense(expense_id).then(function(expense) {
+    res.render('expense', {title: 'Expense detail', expense: expense});
+  }, function(err) {
+    send_error(res, 'An error occured retreiving the expense: ' + err);
+  });
 });
 
 //users.create_user_tables();

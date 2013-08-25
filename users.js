@@ -39,6 +39,14 @@ function get_user(user_id) {
   });
 }
 
+function get_by_email(email) {
+  return execute_cql(
+    'SELECT user_id FROM users WHERE email=?', [email])
+  .then(function(result) {
+    return { id: result.rows[0].get('user_id') };
+  });
+}
+
 function make_user(user) {
   var salt = generateSalt(128);
   return hash_password(user.password, salt)
@@ -66,3 +74,4 @@ function make_user(user) {
 exports.get_user = get_user;
 exports.make_user = make_user;
 exports.create_user_tables = create_user_tables;
+exports.get_by_email = get_by_email;
