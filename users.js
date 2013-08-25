@@ -1,15 +1,7 @@
-var Client = require('node-cassandra-cql').Client;
 var crypto = require('crypto');
-var cql_client = new Client({
-  hosts: ['localhost:9042'],
-  keyspace: 'expense_tracker',
-  version: '3.0.0',
-  getAConnectionTimeout: 1000
-});
 var Q = require('q');
 var uuid = require('node-uuid');
-
-var execute_cql = Q.nbind(cql_client.execute, cql_client);
+var execute_cql = require('./db').execute_cql;
 
 function generateSalt(len) {                                                
   return new Buffer(crypto.randomBytes(len)).toString('base64');          
@@ -64,7 +56,7 @@ function make_user(user) {
               '(email, password, user_id)' +
               'VALUES (?, ?, ?)',
               [user.email, hashed_password, user_id])
-            .then(function(result) {
+            .then(function() {
               return user_id;
             });
         });

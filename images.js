@@ -1,14 +1,9 @@
-var Client = require('node-cassandra-cql').Client;
 var Q = require('q');
 var imagemagick = require('imagemagick');
 var uuid = require('node-uuid');
-var cql_client = new Client({hosts: ['localhost:9042'],
-                             keyspace: 'expense_tracker',
-                             version: '3.0.0',
-                             getAConnectionTimeout: 1000});
 var ExifImage = require('exif').ExifImage;
-var execute_cql = Q.nbind(cql_client.execute, cql_client);
 var thumbnail_sizes = ['800x600', '640x480'];
+var execute_cql = require('./db').execute_cql;
 
 function extract_exif(image_data) {
   var deferred = Q.defer();
