@@ -5,15 +5,29 @@ var images = require('./images');
 var users = require('./users');
 var Q = require('q');
 var fs = require('fs');
+var exphbs = require('express3-handlebars');
+
+app.engine('handlebars', exphbs({defaultLayout: 'main'}));
+app.set('view engine', 'handlebars');
+
+// Error sending
+function send_error(res, info) {
+  res.render('error',
+             { title: 'An error occured',
+               info: info},
+             function(err, response) {
+               res.send(500, response);
+             });
+}
+  
 
 // User routes
-
 app.get('/user/:id', function(req, res) {
   var user_id = req.params.id;
   users.get_user(user_id).then(function(data) {
-    res.send('Retrieved user data: ' + data);
+    res.render('user', { title: data, email: data});
   }, function(err) {
-    res.send(500, 'An error occured making the account: ' + err);
+    send_error(res, 'An error occured making the account: ' + err);
   });
 });
 
@@ -27,18 +41,12 @@ app.post('/make_account', function(req, res) {
   users.make_user(new_user).then(function(user_id) {
     res.redirect('/user/' + user_id);
   }, function(err) {
-    res.send(500, 'An error occured making the account: ' + err);
+    send_error(res, 'An error occured making the account: ' + err);
   });
 });
 
 app.get('/make_account', function(req, res) {
-  res.send('<html><body><form method="post" enctype="multipart/form-data">' +
-           '<div><label for="email">Email: </label>' +
-           '<input type="email" name="email" required="required" /></div>' +
-           '<div><label for="password">Password: </label>' +
-           '<input type="password" name="password" required="required" /></div>' +
-           '<input type="submit" value="Create Account" />' +
-           '</form></body> </html>');
+  res.render('make_account');
 });
 
 // Image routes
@@ -49,7 +57,7 @@ app.get('/images/:uuid', function(req, res) {
     res.set('Content-Type', 'image/jpeg');
     res.send(image_data);
   }, function(err) {
-    res.send(500, 'An error occured getting the image: ' + err);
+    send_error(res, 'An error occured getting the image: ' + err);
   });
 });
 
@@ -60,7 +68,7 @@ app.get('/thumb/:uuid/:size', function(req, res) {
     res.set('Content-Type', 'image/jpeg');
     res.send(image_data);
   }, function(err) {
-    res.send(500, 'An error occured getting the image: ' + err);
+    send_error(res, 'An error occured getting the image: ' + err);
   });
 });
 
@@ -72,15 +80,12 @@ app.post('/upload_image', function(req, res) {
   }).then(function(image_id) {
     res.redirect('/images/' + image_id);
   }, function(err) {
-    res.send(500, 'An error occured uploading the image: ' + err);
+    send_error(res, 'An error occured uploading the image: ' + err);
   });
 });
 
 app.get('/upload_image', function(req, res) {
-  res.send('<html><body><form method="post" enctype="multipart/form-data">' +
-           '<input type="file" name="image" />' +
-           '<input type="submit" value="upload" />' +
-           '</form> </body> </html>');
+  res.render('upload_image');
 });
 
 //users.create_user_tables();

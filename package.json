@@ -7,6 +7,7 @@
     "node-uuid": "*",
     "node-cassandra-cql": "*",
     "exif": "*",
-    "imagemagick": "*"
+    "imagemagick": "*",
+    "express3-handlebars": "*"
   }
 }
