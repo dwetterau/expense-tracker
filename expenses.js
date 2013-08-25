@@ -21,12 +21,12 @@ function store_expense(expense) {
     })
   ).then(function(user_ids) {
     // TODO: make a better way around this
-    var user_id_cql = '{' + user_ids.join(',') + '}';
+    var user_id_cql = {value: user_ids, hint: 'set'};
     console.log('user_ids: ', user_id_cql);
     return execute_cql('INSERT INTO expenses ' +
                        '(expense_id, value, participants) ' +
                        'VALUES (?, ?, ?)',
-                       [id, parseInt(expense.value), user_id_cql]);
+                       [id, parseInt(expense.value, 10), user_id_cql]);
   }).then(function() {
     return id;
   });
