@@ -95,8 +95,11 @@ app.get('/create_expense', function(req, res) {
 });
 
 app.post('/create_expense', function(req, res) {
+  console.log('creating expense');
   var value = req.body.value;
-  var participants = req.body.participants.split(',');
+  var participants = req.body.participants && req.body.participants.split(',');
+  participants = participants || [];
+  console.log(participants);
   expenses.store_expense({ value: value,
                            participants: participants })
   .then(function(expense_id) {

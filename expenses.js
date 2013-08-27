@@ -4,17 +4,22 @@ var Q = require('q');
 var uuid = require('node-uuid');
 
 function create_expense_tables() {
-  return execute_cql('CREATE TABLE expenses ( expense_id uuid PRIMARY KEY, ' +
+  return execute_cql('CREATE TABLE expenses (' +
+                     'expense_id uuid PRIMARY KEY, ' +
+                     'title text, ' +
+                     'description text, ' +
                      'value int, ' +
-                     'participants set<uuid>)');
+                     'participants set<uuid>, ' +
+                     'receipt_image uuid)');
 }
-
 
 function store_expense(expense) {
   var id = uuid.v4();
+  console.log(expense.participants);
   return Q.all(
     // Convert emails to uuids
     expense.participants.map(function(email) {
+      console.log(email);
       return users.get_by_email(email).then(function(result) {
         return result.id;
       });
@@ -22,6 +27,8 @@ function store_expense(expense) {
   ).then(function(user_ids) {
     // TODO: make a better way around this
     var user_id_cql = {value: user_ids, hint: 'set'};
+    console.log(user_id_cql);
+    console.log('executing');
     console.log('user_ids: ', user_id_cql);
     return execute_cql('INSERT INTO expenses ' +
                        '(expense_id, value, participants) ' +
