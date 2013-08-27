@@ -59,9 +59,18 @@ function get_expense(id) {
       template_data.title = result.rows[0].get('title');
       template_data.description = result.rows[0].get('description');
       template_data.receipt_image = result.rows[0].get('receipt_image');
-      template_data.participants = result.rows[0].get('participants');
+      var participant_uuids = result.rows[0].get('participants');
       template_data.value = result.rows[0].get('value');
-      return template_data;
+      return Q.all(
+        participant_uuids.map(
+          function(uuid) {
+            return users.get_user(uuid);
+          }
+        )
+      ).then(function(participant_emails) {
+        template_data.participants = participant_emails;
+        return template_data;
+      });
     });
 }
 
