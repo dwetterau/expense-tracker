@@ -95,13 +95,16 @@ app.get('/create_expense', function(req, res) {
 });
 
 app.post('/create_expense', function(req, res) {
-  console.log('creating expense');
+  var title = req.body.title;
+  var description = req.body.description || undefined;
   var value = req.body.value;
   var participants = req.body.participants && req.body.participants.split(',');
   participants = participants || [];
-  console.log(participants);
   expenses.store_expense({ value: value,
-                           participants: participants })
+                           participants: participants,
+                           title: title,
+                           description: description
+                         })
   .then(function(expense_id) {
     res.redirect('/expense/' + expense_id);
   }, function(err) {

@@ -31,24 +31,37 @@ function store_expense(expense) {
     console.log('executing');
     console.log('user_ids: ', user_id_cql);
     return execute_cql('INSERT INTO expenses ' +
-                       '(expense_id, value, participants) ' +
-                       'VALUES (?, ?, ?)',
-                       [id, parseInt(expense.value, 10), user_id_cql]);
+                       '(expense_id, title, value, participants) ' +
+                       'VALUES (?, ?, ?, ?)',
+                       [id, expense.title, parseInt(expense.value, 10), user_id_cql]);
+  }).then(function() {
+    // TODO: abstract this out
+    // this is messy
+    if (expense.description) {
+      return execute_cql('UPDATE expenses ' +
+                         'SET description=? ' +
+                         'WHERE expense_id=?',
+                         [expense.description, id]
+                        );
+    }
   }).then(function() {
     return id;
   });
 }
 
 function get_expense(id) {
-  return execute_cql('SELECT expense_id, value, participants ' +
+  return execute_cql('SELECT * ' +
                      'FROM expenses ' +
                      'WHERE expense_id=?', 
                      [id])
     .then(function(result) {
-      var participants = result.rows[0].get('participants');
-      var value = result.rows[0].get('value');
-      return { participants: participants,
-               value: value };
+      var template_data = {};
+      template_data.title = result.rows[0].get('title');
+      template_data.description = result.rows[0].get('description');
+      template_data.receipt_image = result.rows[0].get('receipt_image');
+      template_data.participants = result.rows[0].get('participants');
+      template_data.value = result.rows[0].get('value');
+      return template_data;
     });
 }
 

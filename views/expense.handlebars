@@ -1,2 +1,10 @@
+<h1> {{ expense.title }} </h1>
+{{# if expense.description }}
+  <p> {{ expense.description }} </p>
+{{/if }}
 <p> value: {{ expense.value }} </p>
 <p> Participants: {{ expense.participants }} </p>
+{{# if expense.receipt_image }}
+  {{! TODO: factor out this path somehow }}
+  <img src="/thumb/{{ expense.receipt_image }}/640x480" />
+{{/if}}
