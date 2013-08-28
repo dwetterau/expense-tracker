@@ -3,7 +3,19 @@
   <p> {{ expense.description }} </p>
 {{/if }}
 <p> value: {{ expense.value }} </p>
-<p> Participants: {{ expense.participants }} </p>
+<div>
+  <p>Participants:</p>
+  <ul>
+  {{#each expense.participants_status }}
+    <li> {{ this.email }} - {{# if this.status }}
+      paid
+    {{else}}
+      unpaid
+    {{/if}}
+    </li>
+  {{/each}}
+  </ul>
+</div>
 {{# if expense.receipt_image }}
   {{! TODO: factor out this path somehow }}
   <img src="/thumb/{{ expense.receipt_image }}/640x480" />

@@ -91,11 +91,13 @@ function get_expense(id) {
       return Q.all(
         participant_uuids.map(
           function(uuid) {
-            return users.get_user(uuid);
+            return users.get_user(uuid).then(function(user_email) {
+              return {email: user_email, status: participants_status[uuid]};
+            });
           }
         )
-      ).then(function(participant_emails) {
-        template_data.participants = participant_emails;
+      ).then(function(email_status) {
+        template_data.participants_status = email_status;
         return template_data;
       });
     });
