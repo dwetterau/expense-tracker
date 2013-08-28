@@ -8,6 +8,9 @@
     "node-cassandra-cql": "*",
     "exif": "*",
     "imagemagick": "*",
-    "express3-handlebars": "*"
+    "express3-handlebars": "*",
+    "helenus": "*",
+    "connect-cassandra": "*",
+    "connect": "*"
   }
 }

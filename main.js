@@ -1,12 +1,33 @@
 var express = require('express');
 var app = express();
-app.use(express.bodyParser());
+
+var connect = require('connect');
+var fs = require('fs');
+var Q = require('q');
+var exphbs = require('express3-handlebars');
+var helenus = require('helenus');
+
+var cassandra_session_store = require('connect-cassandra')(express);
+
+var pool = new helenus.ConnectionPool({
+    hosts      : ['127.0.0.1:9042'],
+    keyspace   : 'expense_tracker'
+});
+pool.connect(function(e) {
+  console.log("session pool connected.");
+});
+app.use(
+  express.bodyParser(),
+  express.cookieParser(),
+  express.session({
+    secret: '54b20410-6b04-11e2-bcfd-0800200c9a66', 
+    store: new cassandra_session_store({pool: pool})
+  })
+);
+var auth = require('./auth');
+var expenses = require('./expenses');
 var images = require('./images');
 var users = require('./users');
-var Q = require('q');
-var fs = require('fs');
-var exphbs = require('express3-handlebars');
-var expenses = require('./expenses');
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
@@ -23,12 +44,23 @@ function send_error(res, info) {
   
 
 // User routes
-app.get('/user/:id', function(req, res) {
+app.get('/user/:id', auth.check_auth, function(req, res) {
   var user_id = req.params.id;
   users.get_user(user_id).then(function(data) {
     res.render('user', { title: data, email: data});
   }, function(err) {
     send_error(res, 'An error occured making the account: ' + err);
+  });
+});
+
+app.post('/login', function(req, res) {
+  var email = req.body.email;
+  var password = req.body.password;
+  users.login({email, password}).then(function(user_id) {
+    req.session.user_id = user_id;
+    res.redirect('/user/' + user_id);
+  }, function(err) {
+    send_error(res, 'Login error: ' + err);
   });
 });
 
@@ -73,7 +105,7 @@ app.get('/thumb/:uuid/:size', function(req, res) {
   });
 });
 
-app.post('/upload_image', function(req, res) {
+app.post('/upload_image', auth.check_auth, function(req, res) {
   // Not happy about reading it from the disk
   var path = req.files.image.path;
   Q.nfcall(fs.readFile, path).then(function(data) {
@@ -85,16 +117,16 @@ app.post('/upload_image', function(req, res) {
   });
 });
 
-app.get('/upload_image', function(req, res) {
+app.get('/upload_image', auth.check_auth, function(req, res) {
   res.render('upload_image');
 });
 
 // Expenses routes
-app.get('/create_expense', function(req, res) {
+app.get('/create_expense', auth.check_auth, function(req, res) {
   res.render('create_expense');
 });
 
-app.post('/create_expense', function(req, res) {
+app.post('/create_expense', auth.check_auth, function(req, res) {
   var title = req.body.title;
   var description = req.body.description || undefined;
   var value = req.body.value;
@@ -112,7 +144,7 @@ app.post('/create_expense', function(req, res) {
   });
 });
 
-app.get('/expense/:expense_id', function(req, res) {
+app.get('/expense/:expense_id', auth.check_auth, function(req, res) {
   var expense_id = req.params.expense_id;
   expenses.get_expense(expense_id).then(function(expense) {
     res.render('expense', {title: 'Expense detail', expense: expense});
