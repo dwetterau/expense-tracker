@@ -11,6 +11,5 @@
     "express3-handlebars": "*",
     "helenus": "*",
     "connect-cassandra": "*",
-    "connect": "*"
   }
 }

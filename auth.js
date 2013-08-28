@@ -1,4 +1,5 @@
 var crypto = require('crypto');
+var Q = require('q');
 
 function is_logged_in(req) {
   return req.session.user_id !== undefined;

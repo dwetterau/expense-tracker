@@ -1,29 +1,29 @@
 var express = require('express');
 var app = express();
+app.use(express.bodyParser());
+app.use(express.cookieParser());
 
-var connect = require('connect');
 var fs = require('fs');
 var Q = require('q');
 var exphbs = require('express3-handlebars');
 var helenus = require('helenus');
 
-var cassandra_session_store = require('connect-cassandra')(express);
+var CassandraStore = require('connect-cassandra')(express);
 
 var pool = new helenus.ConnectionPool({
-    hosts      : ['127.0.0.1:9042'],
-    keyspace   : 'expense_tracker'
+    hosts : ['localhost:9160'],
+    keyspace : 'expense_tracker',
+    timeout : 3000
 });
 pool.connect(function(e) {
-  console.log("session pool connected.");
+  app.use(
+    express.session({
+      secret: '54b20410-6b04-11e2-bcfd-0800200c9a66', 
+      store: new CassandraStore({pool: pool})
+    })
+  );
 });
-app.use(
-  express.bodyParser(),
-  express.cookieParser(),
-  express.session({
-    secret: '54b20410-6b04-11e2-bcfd-0800200c9a66', 
-    store: new cassandra_session_store({pool: pool})
-  })
-);
+
 var auth = require('./auth');
 var expenses = require('./expenses');
 var images = require('./images');
@@ -34,19 +34,20 @@ app.set('view engine', 'handlebars');
 
 // Error sending
 function send_error(res, info) {
+  console.log('error:', info);
   res.render('error',
              { title: 'An error occured',
                info: info},
              function(err, response) {
                res.send(500, response);
              });
-}
-  
+} 
 
 // User routes
 app.get('/user/:id', auth.check_auth, function(req, res) {
   var user_id = req.params.id;
   users.get_user(user_id).then(function(data) {
+    console.log("rendering user:", data);
     res.render('user', { title: data, email: data});
   }, function(err) {
     send_error(res, 'An error occured making the account: ' + err);
@@ -56,12 +57,21 @@ app.get('/user/:id', auth.check_auth, function(req, res) {
 app.post('/login', function(req, res) {
   var email = req.body.email;
   var password = req.body.password;
-  users.login({email, password}).then(function(user_id) {
+  users.login({email: email, password: password}).then(function(user_id) {
     req.session.user_id = user_id;
     res.redirect('/user/' + user_id);
   }, function(err) {
     send_error(res, 'Login error: ' + err);
   });
+});
+
+app.post('/logout', function(req, res) {
+  req.session.user_id = null;
+  res.redirect('/login');
+});
+
+app.get('/login', function(req, res) {
+  res.render('login');
 });
 
 app.post('/make_account', function(req, res) {
