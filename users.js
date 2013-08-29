@@ -18,16 +18,17 @@ function create_user_tables() {
 function get_user(user_id) {
   return execute_cql(
     'SELECT email FROM users WHERE user_id=?', [user_id])
-      .then(function(result) {
-    return result.rows[0];
-  });
+    .then(function(result) {
+      return result.rows[0];
+    });
 }
 
 function get_by_email(email) {
   return execute_cql(
       'SELECT * FROM users WHERE email=?', [email])
-      .then(function(result) {
-    return result.rows[0];
+    .then(function(result) {
+      console.log('result: ', result);
+      return result.rows[0];
   });
 }
 
@@ -50,14 +51,14 @@ function make_user(user) {
       .then(function(hashed_password) {
     var user_id = uuid.v4();
     return execute_cql(
-        'SELECT email FROM users WHERE email=?', 
+        'SELECT email FROM users WHERE email=?',
         [user.email])
         .then(function(email_search) {
       if (email_search.rows.length > 0) {
         throw new Error('Email already in use');
       }
       return execute_cql(
-          'INSERT INTO users' + 
+          'INSERT INTO users' +
           '(email, password, salt, user_id)' +
           'VALUES (?, ?, ?, ?)',
           [user.email, hashed_password, salt, user_id])

@@ -31,11 +31,11 @@ function create_expense_tables() {
 
 function update_status(expense_id, user_id, status) {
   return execute_cql('UPDATE expense_status ' +
-                     'SET status=? ' + 
+                     'SET status=? ' +
                      'WHERE expense_id=? and user_id=?',
                      [status, expense_id, user_id ]);
 }
-  
+
 
 function store_expense(expense) {
   var id = uuid.v4();
@@ -43,11 +43,14 @@ function store_expense(expense) {
   return Q.all(
     // Convert emails to uuids
     expense.participants.map(function(email) {
+      console.log('email:', '\'' + email + '\'');
       return users.get_by_email(email).then(function(result) {
-        return result.id;
+        console.log('rrr: ', result);
+        return result.get('user_id');
       });
     })
   ).then(function(retreived_ids) {
+    console.log(retreived_ids);
     user_ids = retreived_ids;
   }).then(function() {
     var users_status = {};
@@ -80,7 +83,7 @@ function store_expense(expense) {
 function get_expense(id) {
   return execute_cql('SELECT * ' +
                      'FROM expenses ' +
-                     'WHERE expense_id=?', 
+                     'WHERE expense_id=?',
                      [id])
     .then(function(result) {
       var template_data = {};
