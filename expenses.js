@@ -29,6 +29,14 @@ function create_expense_tables() {
   return Q.all([create_expenses, create_status]);
 }
 
+function update_status(expense_id, user_id, status) {
+  return execute_cql('UPDATE expense_status ' +
+                     'SET status=? ' + 
+                     'WHERE expense_id=? and user_id=?',
+                     [status, expense_id, user_id ]);
+}
+  
+
 function store_expense(expense) {
   var id = uuid.v4();
   var user_ids = [];
@@ -62,10 +70,7 @@ function store_expense(expense) {
     }
   }).then(function() {
     return user_ids.map(function(user_id) {
-      return execute_cql('INSERT INTO expense_status ' +
-                         '(user_id, expense_id, status)' +
-                         ' VALUES (?, ?, ?)',
-                         [user_id, id, 0]);
+      return update_status(id, user_id, 0);
     });
   }).then(function() {
     return id;
@@ -106,3 +111,5 @@ function get_expense(id) {
 exports.create_expense_tables = create_expense_tables;
 exports.store_expense = store_expense;
 exports.get_expense = get_expense;
+exports.update_status = update_status;
+exports.states = expense_states;

@@ -162,9 +162,19 @@ app.get('/expense/:expense_id', auth.check_auth, function(req, res) {
   });
 });
 
+app.post('/expense/:expense_id/pay', function(req, res) {
+  var expense_id = req.params.expense_id;
+  var user_id = req.session.user_id;
+  expenses.update_status(expense_id,
+                         user_id,
+                         expenses.states.PAID)
+  .then(function() {
+    res.redirect('/expense/' + expense_id);
+  });
+});
+
 //users.create_user_tables();
 //images.create_image_tables();
-
 
 var port = process.env.PORT || 3000;
 app.listen(port, function() {
