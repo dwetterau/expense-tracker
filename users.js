@@ -4,15 +4,15 @@ var execute_cql = require('./db').execute_cql;
 var auth = require('./auth');
 
 function create_user_tables() {
-  return Q.all([
-    execute_cql('CREATE TABLE users ( ' +
-                'email varchar PRIMARY KEY,' +
-                'password varchar,' +
-                'salt varchar,' +
-                'user_id uuid)'),
-    execute_cql('CREATE INDEX users_user_id ' +
-                'ON users (user_id)')
-  ]); 
+  return execute_cql('CREATE TABLE users ( ' +
+                     'email varchar PRIMARY KEY,' +
+                     'password varchar,' +
+                     'salt varchar,' +
+                     'user_id uuid)')
+    .then(function() {
+      return execute_cql('CREATE INDEX users_user_id ' +
+                         'ON users (user_id)');
+    });
 }
 
 function get_user(user_id) {

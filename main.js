@@ -17,39 +17,43 @@ var pool = new helenus.ConnectionPool({
     keyspace : 'expense_tracker',
     timeout : 3000
 });
+
+app.use(express.bodyParser());
+app.use(express.cookieParser());
+
 pool.connect(function(e) {
-  app.use(express.bodyParser());
-  app.use(express.cookieParser());
+  if (e) {
+    console.error('Error connecting helenus: ', e);
+  }
   app.use(
     express.session({
-      secret: '54b20410-6b04-11e2-bcfd-0800200c9a66', 
+      secret: '54b20410-6b04-11e2-bcfd-0800200c9a66',
       store: new CassandraStore({pool: pool})
     })
   );
-});
+//});
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
 
 // Error sending
 function send_error(res, info) {
-  console.log('error:', info);
+  console.error('error:', info);
   res.render('error',
              { title: 'An error occured',
                info: info},
              function(err, response) {
                res.send(500, response);
              });
-} 
+}
 
 // User routes
 app.get('/user/:id', auth.check_auth, function(req, res) {
   var user_id = req.params.id;
   users.get_user(user_id).then(function(data) {
-    console.log("rendering user:", data);
     res.render('user', { title: data, email: data});
   }, function(err) {
-    send_error(res, 'An error occured making the account: ' + err);
+    send_error(res, 'An error occured retrieving the user: ' + err);
   });
 });
 
@@ -179,4 +183,5 @@ app.post('/expense/:expense_id/pay', function(req, res) {
 var port = process.env.PORT || 3000;
 app.listen(port, function() {
   console.log("Listening on", port);
+});
 });
