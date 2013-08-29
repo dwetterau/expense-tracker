@@ -1,5 +1,6 @@
 var crypto = require('crypto');
 var Q = require('q');
+var users = require('./users');
 
 function is_logged_in(req) {
   return req.session.user_id !== undefined;
@@ -9,7 +10,7 @@ function check_auth(req, res, next) {
   if (!is_logged_in(req)) {
     throw new Error("Not logged in");
   } else {
-    get_user(req.session.user_id).then(function(user) {
+    users.get_user(req.session.user_id).then(function(user) {
       req.user = user;
       next();
     });

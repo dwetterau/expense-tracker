@@ -1,12 +1,14 @@
 var express = require('express');
 var app = express();
-app.use(express.bodyParser());
-app.use(express.cookieParser());
-
 var fs = require('fs');
 var Q = require('q');
 var exphbs = require('express3-handlebars');
 var helenus = require('helenus');
+
+var auth = require('./auth');
+var expenses = require('./expenses');
+var images = require('./images');
+var users = require('./users');
 
 var CassandraStore = require('connect-cassandra')(express);
 
@@ -16,6 +18,8 @@ var pool = new helenus.ConnectionPool({
     timeout : 3000
 });
 pool.connect(function(e) {
+  app.use(express.bodyParser());
+  app.use(express.cookieParser());
   app.use(
     express.session({
       secret: '54b20410-6b04-11e2-bcfd-0800200c9a66', 
@@ -23,11 +27,6 @@ pool.connect(function(e) {
     })
   );
 });
-
-var auth = require('./auth');
-var expenses = require('./expenses');
-var images = require('./images');
-var users = require('./users');
 
 app.engine('handlebars', exphbs({defaultLayout: 'main'}));
 app.set('view engine', 'handlebars');
