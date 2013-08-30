@@ -27,7 +27,6 @@ function get_by_email(email) {
   return execute_cql(
       'SELECT * FROM users WHERE email=?', [email])
     .then(function(result) {
-      console.log('result: ', result);
       return result.rows[0];
   });
 }

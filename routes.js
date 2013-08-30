@@ -147,9 +147,6 @@ exports.install_routes = function(app) {
       });
   });
 
-  //users.create_user_tables();
-  //images.create_image_tables();
-
   var port = process.env.PORT || 3000;
   app.listen(port, function() {
     console.log("Listening on", port);
