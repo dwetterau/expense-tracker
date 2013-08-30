@@ -20,6 +20,11 @@ exports.install_routes = function(app) {
   // User routes
   app.get('/user/:id', auth.check_auth, function(req, res) {
     var user_id = req.params.id;
+    if (user_id == 'me') {
+      user_id = req.session.user_id;
+      res.redirect('/user/' + user_id);
+      return;
+    }
     users.get_user(user_id).then(function(data) {
       res.render('user', { title: data, email: data});
     }, function(err) {
@@ -38,13 +43,17 @@ exports.install_routes = function(app) {
     });
   });
 
+  app.get('/login', function(req, res) {
+    res.render('login');
+  });
+
   app.post('/logout', function(req, res) {
-    req.session.user_id = null;
+    delete req.session.user_id;
     res.redirect('/login');
   });
 
-  app.get('/login', function(req, res) {
-    res.render('login');
+  app.get('/logout', auth.check_auth, function(req, res) {
+    res.render('logout');
   });
 
   app.post('/make_account', function(req, res) {
@@ -55,7 +64,9 @@ exports.install_routes = function(app) {
       password: password
     };
     users.make_user(new_user).then(function(user_id) {
-      res.redirect('/user/' + user_id);
+      users.login({email: email, password: password}).then(function(user_id) {
+        res.redirect('/user/' + user_id);
+      });
     }, function(err) {
       send_error(res, 'An error occured making the account: ' + err);
     });

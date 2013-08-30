@@ -8,7 +8,8 @@ function is_logged_in(req) {
 
 function check_auth(req, res, next) {
   if (!is_logged_in(req)) {
-    throw new Error("Not logged in");
+    // User is not logged in, take them to the login page
+    res.redirect('/login');
   } else {
     users.get_user(req.session.user_id).then(function(user) {
       req.user = user;
