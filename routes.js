@@ -63,12 +63,12 @@ exports.install_routes = function(app) {
       email: email,
       password: password
     };
-    users.make_user(new_user).then(function(user_id) {
+    users.make_user(new_user).then(function() {
       users.login({email: email, password: password}).then(function(user_id) {
         res.redirect('/user/' + user_id);
       });
     }, function(err) {
-      send_error(res, 'An error occured making the account: ' + err);
+      send_error(res, 'An error occurred making the account: ' + err);
     });
   });
 
@@ -84,7 +84,7 @@ exports.install_routes = function(app) {
       res.set('Content-Type', 'image/jpeg');
       res.send(image_data);
     }, function(err) {
-      send_error(res, 'An error occured getting the image: ' + err);
+      send_error(res, 'An error occurred getting the image: ' + err);
     });
   });
 
@@ -95,7 +95,7 @@ exports.install_routes = function(app) {
       res.set('Content-Type', 'image/jpeg');
       res.send(image_data);
     }, function(err) {
-      send_error(res, 'An error occured getting the image: ' + err);
+      send_error(res, 'An error occurred getting the image: ' + err);
     });
   });
 
@@ -107,7 +107,7 @@ exports.install_routes = function(app) {
     }).then(function(image_id) {
       res.redirect('/images/' + image_id);
     }, function(err) {
-      send_error(res, 'An error occured uploading the image: ' + err);
+      send_error(res, 'An error occurred uploading the image: ' + err);
     });
   });
 
@@ -134,7 +134,8 @@ exports.install_routes = function(app) {
       .then(function(expense_id) {
         res.redirect('/expense/' + expense_id);
       }, function(err) {
-        send_error(res, 'An error occured making the expense: ' + err);
+        console.log(err.stack);
+        send_error(res, 'An error occurred making the expense: ' + err);
       });
   });
 
@@ -143,7 +144,7 @@ exports.install_routes = function(app) {
     expenses.get_expense(expense_id).then(function(expense) {
       res.render('expense', {title: 'Expense detail', expense: expense});
     }, function(err) {
-      send_error(res, 'An error occured retreiving the expense: ' + err);
+      send_error(res, 'An error occurred retrieving the expense: ' + err);
     });
   });
 

@@ -6,7 +6,7 @@ var uuid = require('node-uuid');
 // constants for expense state
 var expense_states = {
   WAITING: 0,
-  PAID: 1,
+  PAID: 1
 };
 
 function create_expense_tables() {
@@ -43,15 +43,12 @@ function store_expense(expense) {
   return Q.all(
     // Convert emails to uuids
     expense.participants.map(function(email) {
-      console.log('email:', '\'' + email + '\'');
       return users.get_by_email(email).then(function(result) {
-        console.log('rrr: ', result);
         return result.get('user_id');
       });
     })
-  ).then(function(retreived_ids) {
-    console.log(retreived_ids);
-    user_ids = retreived_ids;
+  ).then(function(retrieved_ids) {
+    user_ids = retrieved_ids;
   }).then(function() {
     var users_status = {};
     user_ids.forEach(function(user_id) {
@@ -60,7 +57,7 @@ function store_expense(expense) {
     return execute_cql('INSERT INTO expenses ' +
                        '(expense_id, title, value, participants) ' +
                        'VALUES (?, ?, ?, ?)',
-                       [id, expense.title, parseInt(expense.value, 10), users_status]);
+                       [id, expense.title, parseFloat(expense.value, 10), users_status]);
   }).then(function() {
     // TODO: abstract this out
     // this is messy
