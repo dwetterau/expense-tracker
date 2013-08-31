@@ -142,7 +142,7 @@ exports.install_routes = function(app) {
     var value = req.body.value;
     var participants = [req.session.email];
     if (req.body.participants) {
-      participants.concat(req.body.participants.split(','));
+      participants = participants.concat(req.body.participants.split(','));
     }
     expenses.store_expense({ value: value,
                              participants: participants,
