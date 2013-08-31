@@ -6,8 +6,9 @@ var images = require('./images');
 var users = require('./users');
 
 // Error sending
-function send_error(res, info) {
-  console.error('error:', info);
+function send_error(res, info, exception) {
+  console.error('error:', info + exception);
+  console.error('stack:', exception.stack);
   res.render('error',
              { title: 'An error occured',
                info: info},
@@ -27,7 +28,7 @@ exports.install_routes = function(app) {
         expense_templates: expense_templates
       });
     }, function(err) {
-      send_error(res, 'An error occurred while retrieving the expenses: ' + err);
+      send_error(res, 'An error occurred while retrieving the expenses: ', err);
     });
   });
 
@@ -42,7 +43,7 @@ exports.install_routes = function(app) {
     users.get_user(user_id).then(function(data) {
       res.render('user', { title: data, email: data});
     }, function(err) {
-      send_error(res, 'An error occurred while retrieving the user: ' + err);
+      send_error(res, 'An error occurred while retrieving the user: ', err);
     });
   });
 
@@ -54,7 +55,7 @@ exports.install_routes = function(app) {
       req.session.email = email;
       res.redirect('/user/' + user_id);
     }, function(err) {
-      send_error(res, 'Login error: ' + err);
+      send_error(res, 'Login error: ',err);
     });
   });
 
@@ -83,7 +84,7 @@ exports.install_routes = function(app) {
         res.redirect('/user/' + user_id);
       });
     }, function(err) {
-      send_error(res, 'An error occurred making the account: ' + err);
+      send_error(res, 'An error occurred making the account: ', err);
     });
   });
 
@@ -99,7 +100,7 @@ exports.install_routes = function(app) {
       res.set('Content-Type', 'image/jpeg');
       res.send(image_data);
     }, function(err) {
-      send_error(res, 'An error occurred getting the image: ' + err);
+      send_error(res, 'An error occurred getting the image: ', err);
     });
   });
 
@@ -110,7 +111,7 @@ exports.install_routes = function(app) {
       res.set('Content-Type', 'image/jpeg');
       res.send(image_data);
     }, function(err) {
-      send_error(res, 'An error occurred getting the image: ' + err);
+      send_error(res, 'An error occurred getting the image: ', err);
     });
   });
 
@@ -122,7 +123,7 @@ exports.install_routes = function(app) {
     }).then(function(image_id) {
       res.redirect('/images/' + image_id);
     }, function(err) {
-      send_error(res, 'An error occurred uploading the image: ' + err);
+      send_error(res, 'An error occurred uploading the image: ', err);
     });
   });
 
@@ -152,7 +153,7 @@ exports.install_routes = function(app) {
         res.redirect('/expense/' + expense_id);
       }, function(err) {
         console.log(err.stack);
-        send_error(res, 'An error occurred making the expense: ' + err);
+        send_error(res, 'An error occurred making the expense: ', err);
       });
   });
 
@@ -162,7 +163,7 @@ exports.install_routes = function(app) {
     expenses.get_expense(expense_id).then(function(expense) {
       res.render('expense', {title: 'Expense detail', expense: expense});
     }, function(err) {
-      send_error(res, 'An error occurred retrieving the expense: ' + err);
+      send_error(res, 'An error occurred retrieving the expense: ', err);
     });
   });
 
