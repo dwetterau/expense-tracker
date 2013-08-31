@@ -141,15 +141,32 @@ exports.install_routes = function(app) {
     var description = req.body.description || undefined;
     var value = req.body.value;
     var participants = [req.session.email];
+    var image_path = req.files.image && req.files.image.path;
+    var store_image_done = Q.defer();
     if (req.body.participants) {
       participants = participants.concat(req.body.participants.split(','));
     }
-    expenses.store_expense({ value: value,
-                             participants: participants,
-                             title: title,
-                             description: description
-                           })
-      .then(function(expense_id) {
+    if (!image_path) {
+      store_image_done.resolve(undefined);
+    } else {
+      Q.nfcall(fs.readFile, image_path).then(function(image_data) {
+        return images.store_image(image_data);
+      }).then(function(image_id) {
+        store_image_done.resolve(image_id);
+      }, function(err) {
+        console.err('Store image failed:', err);
+        store_image_done.resolve(undefined);
+      });
+    }
+    store_image_done.promise.then(function(image_id) {
+      return expenses.store_expense(
+        { value: value,
+          participants: participants,
+          title: title,
+          description: description,
+          receipt_image: image_id
+        });
+    }).then(function(expense_id) {
         res.redirect('/expense/' + expense_id);
       }, function(err) {
         console.log(err.stack);

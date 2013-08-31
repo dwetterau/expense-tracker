@@ -72,6 +72,14 @@ function store_expense(expense) {
                         );
     }
   }).then(function() {
+    if (expense.receipt_image) {
+      return execute_cql('UPDATE expenses ' +
+                         'SET receipt_image=? ' +
+                         'WHERE expense_id=?',
+                         [expense.receipt_image, id]
+                        );
+    }
+  }).then(function() {
     return user_ids.map(function(user_id) {
       return update_status(id, user_id, 0);
     });
