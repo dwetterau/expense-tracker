@@ -17,6 +17,20 @@ function send_error(res, info) {
 }
 
 exports.install_routes = function(app) {
+  // Main route
+  app.get('/', auth.check_auth, function(req, res) {
+    var user_id = req.session.user_id;
+    expenses.get_user_expenses(user_id).then(function (expense_templates) {
+      res.render("index", {
+        title: "Expense Tracker", //TODO: Move this to the template somewhere
+        email: req.session.email,
+        expense_templates: expense_templates
+      });
+    }, function(err) {
+      send_error(res, 'An error occurred while retrieving the expenses: ' + err);
+    });
+  });
+
   // User routes
   app.get('/user/:id', auth.check_auth, function(req, res) {
     var user_id = req.params.id;
@@ -28,7 +42,7 @@ exports.install_routes = function(app) {
     users.get_user(user_id).then(function(data) {
       res.render('user', { title: data, email: data});
     }, function(err) {
-      send_error(res, 'An error occured retrieving the user: ' + err);
+      send_error(res, 'An error occurred while retrieving the user: ' + err);
     });
   });
 
@@ -37,6 +51,7 @@ exports.install_routes = function(app) {
     var password = req.body.password;
     users.login({email: email, password: password}).then(function(user_id) {
       req.session.user_id = user_id;
+      req.session.email = email;
       res.redirect('/user/' + user_id);
     }, function(err) {
       send_error(res, 'Login error: ' + err);
@@ -124,8 +139,10 @@ exports.install_routes = function(app) {
     var title = req.body.title;
     var description = req.body.description || undefined;
     var value = req.body.value;
-    var participants = req.body.participants && req.body.participants.split(',');
-    participants = participants || [];
+    var participants = [req.session.email];
+    if (req.body.participants) {
+      participants.concat(req.body.participants.split(','));
+    }
     expenses.store_expense({ value: value,
                              participants: participants,
                              title: title,
@@ -140,6 +157,7 @@ exports.install_routes = function(app) {
   });
 
   app.get('/expense/:expense_id', auth.check_auth, function(req, res) {
+    // TODO: make sure you are involved in the expense to see it?
     var expense_id = req.params.expense_id;
     expenses.get_expense(expense_id).then(function(expense) {
       res.render('expense', {title: 'Expense detail', expense: expense});

@@ -12,7 +12,6 @@ function check_auth(req, res, next) {
     res.redirect('/login');
   } else {
     users.get_user(req.session.user_id).then(function(user) {
-      req.user = user;
       next();
     }, function(err) {
       next(err);

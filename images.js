@@ -2,7 +2,7 @@ var Q = require('q');
 var imagemagick = require('imagemagick');
 var uuid = require('node-uuid');
 var ExifImage = require('exif').ExifImage;
-var thumbnail_sizes = ['800x600', '640x480'];
+var thumbnail_sizes = ['800x600', '640x480', '320x240'];
 var execute_cql = require('./db').execute_cql;
 
 function extract_exif(image_data) {

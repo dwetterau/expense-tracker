@@ -57,7 +57,7 @@ function store_expense(expense) {
     return execute_cql('INSERT INTO expenses ' +
                        '(expense_id, title, value, participants) ' +
                        'VALUES (?, ?, ?, ?)',
-                       [id, expense.title, parseFloat(expense.value, 10), users_status]);
+                       [id, expense.title, parseFloat(expense.value), users_status]);
   }).then(function() {
     // TODO: abstract this out
     // this is messy
@@ -84,6 +84,7 @@ function get_expense(id) {
                      [id])
     .then(function(result) {
       var template_data = {};
+      template_data.expense_id = result.rows[0].get('expense_id');
       template_data.title = result.rows[0].get('title');
       template_data.description = result.rows[0].get('description');
       template_data.receipt_image = result.rows[0].get('receipt_image');
@@ -108,8 +109,22 @@ function get_expense(id) {
     });
 }
 
+function get_user_expenses(user_id) {
+  return execute_cql('SELECT expense_id ' +
+                     'FROM expense_status ' +
+                     'WHERE user_id=?',
+                      [user_id])
+    .then(function(result) {
+      var expense_requests = result.rows.map(function(row) {
+        return get_expense(row.get('expense_id'));
+      });
+      return Q.all(expense_requests);
+    });
+}
+
 exports.create_expense_tables = create_expense_tables;
 exports.store_expense = store_expense;
 exports.get_expense = get_expense;
+exports.get_user_expenses = get_user_expenses;
 exports.update_status = update_status;
 exports.states = expense_states;

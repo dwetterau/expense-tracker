@@ -1,0 +1,26 @@
+<h1> Expenses for {{ email }}</h1>
+<ul>
+{{#each expense_templates}}
+<li>
+  <div><a href='expense/{{this.expense_id}}'>{{ this.title }}</a></div>
+  <div> value: {{ this.value }} </div>
+  <div>Participants:
+  <ul>
+  {{#each this.participants_status }}
+    <li> {{ this.email }} - {{# if this.status }}
+      paid
+    {{else}}
+      unpaid
+    {{/if}}
+    </li>
+  {{/each}}
+  </ul>
+  </div>
+</div>
+{{# if expense.receipt_image }}
+  {{! TODO: factor out this path somehow }}
+  <img src="/thumb/{{ expense.receipt_image }}/320x240" />
+{{/if}}
+</li>
+{{/each}}
+</ul>
