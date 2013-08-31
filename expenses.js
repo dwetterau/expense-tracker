@@ -54,10 +54,13 @@ function store_expense(expense) {
     user_ids.forEach(function(user_id) {
       users_status[user_id] = expense_states.WAITING;
     });
+    // Store user_status as a map
+    var cql_users_status = {value: users_status,
+                            hint: 'map'};
     return execute_cql('INSERT INTO expenses ' +
                        '(expense_id, title, value, participants) ' +
                        'VALUES (?, ?, ?, ?)',
-                       [id, expense.title, parseFloat(expense.value), users_status]);
+                       [id, expense.title, parseFloat(expense.value), cql_users_status]);
   }).then(function() {
     // TODO: abstract this out
     // this is messy

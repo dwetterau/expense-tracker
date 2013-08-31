@@ -102,11 +102,15 @@ function store_image(image_data) {
   });
 
   // Store the image
+  var thumbnail_map_cql = { value: thumbnail_map,
+                            hint: 'map' };
   var image_p = extract_metadata(image_data).then(function(metadata) {
+    var metadata_map_cql = { value: metadata,
+                             hint: 'map' };
     return execute_cql('INSERT INTO images' +
                        '(image_id, image_data, metadata, thumbnails)' +
                        ' VALUES (?, ?, ?, ?)',
-                       [image_id, image_data, metadata, thumbnail_map]);
+                       [image_id, image_data, metadata_map_cql, thumbnail_map_cql]);
   }).fail(function(err) {
     console.error('Could not save image: ', err);
   });
@@ -125,7 +129,7 @@ function get_image(image_id) {
 }
 
 function get_thumbnail(image_id, size_string) {
-  return execute_cql('SELECT thumbnails FROM images' + 
+  return execute_cql('SELECT thumbnails FROM images' +
                      ' WHERE image_id=?', [image_id])
   .then(function(result) {
     var thumbnail_id = result.rows[0].get('thumbnails')[size_string];
