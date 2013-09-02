@@ -40,6 +40,7 @@ function update_status(expense_id, user_id, status) {
 function store_expense(expense) {
   var id = uuid.v4();
   var user_ids = [];
+  //TODO chanve expense.value to be the value in micros/millis to avoid floating point
   return Q.all(
     // Convert emails to uuids
     expense.participants.map(function(email) {
@@ -60,7 +61,7 @@ function store_expense(expense) {
     return execute_cql('INSERT INTO expenses ' +
                        '(expense_id, title, value, participants) ' +
                        'VALUES (?, ?, ?, ?)',
-                       [id, expense.title, parseFloat(expense.value), cql_users_status]);
+                       [id, expense.title, parseInt(expense.value), cql_users_status]);
   }).then(function() {
     // TODO: abstract this out
     // this is messy

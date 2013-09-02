@@ -72,24 +72,24 @@ exports.install_routes = function(app) {
     res.render('logout');
   });
 
-  app.post('/make_account', function(req, res) {
+  app.post('/create_account', function(req, res) {
     var email = req.body.email;
     var password = req.body.password;
     var new_user = {
       email: email,
       password: password
     };
-    users.make_user(new_user).then(function() {
+    users.create_user(new_user).then(function() {
       users.login({email: email, password: password}).then(function(user_id) {
         res.redirect('/user/' + user_id);
       });
     }, function(err) {
-      send_error(res, 'An error occurred making the account: ', err);
+      send_error(res, 'An error occurred while creating the account: ', err);
     });
   });
 
-  app.get('/make_account', function(req, res) {
-    res.render('make_account');
+  app.get('/create_account', function(req, res) {
+    res.render('create_account');
   });
 
   // Image routes

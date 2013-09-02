@@ -17,9 +17,9 @@
   </ul>
   </div>
 </div>
-{{# if expense.receipt_image }}
+{{# if this.receipt_image }}
   {{! TODO: factor out this path somehow }}
-  <img src="/thumb/{{ expense.receipt_image }}/320x240" />
+  <img src="/thumb/{{ this.receipt_image }}/320x240" />
 {{/if}}
 </li>
 {{/each}}

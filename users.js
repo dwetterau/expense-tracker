@@ -44,7 +44,7 @@ function login(user) {
   });
 }
 
-function make_user(user) {
+function create_user(user) {
   var salt = auth.generate_salt(128);
   return auth.hash_password(user.password, salt)
       .then(function(hashed_password) {
@@ -72,4 +72,4 @@ exports.create_user_tables = create_user_tables;
 exports.get_by_email = get_by_email;
 exports.get_user = get_user;
 exports.login = login;
-exports.make_user = make_user;
+exports.create_user = create_user;
