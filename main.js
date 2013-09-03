@@ -4,12 +4,20 @@ var exphbs = require('express3-handlebars');
 var helenus = require('helenus');
 var CassandraStore = require('connect-cassandra')(express);
 var routes = require('./routes');
+var development = true;
+
+if (development) {
+  console.log(__dirname + '/static');
+  app.use( '/static', express.static(__dirname + '/static'));
+}
 
 var pool = new helenus.ConnectionPool({
     hosts : ['localhost:9160'],
     keyspace : 'expense_tracker',
     timeout : 3000
 });
+
+
 
 app.use(express.bodyParser());
 app.use(express.cookieParser());
