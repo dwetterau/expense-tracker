@@ -11,7 +11,7 @@ function send_error(res, info, exception) {
   console.error('stack:', exception.stack);
   res.render('error',
              { title: 'An error occured',
-               info: info},
+               info: info + exception},
              function(err, response) {
                res.send(500, response);
              });
@@ -51,11 +51,10 @@ exports.install_routes = function(app) {
     var email = req.body.email;
     var password = req.body.password;
     users.login({email: email, password: password}).then(function(user_id) {
-      req.session.user_id = user_id;
-      req.session.email = email;
-      res.redirect('/user/' + user_id);
+      users.create_session(req, user_id, email);
+      res.redirect('/');
     }, function(err) {
-      send_error(res, 'Login error: ',err);
+      send_error(res, 'Login error: ', err);
     });
   });
 
@@ -64,7 +63,7 @@ exports.install_routes = function(app) {
   });
 
   app.post('/logout', function(req, res) {
-    delete req.session.user_id;
+    users.delete_session(req);
     res.redirect('/login');
   });
 
@@ -79,9 +78,13 @@ exports.install_routes = function(app) {
       email: email,
       password: password
     };
-    users.create_user(new_user).then(function() {
+    users.create_user(new_user).then(function(user_id) {
+      users.delete_session(req);
       users.login({email: email, password: password}).then(function(user_id) {
-        res.redirect('/user/' + user_id);
+        users.create_session(req, user_id, email);
+        res.redirect('/');
+      }, function(err) {
+        send_error(res, 'An error occurred while auto logging in new account: ', err);
       });
     }, function(err) {
       send_error(res, 'An error occurred while creating the account: ', err);
