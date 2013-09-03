@@ -1,7 +1,7 @@
 var Q = require('q');
 var uuid = require('node-uuid');
-var execute_cql = require('./db').execute_cql;
 var auth = require('./auth');
+var execute_cql = exports.execute_cql;
 
 function create_user_tables() {
   return execute_cql('CREATE TABLE users ( ' +
@@ -69,6 +69,7 @@ function create_user(user) {
 }
 
 exports.create_user_tables = create_user_tables;
+exports.execute_cql = require('./db').execute_cql;
 exports.get_by_email = get_by_email;
 exports.get_user = get_user;
 exports.login = login;

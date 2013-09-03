@@ -10,6 +10,8 @@
     "imagemagick": "*",
     "express3-handlebars": "*",
     "helenus": "*",
-    "connect-cassandra": "*"
-  }
+    "connect-cassandra": "*",
+    "mocha": "*"
+  },
+  "scripts": {"test": "mocha test/*_test.js --reporter spec"}
 }
