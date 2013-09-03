@@ -45,6 +45,9 @@ function store_expense(expense) {
     // Convert emails to uuids
     expense.participants.map(function(email) {
       return users.get_by_email(email).then(function(result) {
+        if (!result) {
+          throw Error("User: " + email + " does not exist.");
+        }
         return result.get('user_id');
       });
     })
