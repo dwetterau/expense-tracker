@@ -23,7 +23,7 @@ exports.install_routes = function(app) {
     var user_id = req.session.user_id;
     expenses.get_user_expenses(user_id).then(function (expense_templates) {
       res.render("index", {
-        title: "Expense Tracker", //TODO: Move this to the template somewhere
+        title: "Expense Tracker",
         email: req.session.email,
         expense_templates: expense_templates
       });
@@ -136,7 +136,7 @@ exports.install_routes = function(app) {
 
   // Expenses routes
   app.get('/create_expense', auth.check_auth, function(req, res) {
-    res.render('create_expense');
+    res.render('create_expense', {title: 'Create new expense'});
   });
 
   app.post('/create_expense', auth.check_auth, function(req, res) {

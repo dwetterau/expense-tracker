@@ -37,7 +37,7 @@ function update_status(expense_id, user_id, status) {
 }
 
 function store_expense(expense) {
-  var id = uuid.v4();
+  var id = uuid.v1();
   var user_ids = [];
   return Q.all(
     // Convert emails to uuids
