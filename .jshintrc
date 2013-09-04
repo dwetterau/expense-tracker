@@ -2,5 +2,8 @@
     "globals": { "exports": false,
                  "Buffer": false,
                  "console": false,
-                 "process": false }
+                 "process": false,
+	         "before": false,
+	         "after": false,
+	         "describe": false }
 }
