@@ -36,7 +36,6 @@ function update_status(expense_id, user_id, status) {
                      [status, expense_id, user_id ]);
 }
 
-
 function store_expense(expense) {
   var id = uuid.v4();
   var user_ids = [];
@@ -61,26 +60,26 @@ function store_expense(expense) {
     var cql_users_status = {value: users_status,
                             hint: 'map'};
     return db.execute_cql('INSERT INTO expenses ' +
-                       '(expense_id, title, value, participants) ' +
-                       'VALUES (?, ?, ?, ?)',
-                       [id, expense.title, parseInt(expense.value), cql_users_status]);
+                          '(expense_id, title, value, participants) ' +
+                          'VALUES (?, ?, ?, ?)',
+                          [id, expense.title, parseInt(expense.value), cql_users_status]);
   }).then(function() {
     // TODO: abstract this out
     // this is messy
     if (expense.description) {
       return db.execute_cql('UPDATE expenses ' +
-                         'SET description=? ' +
-                         'WHERE expense_id=?',
-                         [expense.description, id]
-                        );
+                            'SET description=? ' +
+                            'WHERE expense_id=?',
+                            [expense.description, id]
+                           );
     }
   }).then(function() {
     if (expense.receipt_image) {
       return db.execute_cql('UPDATE expenses ' +
-                         'SET receipt_image=? ' +
-                         'WHERE expense_id=?',
-                         [expense.receipt_image, id]
-                        );
+                            'SET receipt_image=? ' +
+                            'WHERE expense_id=?',
+                            [expense.receipt_image, id]
+                           );
     }
   }).then(function() {
     return user_ids.map(function(user_id) {
@@ -92,11 +91,15 @@ function store_expense(expense) {
 }
 
 function get_expense(id) {
-  return execute_cql('SELECT * ' +
-                     'FROM expenses ' +
-                     'WHERE expense_id=?',
-                     [id])
+  return db.execute_cql('SELECT * ' +
+                        'FROM expenses ' +
+                        'WHERE expense_id=?',
+                        [id])
     .then(function(result) {
+      if (!result.rows[0]) {
+        // Didn't find the expense, return nothing
+        return;
+      }
       var template_data = {};
       template_data.expense_id = result.rows[0].get('expense_id');
       template_data.title = result.rows[0].get('title');
@@ -125,9 +128,9 @@ function get_expense(id) {
 
 function get_user_expenses(user_id) {
   return db.execute_cql('SELECT expense_id ' +
-                     'FROM expense_status ' +
-                     'WHERE user_id=?',
-                      [user_id])
+                        'FROM expense_status ' +
+                        'WHERE user_id=?',
+                        [user_id])
     .then(function(result) {
       var expense_requests = result.rows.map(function(row) {
         return get_expense(row.get('expense_id'));
