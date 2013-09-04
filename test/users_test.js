@@ -118,6 +118,5 @@ describe('users', function() {
     }, function(err) {
       done(err);
     });
-    done();
   });
 });

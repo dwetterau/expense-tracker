@@ -1,6 +1,6 @@
-var execute_cql = require('./db').execute_cql;
-var users = require('./users');
+var db = require('./db');
 var Q = require('q');
+var users = require('./users');
 var uuid = require('node-uuid');
 
 // constants for expense state
@@ -10,7 +10,7 @@ var expense_states = {
 };
 
 function create_expense_tables() {
-  var create_expenses = execute_cql(
+  var create_expenses = db.execute_cql(
     'CREATE TABLE expenses (' +
       'expense_id uuid PRIMARY KEY, ' +
       'title text, ' +
@@ -19,7 +19,7 @@ function create_expense_tables() {
       'participants map<uuid, int>, ' +
       'receipt_image uuid)'
   );
-  var create_status = execute_cql(
+  var create_status = db.execute_cql(
     'CREATE TABLE expense_status (' +
       'user_id uuid, ' +
       'expense_id uuid, ' +
@@ -30,7 +30,7 @@ function create_expense_tables() {
 }
 
 function update_status(expense_id, user_id, status) {
-  return execute_cql('UPDATE expense_status ' +
+  return db.execute_cql('UPDATE expense_status ' +
                      'SET status=? ' +
                      'WHERE expense_id=? and user_id=?',
                      [status, expense_id, user_id ]);
@@ -61,7 +61,7 @@ function store_expense(expense) {
     // Store user_status as a map
     var cql_users_status = {value: users_status,
                             hint: 'map'};
-    return execute_cql('INSERT INTO expenses ' +
+    return db.execute_cql('INSERT INTO expenses ' +
                        '(expense_id, title, value, participants) ' +
                        'VALUES (?, ?, ?, ?)',
                        [id, expense.title, parseInt(expense.value), cql_users_status]);
@@ -69,7 +69,7 @@ function store_expense(expense) {
     // TODO: abstract this out
     // this is messy
     if (expense.description) {
-      return execute_cql('UPDATE expenses ' +
+      return db.execute_cql('UPDATE expenses ' +
                          'SET description=? ' +
                          'WHERE expense_id=?',
                          [expense.description, id]
@@ -77,7 +77,7 @@ function store_expense(expense) {
     }
   }).then(function() {
     if (expense.receipt_image) {
-      return execute_cql('UPDATE expenses ' +
+      return db.execute_cql('UPDATE expenses ' +
                          'SET receipt_image=? ' +
                          'WHERE expense_id=?',
                          [expense.receipt_image, id]
@@ -125,7 +125,7 @@ function get_expense(id) {
 }
 
 function get_user_expenses(user_id) {
-  return execute_cql('SELECT expense_id ' +
+  return db.execute_cql('SELECT expense_id ' +
                      'FROM expense_status ' +
                      'WHERE user_id=?',
                       [user_id])
@@ -143,3 +143,6 @@ exports.get_expense = get_expense;
 exports.get_user_expenses = get_user_expenses;
 exports.update_status = update_status;
 exports.states = expense_states;
+
+// export for testing
+exports.db = db;

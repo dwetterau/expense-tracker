@@ -1,7 +1,7 @@
-var Q = require('q');
-var uuid = require('node-uuid');
 var auth = require('./auth');
 var db = require('./db');
+var uuid = require('node-uuid');
+var Q = require('q');
 
 function create_user_tables() {
   return db.execute_cql('CREATE TABLE users ( ' +
