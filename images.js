@@ -4,6 +4,7 @@ var uuid = require('node-uuid');
 var ExifImage = require('exif').ExifImage;
 var thumbnail_sizes = ['800x600', '640x480', '320x240'];
 var execute_cql = require('./db').execute_cql;
+var fs = require('fs');
 
 function extract_exif(image_data) {
   var deferred = Q.defer();
@@ -140,7 +141,20 @@ function get_thumbnail(image_id, size_string) {
   });
 }
 
+function store_image_from_path(image_path) {
+  return Q.nfcall(fs.readFile, image_path).then(function(image_data) {
+    if (image_data && image_data.length) {
+      return store_image(image_data);
+    } else {
+      throw "Empty image";
+    }
+  });
+}
+
+
+
 exports.create_image_tables = create_image_tables;
 exports.store_image = store_image;
+exports.store_image_from_path = store_image_from_path;
 exports.get_image = get_image;
 exports.get_thumbnail = get_thumbnail;

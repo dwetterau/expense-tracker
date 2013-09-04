@@ -40,7 +40,6 @@ function update_status(expense_id, user_id, status) {
 function store_expense(expense) {
   var id = uuid.v4();
   var user_ids = [];
-  //TODO chanve expense.value to be the value in micros/millis to avoid floating point
   return Q.all(
     // Convert emails to uuids
     expense.participants.map(function(email) {
