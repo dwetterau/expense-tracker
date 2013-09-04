@@ -112,8 +112,8 @@ function get_expense(id) {
       return Q.all(
         participant_uuids.map(
           function(uuid) {
-            return users.get_user(uuid).then(function(user_email) {
-              return {email: user_email, status: participants_status[uuid]};
+            return users.get_user(uuid).then(function(user) {
+              return {email: user.get('email'), status: participants_status[uuid]};
             });
           }
         )
