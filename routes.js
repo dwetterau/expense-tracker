@@ -40,8 +40,8 @@ exports.install_routes = function(app) {
       res.redirect('/user/' + user_id);
       return;
     }
-    users.get_user(user_id).then(function(data) {
-      res.render('user', { title: data, email: data});
+    users.get_user(user_id).then(function(user) {
+      res.render('user', { title: user.get('email'), email: user.get('email')});
     }, function(err) {
       send_error(res, 'An error occurred while retrieving the user: ', err);
     });
