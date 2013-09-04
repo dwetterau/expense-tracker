@@ -8,19 +8,17 @@ describe('users', function() {
     db.set_client_testing();
     users.db.set_client_testing();
     db.setup().then(function() {
-      users.create_user_tables().then(function() {
-        // Table set up successfully
-        done();
-      }, function(err) {
-        if (err.message.indexOf('Cannot add already existing column family') != -1) {
-          console.warn("previous user table existed...");
-          done();
-        } else {
-          done(err);
-        }
-      });
+      return users.create_user_tables();
+    }).then(function() {
+      // Table set up successfully
+      done();
     }, function(err) {
-      done(err);
+      if (err.message.indexOf('Cannot add already existing column family') != -1) {
+        console.warn("previous user table existed...");
+        done();
+      } else {
+        done(err);
+      }
     });
   });
   var test_email = 'test2@test.com';

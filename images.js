@@ -3,7 +3,8 @@ var imagemagick = require('imagemagick');
 var uuid = require('node-uuid');
 var ExifImage = require('exif').ExifImage;
 var thumbnail_sizes = ['800x600', '640x480', '320x240'];
-var execute_cql = require('./db').execute_cql;
+var db = require('./db');
+var fs = require('fs');
 
 function extract_exif(image_data) {
   var deferred = Q.defer();
@@ -58,23 +59,23 @@ function resize_image(image_data, size_string) {
 
 function create_image_tables() {
   return Q.all([
-    execute_cql('CREATE TABLE images ( image_id uuid PRIMARY KEY,' +
-                'image_data blob,' +
-                'thumbnails map<text, uuid>,' +
-                'metadata map<text, text>)'),
-    execute_cql('CREATE TABLE thumbnails (thumbnail_id uuid PRIMARY KEY,' +
-                'image_data blob,' +
-                'orig_image uuid)')
+    db.execute_cql('CREATE TABLE images ( image_id uuid PRIMARY KEY,' +
+                   'image_data blob,' +
+                   'thumbnails map<text, uuid>,' +
+                   'metadata map<text, text>)'),
+    db.execute_cql('CREATE TABLE thumbnails (thumbnail_id uuid PRIMARY KEY,' +
+                   'image_data blob,' +
+                   'orig_image uuid)')
   ]).fail(function(err) {
     console.error('There was an error creating image tables ', err);
   });
 }
 
 function store_thumbnail(id, data, orig_id) {
-  return execute_cql('INSERT INTO thumbnails' +
-                     '(thumbnail_id, image_data, orig_image)' +
-                     'VALUES (?, ?, ?)',
-                     [id, data, orig_id]);
+  return db.execute_cql('INSERT INTO thumbnails' +
+                        '(thumbnail_id, image_data, orig_image)' +
+                        'VALUES (?, ?, ?)',
+                        [id, data, orig_id]);
 }
 
 function store_image(image_data) {
@@ -107,10 +108,10 @@ function store_image(image_data) {
   var image_p = extract_metadata(image_data).then(function(metadata) {
     var metadata_map_cql = { value: metadata,
                              hint: 'map' };
-    return execute_cql('INSERT INTO images' +
-                       '(image_id, image_data, metadata, thumbnails)' +
-                       ' VALUES (?, ?, ?, ?)',
-                       [image_id, image_data, metadata_map_cql, thumbnail_map_cql]);
+    return db.execute_cql('INSERT INTO images' +
+                          '(image_id, image_data, metadata, thumbnails)' +
+                          ' VALUES (?, ?, ?, ?)',
+                          [image_id, image_data, metadata_map_cql, thumbnail_map_cql]);
   }).fail(function(err) {
     console.error('Could not save image: ', err);
   });
@@ -121,26 +122,40 @@ function store_image(image_data) {
 }
 
 function get_image(image_id) {
-  return execute_cql('SELECT image_data FROM images' +
-                     ' WHERE image_id=?', [image_id])
+  return db.execute_cql('SELECT image_data FROM images' +
+                        ' WHERE image_id=?', [image_id])
   .then(function(result) {
     return result.rows[0].get('image_data');
   });
 }
 
 function get_thumbnail(image_id, size_string) {
-  return execute_cql('SELECT thumbnails FROM images' +
-                     ' WHERE image_id=?', [image_id])
+  return db.execute_cql('SELECT thumbnails FROM images' +
+                        ' WHERE image_id=?', [image_id])
   .then(function(result) {
     var thumbnail_id = result.rows[0].get('thumbnails')[size_string];
-    return execute_cql('SELECT image_data FROM thumbnails' +
-                       ' WHERE thumbnail_id=?', [thumbnail_id]);
+    return db.execute_cql('SELECT image_data FROM thumbnails' +
+                          ' WHERE thumbnail_id=?', [thumbnail_id]);
   }).then(function(result) {
     return result.rows[0].get('image_data');
   });
 }
 
+function store_image_from_path(image_path) {
+  return Q.nfcall(fs.readFile, image_path).then(function(image_data) {
+    if (image_data && image_data.length) {
+      return store_image(image_data);
+    } else {
+      throw "Empty image";
+    }
+  });
+}
+
+
+
 exports.create_image_tables = create_image_tables;
 exports.store_image = store_image;
+exports.store_image_from_path = store_image_from_path;
 exports.get_image = get_image;
 exports.get_thumbnail = get_thumbnail;
+exports.db = db;
