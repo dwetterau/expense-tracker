@@ -19,7 +19,7 @@ describe('expenses', function() {
         done();
     }, function(err) {
       if (err.message.indexOf('Cannot add already existing column family') != -1) {
-        console.warn("previous user table existed...");
+        console.warn("previous user or expense table existed...", err);
         done();
       } else {
         done(err);
@@ -44,7 +44,7 @@ describe('expenses', function() {
       expenses.store_expense(test_expense).then(function() {
         done(new Error('Should not have allowed expense to be created'));
       }, function(err) {
-        assert.equal("User: " + test_email + " does not exist.", err.message);
+        assert.equal(err.message, "User: " + test_email + " does not exist.");
         done();
       });
     });
@@ -52,7 +52,7 @@ describe('expenses', function() {
       users.create_user({email: test_email, password: test_password}).then(function() {
         return expenses.store_expense(test_expense);
       }).then(function(expense_id) {
-        assert.equal(36, expense_id.length); // Make sure it's a uuid
+        assert.equal(expense_id.length, 36); // Make sure it's a uuid
           test_expense_id = expense_id;
         done();
       }, function(err) {
@@ -71,13 +71,13 @@ describe('expenses', function() {
     });
     it('will retrieve the expense successfully', function(done) {
       expenses.get_expense(test_expense_id).then(function(template_data) {
-        assert.equal(test_expense_id, template_data.expense_id);
-        assert.equal(test_title, template_data.title);
-        assert.equal(test_description, template_data.description);
-        assert.equal(test_value, template_data.value);
+        assert.equal(template_data.expense_id, test_expense_id);
+        assert.equal(template_data.title, test_title);
+        assert.equal(template_data.description, test_description);
+        assert.equal(template_data.value, test_value);
         assert(!template_data.receipt_image);
-        assert.equal(test_email, template_data.participants_status[0].email);
-        assert.equal(expenses.states.WAITING, template_data.participants_status[0].status);
+        assert.equal(template_data.participants_status[0].email, test_email);
+        assert.equal(template_data.participants_status[0].status, expenses.states.WAITING);
         done();
       }, function(err) {
         done(err);

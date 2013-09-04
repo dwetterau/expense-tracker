@@ -146,7 +146,7 @@ function store_image_from_path(image_path) {
     if (image_data && image_data.length) {
       return store_image(image_data);
     } else {
-      throw "Empty image";
+      throw Error("Empty image");
     }
   });
 }

@@ -14,7 +14,7 @@ describe('users', function() {
       done();
     }, function(err) {
       if (err.message.indexOf('Cannot add already existing column family') != -1) {
-        console.warn("previous user table existed...");
+        console.warn("previous user table existed...", err);
         done();
       } else {
         done(err);
@@ -28,7 +28,7 @@ describe('users', function() {
     it('should create a user successfully', function(done) {
       users.create_user({email: test_email, password: test_password}).then(function(user_id) {
         // Make sure this is a uuid
-        assert.equal(36, user_id.length);
+        assert.equal(user_id.length, 36);
         test_user_id = user_id;
         done();
       }, function(err) {
@@ -39,7 +39,7 @@ describe('users', function() {
       users.create_user({email: test_email, password: test_password}).then(function(user_id) {
         done(new Error('allowed user to be created'));
       }, function(err) {
-        assert.equal('Email already in use', err.message);
+        assert.equal(err.message, 'Email already in use');
         done();
       });
     });
@@ -48,8 +48,8 @@ describe('users', function() {
     it('should log in test user', function(done) {
       users.login({email: test_email, password: test_password}).then(function(user_id) {
         // Make sure this is a uuid
-        assert.equal(36, user_id.length);
-        assert.equal(test_user_id, user_id);
+        assert.equal(user_id.length, 36);
+        assert.equal(user_id, test_user_id);
         done();
       }, function(err) {
         done(err);
@@ -59,7 +59,7 @@ describe('users', function() {
       users.login({email: test_email, password: test_password + 'A'}).then(function(user_id) {
         done(new Error('allowed user to login'));
       }, function(err) {
-        assert.equal('Invalid email or password', err.message);
+        assert.equal(err.message, 'Invalid email or password');
         done();
       });
     });
@@ -67,7 +67,7 @@ describe('users', function() {
       users.login({email: test_email + 'A', password: test_password}).then(function(user_id) {
         done(new Error('allowed user to login'));
       }, function(err) {
-        assert.equal('Invalid email or password', err.message);
+        assert.equal(err.message, 'Invalid email or password');
         done();
       });
     });
@@ -75,8 +75,8 @@ describe('users', function() {
   describe('get_user', function() {
     it('should retrieve test user', function(done) {
       users.get_user(test_user_id).then(function(user) {
-        assert.equal(test_user_id, user.get('user_id'));
-        assert.equal(test_email, user.get('email'));
+        assert.equal(user.get('user_id'), test_user_id);
+        assert.equal(user.get('email'), test_email);
         done();
       }, function (err) {
         done(err);
@@ -94,8 +94,8 @@ describe('users', function() {
   describe('get_by_email', function() {
     it('should retrieve test user', function(done) {
       users.get_by_email(test_email).then(function(user) {
-        assert.equal(test_user_id, user.get('user_id'));
-        assert.equal(test_email, user.get('email'));
+        assert.equal(user.get('user_id'), test_user_id);
+        assert.equal(user.get('email'), test_email);
         done();
       }, function (err) {
         done(err);

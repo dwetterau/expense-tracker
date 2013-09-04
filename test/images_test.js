@@ -14,7 +14,7 @@ describe('images', function(){
       done();
     }, function(err) {
       if (err.message.indexOf('Cannot add already existing column family') != -1) {
-        console.warn("previous user table existed...");
+        console.warn("previous image table existed...", err);
         done();
       } else {
         done(err);
@@ -28,9 +28,9 @@ describe('images', function(){
       fs.closeSync(fd);
       images.store_image_from_path('/tmp/asdfasdfasdf').then(
         function() {
-          done('Promise was not failed');
+          done(new Error('Promise was not failed'));
         }, function(err) {
-          assert.equal(err, 'Empty image');
+          assert.equal(err.message, 'Empty image');
           done();
       });
     });
@@ -43,6 +43,5 @@ describe('images', function(){
       }, function(err) {
         done(err);
       });
-    done();
   });
 });
