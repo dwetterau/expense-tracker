@@ -1,0 +1,9 @@
+{{# if this }}
+  <div> Participants:
+    <ul class="participant-list">
+      {{# each this }}
+        {{> participant }}
+      {{/each}}
+    </ul>
+  </div>
+{{/if}}

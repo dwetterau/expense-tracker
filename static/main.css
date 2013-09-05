@@ -9,3 +9,17 @@ ul.expense-listing {
 li.expense-listing-item:nth-child(odd) {
     background-color: #EEE;
 }
+
+ul.participant-list {
+    list-style-type: none;
+}
+
+li.participant-paid:before {
+    font-family: "GeneralFoundicons";
+    content: "\f005"; /* Put a checkmark */
+}
+
+li.participant-unpaid:before {
+    font-family: "GeneralFoundicons";
+    content: "\f006"; /* Put a X */
+}

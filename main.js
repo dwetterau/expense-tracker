@@ -4,11 +4,12 @@ var exphbs = require('express3-handlebars');
 var helenus = require('helenus');
 var CassandraStore = require('connect-cassandra')(express);
 var routes = require('./routes');
-var development = true;
+var helpers = require('./handlebars_helpers');
 
-if (development) {
+if (app.get('env') == 'development') {
   console.log(__dirname + '/static');
   app.use( '/static', express.static(__dirname + '/static'));
+  app.use( '/fonts', express.static(__dirname + '/fonts'));
 }
 
 var pool = new helenus.ConnectionPool({
@@ -21,7 +22,8 @@ var pool = new helenus.ConnectionPool({
 
 app.use(express.bodyParser());
 app.use(express.cookieParser());
-app.engine('handlebars', exphbs({defaultLayout: 'main'}));
+app.engine('handlebars', exphbs({defaultLayout: 'main',
+                                 helpers: helpers}));
 app.set('view engine', 'handlebars');
 
 pool.connect(function(e) {
