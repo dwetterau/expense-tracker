@@ -90,7 +90,7 @@ function store_expense(expense) {
   });
 }
 
-function get_expense(id) {
+function get_expense(id, user_id) {
   return db.execute_cql('SELECT * ' +
                         'FROM expenses ' +
                         'WHERE expense_id=?',
@@ -106,6 +106,10 @@ function get_expense(id) {
       template_data.description = result.rows[0].get('description');
       template_data.receipt_image = result.rows[0].get('receipt_image');
       var participants_status = result.rows[0].get('participants');
+      if (!participants_status.hasOwnProperty(user_id)) {
+        // User is not part of this expense, don't return it.
+        return;
+      }
       var participant_uuids = [];
       for (var uuid in participants_status) {
         participant_uuids.push(uuid);
@@ -133,7 +137,7 @@ function get_user_expenses(user_id) {
                         [user_id])
     .then(function(result) {
       var expense_requests = result.rows.map(function(row) {
-        return get_expense(row.get('expense_id'));
+        return get_expense(row.get('expense_id'), user_id);
       });
       return Q.all(expense_requests);
     });

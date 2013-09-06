@@ -38,6 +38,7 @@ describe('expenses', function() {
     description: test_description,
     receipt_image: undefined // no image
   };
+  var test_user_id;
   var test_expense_id;
   describe('store_expense', function() {
     it('won\'t store the expense because the user can\'t be found', function(done) {
@@ -49,7 +50,8 @@ describe('expenses', function() {
       });
     });
     it('should be stored correctly', function(done) {
-      users.create_user({email: test_email, password: test_password}).then(function() {
+      users.create_user({email: test_email, password: test_password}).then(function(user_id) {
+        test_user_id = user_id;
         return expenses.store_expense(test_expense);
       }).then(function(expense_id) {
         assert.equal(expense_id.length, 36); // Make sure it's a uuid
@@ -62,7 +64,15 @@ describe('expenses', function() {
   });
   describe('get_expense', function() {
     it('will return undefined if no expense is found', function(done) {
-      expenses.get_expense(uuid.v4()).then(function(template_data) {
+      expenses.get_expense(uuid.v4(), test_user_id).then(function(template_data) {
+        assert(!template_data);
+        done();
+      }, function(err) {
+        done(err);
+      });
+    });
+    it('will return undefined if user not in participants', function(done) {
+      expenses.get_expense(test_expense_id, uuid.v4()).then(function(template_data) {
         assert(!template_data);
         done();
       }, function(err) {
@@ -70,7 +80,7 @@ describe('expenses', function() {
       });
     });
     it('will retrieve the expense successfully', function(done) {
-      expenses.get_expense(test_expense_id).then(function(template_data) {
+      expenses.get_expense(test_expense_id, test_user_id).then(function(template_data) {
         assert.equal(template_data.expense_id, test_expense_id);
         assert.equal(template_data.title, test_title);
         assert.equal(template_data.description, test_description);

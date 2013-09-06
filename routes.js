@@ -9,6 +9,7 @@ var users = require('./users');
 function send_error(res, info, exception) {
   console.error('error:', info + exception);
   console.error('stack:', exception.stack);
+  console.log(info + exception);
   res.render('error',
              { title: 'An error occured',
                info: info + exception},
@@ -168,9 +169,12 @@ exports.install_routes = function(app) {
   });
 
   app.get('/expense/:expense_id', auth.check_auth, function(req, res) {
-    // TODO: make sure you are involved in the expense to see it?
     var expense_id = req.params.expense_id;
-    expenses.get_expense(expense_id).then(function(expense) {
+    expenses.get_expense(expense_id, req.session.user_id).then(function(expense) {
+      if (!expense) {
+        send_error(res, 'Expense not found ', new Error('Expense not found'));
+        return;
+      }
       res.render('expense', {title: 'Expense detail', expense: expense});
     }, function(err) {
       send_error(res, 'An error occurred retrieving the expense: ', err);
