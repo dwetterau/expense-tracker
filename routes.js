@@ -26,6 +26,7 @@ exports.install_routes = function(app) {
       res.render("index", {
         title: "Expense Tracker",
         email: req.session.email,
+        name: req.session.name,
         expense_templates: expense_templates
       });
     }, function(err) {
@@ -51,8 +52,8 @@ exports.install_routes = function(app) {
   app.post('/login', function(req, res) {
     var email = req.body.email;
     var password = req.body.password;
-    users.login({email: email, password: password}).then(function(user_id) {
-      users.create_session(req, user_id, email);
+    users.login({email: email, password: password}).then(function(user) {
+      users.create_session(req, user);
       res.redirect('/');
     }, function(err) {
       send_error(res, 'Login error: ', err);

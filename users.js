@@ -32,19 +32,24 @@ function get_by_email(email) {
 }
 
 function login(user) {
-  return get_by_email(user.email).then(function(retrieved_user) {
-    if (!retrieved_user) {
+  var retrieved_user;
+  return get_by_email(user.email).then(function(result) {
+    if (!result) {
       throw new Error('Invalid email or password'); // Email not found
     }
-    return auth.hash_password(user.password, retrieved_user.get('salt'))
-        .then(function(hashed_password) {
+    retrieved_user = result;
+    return auth.hash_password(user.password, retrieved_user.get('salt'));
+  })
+    .then(function(hashed_password) {
       if (retrieved_user.get('password') == hashed_password) {
-        return retrieved_user.get('user_id');
+        return { user_id: retrieved_user.get('user_id'),
+                 name: retrieved_user.get('name'),
+                 email: retrieved_user.get('email')
+               };
       } else {
         throw new Error('Invalid email or password'); // Actually just invalid password
       }
     });
-  });
 }
 
 function create_user(user) {
@@ -72,14 +77,14 @@ function create_user(user) {
     });
 }
 
-function create_session(req, user_id, email) {
-  req.session.user_id = user_id;
-  req.session.email = email;
+function create_session(req, user) {
+  req.session.user_id = user.user_id;
+  req.session.email = user.email;
+  req.session.name = user.name;
 }
 
 function delete_session(req) {
-  delete req.session.user_id;
-  delete req.session.email;
+  delete req.session;
 }
 
 exports.create_user_tables = create_user_tables;
