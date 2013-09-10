@@ -59,6 +59,7 @@ function migrate_to_schema(schema) {
       for (var column in needed_columns) {
         // don't consider primary key
         // it can't really be changed
+        // TODO: check if the extra field defines a primary key
         if (needed_columns[column].toUpperCase().indexOf('PRIMARY KEY') != -1) {
           continue;
         }
@@ -102,7 +103,8 @@ var expenses_schema = {
     description: 'text',
     value: 'int',
     participants: 'map<uuid, int>',
-    receipt_image: 'uuid'
+    receipt_image: 'uuid',
+    owner: 'uuid'
   }};
 
 var expense_status_schema = {
@@ -121,7 +123,8 @@ var users_schema = {
     email: 'text PRIMARY KEY',
     password: 'text',
     salt: 'text',
-    user_id: 'uuid'
+    user_id: 'uuid',
+    name: 'text'
   },
   index: {
     name: 'users_user_id',

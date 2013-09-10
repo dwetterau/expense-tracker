@@ -75,11 +75,13 @@ exports.install_routes = function(app) {
   app.post('/create_account', function(req, res) {
     var email = req.body.email;
     var password = req.body.password;
+    var name = req.body.name;
     var new_user = {
       email: email,
-      password: password
+      password: password,
+      name: name
     };
-    users.create_user(new_user).then(function(user_id) {
+    users.create_user(new_user).then(function() {
       users.delete_session(req);
       users.login({email: email, password: password}).then(function(user_id) {
         users.create_session(req, user_id, email);

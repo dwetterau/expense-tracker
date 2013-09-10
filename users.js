@@ -49,24 +49,27 @@ function login(user) {
 
 function create_user(user) {
   var salt = auth.generate_salt(128);
+  var hashed_password;
+  var user_id;
   return auth.hash_password(user.password, salt)
-      .then(function(hashed_password) {
-    var user_id = uuid.v4();
-    return get_by_email(user.email)
-        .then(function(retrieved_user) {
+    .then(function(hash_result) {
+      hashed_password = hash_result;
+      return get_by_email(user.email);
+    })
+    .then(function(retrieved_user) {
       if (retrieved_user) {
         throw new Error('Email already in use');
       }
+      user_id = uuid.v4();
       return db.execute_cql(
-          'INSERT INTO users' +
-          '(email, password, salt, user_id)' +
-          'VALUES (?, ?, ?, ?)',
-          [user.email, hashed_password, salt, user_id])
-          .then(function() {
-        return user_id;
-      });
+        'INSERT INTO users' +
+          '(email, password, salt, user_id, name)' +
+          'VALUES (?, ?, ?, ?, ?)',
+        [user.email, hashed_password, salt, user_id, user.name]);
+    })
+    .then(function() {
+      return user_id;
     });
-  });
 }
 
 function create_session(req, user_id, email) {
