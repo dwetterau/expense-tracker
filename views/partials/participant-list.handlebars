@@ -2,7 +2,11 @@
   <div> Participants:
     <ul class="participant-list">
       {{# each this }}
-        {{> participant }}
+        {{# if this.status }}
+          <li class="participant-paid"> {{ this.name }} - paid </li>
+        {{ else }}
+          <li class="participant-unpaid"> {{ this.name }} - unpaid </li>
+        {{/if}}
       {{/each}}
     </ul>
   </div>
