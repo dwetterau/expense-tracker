@@ -1,6 +1,6 @@
 <h1> Expenses for {{ name }}</h1>
 <ul class="expense-listing">
-{{#each expense_templates}}
+{{#each unfinished_expenses}}
 <li class="expense-listing-item">
   <div><a href='expense/{{this.expense_id}}'>{{ this.title }}</a> - {{ this.owner.name }}</div>
   <div> {{format_money this.value }} </div>

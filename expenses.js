@@ -98,7 +98,7 @@ function get_expense(id, user_id) {
         expense_id: row.get('expense_id'),
         title: row.get('title'),
         description: row.get('description'),
-        receipt_image: row.get('receipt_image'),
+        receipt_image: row.get('receipt_image')
       };
       var participants_status = row.get('participants');
       if (!participants_status.hasOwnProperty(user_id)) {
@@ -143,14 +143,44 @@ function get_user_expenses(user_id) {
       var expense_requests = result.rows.map(function(row) {
         return get_expense(row.get('expense_id'), user_id);
       });
-      Q.all(expense_requests).then(function(expense_templates) {
+      return Q.all(expense_requests).then(function(expense_templates) {
         //divide the expenses into three categories
         // 1: owned unfinished expenses: status = Owned
         // 2: waiting expenses
         // 3: finished expenses
-        console.log(expense_templates);
-        console.log(expense_templates[0].participants_status);
-        return expense_templates;
+        var owned_unfinished = [];
+        var unfinished = [];
+        var other = [];
+        expense_templates.forEach(function(expense) {
+          var done = true;
+          var my_status;
+          expense.participants_status.forEach(function(status) {
+            done = done && status.status != expense_states.WAITING;
+            if (status.user_id == user_id) {
+              my_status = status.status;
+            }
+          });
+          if (done) {
+            //TODO split up finished expenses you owned and ones you didn't
+            other.push(expense);
+          } else {
+            if (my_status == expense_states.OWNED) {
+              // Owner and waiting on someone still
+              owned_unfinished.push(expense);
+            } else if (my_status == expense_states.WAITING) {
+              // You still need to pay
+              unfinished.push(expense);
+            } else if (my_status == expense_states.PAID) {
+              // You're done but it's still not over, put it in other
+              other.push(expense);
+            }
+          }
+        });
+        return {
+          owned_unfinished: owned_unfinished,
+          unfinished: unfinished,
+          other: other
+        };
       });
     });
 }

@@ -22,12 +22,15 @@ exports.install_routes = function(app) {
   // Main route
   app.get('/', auth.check_auth, function(req, res) {
     var user_id = req.session.user_id;
-    expenses.get_user_expenses(user_id).then(function (expense_templates) {
+    expenses.get_user_expenses(user_id).then(function(expense_templates) {
+      console.log(expense_templates);
       res.render("index", {
         title: "Expense Tracker",
         email: req.session.email,
         name: req.session.name,
-        expense_templates: expense_templates
+        owned_unfinished_expenses: expense_templates.owned_unfinished,
+        unfinished_expenses: expense_templates.unfinished,
+        other_expenses: expense_templates.other
       });
     }, function(err) {
       send_error(res, 'An error occurred while retrieving the expenses: ', err);
