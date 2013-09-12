@@ -119,7 +119,11 @@ function get_expense(id, user_id) {
         participant_uuids.map(
           function(uuid) {
             return users.get_user(uuid).then(function(user) {
-              return {email: user.get('email'), status: participants_status[uuid]};
+              return {
+                email: user.get('email'),
+                status: participants_status[uuid],
+                name: user.get('name')
+              };
             });
           }
         )
