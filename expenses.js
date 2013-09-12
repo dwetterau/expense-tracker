@@ -35,15 +35,23 @@ function store_expense(expense) {
   }).then(function() {
     var users_status = {};
     user_ids.forEach(function(user_id) {
-      users_status[user_id] = expense_states.WAITING;
+      if (user_id == expense.owner) {
+        users_status[user_id] = expense_states.OWNED;
+      } else {
+        users_status[user_id] = expense_states.WAITING;
+      }
     });
     // Store user_status as a map
     var cql_users_status = {value: users_status,
                             hint: 'map'};
     return db.execute_cql('INSERT INTO expenses ' +
-                          '(expense_id, title, value, participants) ' +
-                          'VALUES (?, ?, ?, ?)',
-                          [id, expense.title, parseInt(expense.value), cql_users_status]);
+                          '(expense_id, title, value, participants, owner) ' +
+                          'VALUES (?, ?, ?, ?, ?)',
+                          [id,
+                           expense.title,
+                           parseInt(expense.value, 10),
+                           cql_users_status,
+                           expense.owner]);
   }).then(function() {
     // TODO: abstract this out
     // this is messy
@@ -64,7 +72,11 @@ function store_expense(expense) {
     }
   }).then(function() {
     return user_ids.map(function(user_id) {
-      return update_status(id, user_id, 0);
+      if (user_id == expense.owner) {
+        return update_status(id, user_id, expense_states.OWNED);
+      } else {
+        return update_status(id, user_id, expense_states.PAID);
+      }
     });
   }).then(function() {
     return id;
@@ -81,12 +93,14 @@ function get_expense(id, user_id) {
         // Didn't find the expense, return nothing
         return;
       }
-      var template_data = {};
-      template_data.expense_id = result.rows[0].get('expense_id');
-      template_data.title = result.rows[0].get('title');
-      template_data.description = result.rows[0].get('description');
-      template_data.receipt_image = result.rows[0].get('receipt_image');
-      var participants_status = result.rows[0].get('participants');
+      var row = result.rows[0];
+      var template_data = {
+        expense_id: row.get('expense_id'),
+        title: row.get('title'),
+        description: row.get('description'),
+        receipt_image: row.get('receipt_image'),
+      };
+      var participants_status = row.get('participants');
       if (!participants_status.hasOwnProperty(user_id)) {
         // User is not part of this expense, don't return it.
         return;
@@ -95,16 +109,21 @@ function get_expense(id, user_id) {
       for (var uuid in participants_status) {
         participant_uuids.push(uuid);
       }
-      template_data.value = result.rows[0].get('value');
+      template_data.value = row.get('value');
       return Q.all(
         participant_uuids.map(
           function(uuid) {
             return users.get_user(uuid).then(function(user) {
-              return {
-                email: user.get('email'),
-                status: participants_status[uuid],
-                name: user.get('name')
-              };
+              var user_object = users.user_object(user);
+              if (uuid == row.get('owner')) {
+                template_data.owner = user_object;
+                user_object.owner = true;
+              } else {
+                user_object.owner = false;
+              }
+              user_object.status = participants_status[uuid];
+              user_object.paid = user_object.status != expense_states.WAITING;
+              return user_object;
             });
           }
         )

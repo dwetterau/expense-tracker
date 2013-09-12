@@ -3,17 +3,12 @@ var db = require('./db');
 var uuid = require('node-uuid');
 var Q = require('q');
 
-function create_user_tables() {
-  return db.execute_cql('CREATE TABLE users ( ' +
-                     'email varchar PRIMARY KEY,' +
-                     'password varchar,' +
-                     'salt varchar,' +
-                     'name varchar,' +
-                     'user_id uuid)')
-    .then(function() {
-      return db.execute_cql('CREATE INDEX users_user_id ' +
-                         'ON users (user_id)');
-    });
+function user_object(row) {
+  return {
+    name: row.get('name'),
+    user_id: row.get('user_id'),
+    email: row.get('email'),
+  };
 }
 
 function get_user(user_id) {
@@ -84,16 +79,12 @@ function create_session(req, user) {
   req.session.name = user.name;
 }
 
-function delete_session(req) {
-  delete req.session;
-}
-
 exports.create_session = create_session;
-exports.delete_session = delete_session;
 exports.get_by_email = get_by_email;
 exports.get_user = get_user;
 exports.login = login;
 exports.create_user = create_user;
+exports.user_object = user_object;
 
 // export for testing
 exports.db = db;
