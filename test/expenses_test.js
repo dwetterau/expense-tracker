@@ -34,6 +34,7 @@ describe('expenses', function() {
   var test_description = 'test description';
   var test_email = 'a@a.com';
   var test_password = 'asdf';
+  var test_name = 'testName';
   var test_expense = {
     value: test_value,
     participants: [test_email],
@@ -53,7 +54,10 @@ describe('expenses', function() {
       });
     });
     it('should be stored correctly', function(done) {
-      users.create_user({email: test_email, password: test_password}).then(function(user_id) {
+      users.create_user({
+        email: test_email,
+        password: test_password,
+        name: test_name}).then(function(user_id) {
         test_user_id = user_id;
         return expenses.store_expense(test_expense);
       }).then(function(expense_id) {
