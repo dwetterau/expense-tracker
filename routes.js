@@ -65,8 +65,9 @@ exports.install_routes = function(app) {
   });
 
   app.post('/logout', function(req, res) {
-    users.delete_session(req);
-    res.redirect('/login');
+    Q.ninvoke(req.session, 'destroy').then(function() {
+      res.redirect('/login');
+    });
   });
 
   app.get('/logout', auth.check_auth, function(req, res) {
@@ -82,8 +83,9 @@ exports.install_routes = function(app) {
       password: password,
       name: name
     };
-    users.create_user(new_user).then(function() {
-      users.delete_session(req);
+    Q.ninvoke(req.session, 'regenerate').then(function() {
+      return users.create_user(new_user);
+    }).then(function() {
       users.login({email: email, password: password}).then(function(user_id) {
         users.create_session(req, user_id, email);
         res.redirect('/');

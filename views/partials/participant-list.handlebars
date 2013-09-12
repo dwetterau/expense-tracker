@@ -2,10 +2,14 @@
   <div> Participants:
     <ul class="participant-list">
       {{# each this }}
-        {{# if this.status }}
-          <li class="participant-paid"> {{ this.name }} - paid </li>
+        {{# if this.owner }}
+          <li class="participant-paid"> {{ this.name }} - owner </li>
         {{ else }}
-          <li class="participant-unpaid"> {{ this.name }} - unpaid </li>
+          {{# if this.paid }}
+            <li class="participant-paid"> {{ this.name }} - paid </li>
+          {{ else }}
+            <li class="participant-unpaid"> {{ this.name }} - unpaid </li>
+          {{/if}}
         {{/if}}
       {{/each}}
     </ul>
