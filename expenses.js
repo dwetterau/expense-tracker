@@ -6,7 +6,8 @@ var uuid = require('node-uuid');
 // constants for expense state
 var expense_states = {
   WAITING: 0,
-  PAID: 1
+  PAID: 1,
+  OWNED: 2
 };
 
 function update_status(expense_id, user_id, status) {

@@ -147,6 +147,7 @@ exports.install_routes = function(app) {
     var title = req.body.title;
     var description = req.body.description || undefined;
     var value = req.body.value;
+    var owner = req.session.user_id;
     var participants = [req.session.email];
     var image_path = req.files.image && req.files.image.path;
     if (req.body.participants) {
@@ -161,7 +162,8 @@ exports.install_routes = function(app) {
           participants: participants,
           title: title,
           description: description,
-          receipt_image: image_id
+          receipt_image: image_id,
+          owner: owner
         });
     }).then(function(expense_id) {
         res.redirect('/expense/' + expense_id);
