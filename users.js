@@ -8,6 +8,7 @@ function create_user_tables() {
                      'email varchar PRIMARY KEY,' +
                      'password varchar,' +
                      'salt varchar,' +
+                     'name varchar,' +
                      'user_id uuid)')
     .then(function() {
       return db.execute_cql('CREATE INDEX users_user_id ' +

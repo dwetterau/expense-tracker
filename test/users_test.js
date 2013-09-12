@@ -23,10 +23,14 @@ describe('users', function() {
   });
   var test_email = 'test2@test.com';
   var test_password = 'asdf';
+  var test_name = 'testname';
   var test_user_id;
   describe('create_user', function() {
     it('should create a user successfully', function(done) {
-      users.create_user({email: test_email, password: test_password}).then(function(user_id) {
+      users.create_user({
+        email: test_email,
+        password: test_password,
+        name: test_name}).then(function(user_id) {
         // Make sure this is a uuid
         assert.equal(user_id.length, 36);
         test_user_id = user_id;
@@ -36,7 +40,10 @@ describe('users', function() {
       });
     });
     it('should not create a user with the same email', function(done) {
-      users.create_user({email: test_email, password: test_password}).then(function(user_id) {
+      users.create_user({
+        email: test_email,
+        password: test_password,
+        name: test_name}).then(function(user_id) {
         done(new Error('allowed user to be created'));
       }, function(err) {
         assert.equal(err.message, 'Email already in use');
@@ -46,10 +53,10 @@ describe('users', function() {
   });
   describe('login', function() {
     it('should log in test user', function(done) {
-      users.login({email: test_email, password: test_password}).then(function(user_id) {
-        // Make sure this is a uuid
-        assert.equal(user_id.length, 36);
-        assert.equal(user_id, test_user_id);
+      users.login({email: test_email, password: test_password}).then(function(user) {
+        assert.equal(user.user_id, test_user_id);
+        assert.equal(user.name, test_name);
+        assert.equal(user.email, test_email);
         done();
       }, function(err) {
         done(err);
