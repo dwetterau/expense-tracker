@@ -9,26 +9,6 @@ var expense_states = {
   PAID: 1
 };
 
-function create_expense_tables() {
-  var create_expenses = db.execute_cql(
-    'CREATE TABLE expenses (' +
-      'expense_id uuid PRIMARY KEY, ' +
-      'title text, ' +
-      'description text, ' +
-      'value int, ' +
-      'participants map<uuid, int>, ' +
-      'receipt_image uuid)'
-  );
-  var create_status = db.execute_cql(
-    'CREATE TABLE expense_status (' +
-      'user_id uuid, ' +
-      'expense_id uuid, ' +
-      'status int, ' +
-      'PRIMARY KEY (user_id, expense_id))'
-  );
-  return Q.all([create_expenses, create_status]);
-}
-
 function update_status(expense_id, user_id, status) {
   return db.execute_cql('UPDATE expense_status ' +
                      'SET status=? ' +
@@ -143,7 +123,6 @@ function get_user_expenses(user_id) {
     });
 }
 
-exports.create_expense_tables = create_expense_tables;
 exports.store_expense = store_expense;
 exports.get_expense = get_expense;
 exports.get_user_expenses = get_user_expenses;

@@ -88,7 +88,6 @@ function delete_session(req) {
   delete req.session;
 }
 
-exports.create_user_tables = create_user_tables;
 exports.create_session = create_session;
 exports.delete_session = delete_session;
 exports.get_by_email = get_by_email;

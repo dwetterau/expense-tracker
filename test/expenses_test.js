@@ -1,6 +1,7 @@
 var assert = require('assert');
 var db = require('../db');
 var expenses = require('../expenses');
+var schema = require('../schema');
 var users = require('../users');
 var uuid = require('node-uuid');
 var Q = require('q');
@@ -11,9 +12,11 @@ describe('expenses', function() {
     expenses.db.set_client_testing();
     users.db.set_client_testing();
     db.setup().then(function() {
-      return users.create_user_tables();
+      return schema.create_new_table(schema.schemas.users);
     }).then(function() {
-      return expenses.create_expense_tables();
+      return schema.create_new_table(schema.schemas.expenses);
+    }).then(function() {
+      return schema.create_new_table(schema.schemas.expense_status);
     }).then(function() {
         // Table set up successfully
         done();

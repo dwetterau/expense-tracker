@@ -82,7 +82,7 @@ var images_schema = {
     image_id: 'uuid PRIMARY KEY',
     image_data: 'blob',
     metadata: 'map<text, text>',
-    thumbnails: 'map<text, uuid>',
+    thumbnails: 'map<text, uuid>'
   }
 };
 
@@ -132,18 +132,22 @@ var users_schema = {
   }
 };
 
-var schemas = [
-  images_schema,
-  thumbnails_schema,
-  expenses_schema,
-  expense_status_schema,
-  users_schema
-];
+var schemas = {
+  images: images_schema,
+  thumbnails: thumbnails_schema,
+  expenses: expenses_schema,
+  expense_status: expense_status_schema,
+  users: users_schema
+};
 
 exports.install_all = function() {
   var promises = [];
-  schemas.forEach(function(schema) {
-    promises.push(migrate_to_schema(schema));
-  });
+  for (var key in schemas) {
+    if (schemas.hasOwnProperty(key)) {
+      promises.push(migrate_to_schema(schemas[key]));
+    }
+  }
   return Q.all(promises);
 };
+exports.create_new_table = create_new_table;
+exports.schemas = schemas;

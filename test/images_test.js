@@ -1,6 +1,7 @@
 var assert = require('assert');
 var images = require('../images');
 var db = require('../db');
+var schema = require('../schema');
 var fs = require('fs');
 var Q = require('q');
 
@@ -9,7 +10,9 @@ describe('images', function(){
     db.set_client_testing();
     images.db.set_client_testing();
     db.setup().then(function() {
-      return images.create_image_tables();
+      return schema.create_new_table(schema.schemas.images);
+    }).then(function() {
+      return schema.create_new_table(schema.schemas.thumbnails);
     }).then(function() {
       done();
     }, function(err) {

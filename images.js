@@ -57,20 +57,6 @@ function resize_image(image_data, size_string) {
     });
 }
 
-function create_image_tables() {
-  return Q.all([
-    db.execute_cql('CREATE TABLE images ( image_id uuid PRIMARY KEY,' +
-                   'image_data blob,' +
-                   'thumbnails map<text, uuid>,' +
-                   'metadata map<text, text>)'),
-    db.execute_cql('CREATE TABLE thumbnails (thumbnail_id uuid PRIMARY KEY,' +
-                   'image_data blob,' +
-                   'orig_image uuid)')
-  ]).fail(function(err) {
-    console.error('There was an error creating image tables ', err);
-  });
-}
-
 function store_thumbnail(id, data, orig_id) {
   return db.execute_cql('INSERT INTO thumbnails' +
                         '(thumbnail_id, image_data, orig_image)' +
@@ -151,9 +137,6 @@ function store_image_from_path(image_path) {
   });
 }
 
-
-
-exports.create_image_tables = create_image_tables;
 exports.store_image = store_image;
 exports.store_image_from_path = store_image_from_path;
 exports.get_image = get_image;
