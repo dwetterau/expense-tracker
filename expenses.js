@@ -124,7 +124,15 @@ function get_user_expenses(user_id) {
       var expense_requests = result.rows.map(function(row) {
         return get_expense(row.get('expense_id'), user_id);
       });
-      return Q.all(expense_requests);
+      Q.all(expense_requests).then(function(expense_templates) {
+        //divide the expenses into three categories
+        // 1: owned unfinished expenses: status = Owned
+        // 2: waiting expenses
+        // 3: finished expenses
+        console.log(expense_templates);
+        console.log(expense_templates[0].participants_status);
+        return expense_templates;
+      });
     });
 }
 

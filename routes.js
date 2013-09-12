@@ -84,8 +84,8 @@ exports.install_routes = function(app) {
     };
     users.create_user(new_user).then(function() {
       users.delete_session(req);
-      users.login({email: email, password: password}).then(function(user_id) {
-        users.create_session(req, user_id, email);
+      users.login({email: email, password: password}).then(function(user) {
+        users.create_session(req, user);
         res.redirect('/');
       }, function(err) {
         send_error(res, 'An error occurred while auto logging in new account: ', err);
@@ -197,7 +197,7 @@ exports.install_routes = function(app) {
       });
   });
 
-  var port = process.env.PORT || 3000;
+  var port = process.env.PORT || 4000;
   app.listen(port, function() {
     console.log("Listening on", port);
   });

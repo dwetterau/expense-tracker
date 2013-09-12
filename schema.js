@@ -32,6 +32,12 @@ function create_new_table(schema) {
     });
 }
 
+function drop_table(schema) {
+  var statement = 'DROP TABLE ' + schema.name;
+  console.log(statement);
+  return db.execute_cql(statement);
+}
+
 function alter_table_add(table_name, column_name, column_type) {
   return db.execute_cql('ALTER TABLE ' + table_name +
                         ' ADD ' + column_name + ' ' + column_type);
@@ -149,5 +155,16 @@ exports.install_all = function() {
   }
   return Q.all(promises);
 };
+
+exports.drop_all = function() {
+  var promises = [];
+  for (var key in schemas) {
+    if (schemas.hasOwnProperty(key)) {
+      promises.push(drop_table(schemas[key]));
+    }
+  }
+  return Q.all(promises);
+};
+
 exports.create_new_table = create_new_table;
 exports.schemas = schemas;
