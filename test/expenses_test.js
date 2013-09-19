@@ -5,9 +5,12 @@ var schema = require('../schema');
 var users = require('../users');
 var uuid = require('node-uuid');
 var Q = require('q');
+// TODO: This should be enabled for all tests
+Q.longStackSupport = true;
 
 describe('expenses', function() {
   before(function(done) {
+    this.timeout(30000);
     db.set_client_testing();
     expenses.db.set_client_testing();
     users.db.set_client_testing();
@@ -53,16 +56,19 @@ describe('expenses', function() {
       });
     });
     it('should be stored correctly', function(done) {
-      users.create_user({email: test_email, password: test_password}).then(function(user_id) {
-        test_user_id = user_id;
-        return expenses.store_expense(test_expense);
-      }).then(function(expense_id) {
-        assert.equal(expense_id.length, 36); // Make sure it's a uuid
+      users.create_user({email: test_email, password: test_password, name:'testMan'})
+        .then(function(user_id) {
+          test_user_id = user_id;
+          test_expense.owner = user_id;
+          return expenses.store_expense(test_expense);
+        })
+        .then(function(expense_id) {
+          assert.equal(expense_id.length, 36); // Make sure it's a uuid
           test_expense_id = expense_id;
-        done();
-      }, function(err) {
-        done(err);
-      });
+          done();
+        }, function(err) {
+          done(err);
+        });
     });
   });
   describe('get_expense', function() {
@@ -90,15 +96,15 @@ describe('expenses', function() {
         assert.equal(template_data.value, test_value);
         assert(!template_data.receipt_image);
         assert.equal(template_data.participants_status[0].email, test_email);
-        assert.equal(template_data.participants_status[0].status, expenses.states.WAITING);
+        assert.equal(template_data.participants_status[0].status, expenses.states.OWNED);
         done();
-      }, function(err) {
+      }).fail(function(err) {
         done(err);
       });
     });
   });
   after(function(done) {
-    this.timeout(3000);
+    this.timeout(0);
     var drop_users = db.execute_cql("DROP COLUMNFAMILY users");
     var drop_expenses = db.execute_cql("DROP COLUMNFAMILY expenses");
     var drop_statuses = db.execute_cql("DROP COLUMNFAMILY expense_status");

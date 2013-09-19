@@ -94,22 +94,22 @@ function get_expense(id, user_id) {
         return;
       }
       var row = result.rows[0];
-      var template_data = {
-        expense_id: row.get('expense_id'),
-        title: row.get('title'),
-        description: row.get('description'),
-        receipt_image: row.get('receipt_image'),
-      };
       var participants_status = row.get('participants');
       if (!participants_status.hasOwnProperty(user_id)) {
         // User is not part of this expense, don't return it.
         return;
       }
+      var template_data = {
+        expense_id: row.get('expense_id'),
+        title: row.get('title'),
+        description: row.get('description'),
+        receipt_image: row.get('receipt_image'),
+        value: row.get('value')
+      };
       var participant_uuids = [];
       for (var uuid in participants_status) {
         participant_uuids.push(uuid);
       }
-      template_data.value = row.get('value');
       return Q.all(
         participant_uuids.map(
           function(uuid) {

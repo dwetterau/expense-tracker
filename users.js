@@ -64,7 +64,7 @@ function create_user(user) {
       user_id = uuid.v4();
       return db.execute_cql(
         'INSERT INTO users' +
-          '(email, password, salt, user_id, name)' +
+          '(email, password, salt, user_id, name) ' +
           'VALUES (?, ?, ?, ?, ?)',
         [user.email, hashed_password, salt, user_id, user.name]);
     })
