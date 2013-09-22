@@ -17,6 +17,17 @@ function update_status(expense_id, user_id, status) {
                      [status, expense_id, user_id ]);
 }
 
+function mark_paid(expense_id, owner_id, user_id) {
+  return db.execute_cql('SELECT owner FROM expenses WHERE expense_id=?',
+                        [expense_id])
+    .then(function(result) {
+      if (result.rows[0].get('owner') != owner_id) {
+        throw Error("User: " + user_id + " not owner of expense.");
+      }
+      return update_status(expense_id, user_id, expense_states.PAID);
+    });
+}
+
 function store_expense(expense) {
   var id = uuid.v1();
   var user_ids = [];
@@ -152,6 +163,7 @@ exports.get_expense = get_expense;
 exports.get_user_expenses = get_user_expenses;
 exports.update_status = update_status;
 exports.states = expense_states;
+exports.mark_paid = mark_paid;
 
 // export for testing
 exports.db = db;

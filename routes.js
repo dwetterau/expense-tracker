@@ -188,12 +188,14 @@ exports.install_routes = function(app) {
     });
   });
 
-  app.post('/expense/:expense_id/pay', function(req, res) {
+  app.post('/expense/:expense_id/pay/:user_id', function(req, res) {
+    // Mark the expense as paid for user user_id
     var expense_id = req.params.expense_id;
-    var user_id = req.session.user_id;
-    expenses.update_status(expense_id,
-                           user_id,
-                           expenses.states.PAID)
+    var user_id = req.params.user_id;
+    var owner_id = req.session.user_id;
+    expenses.mark_paid(expense_id,
+                       owner_id,
+                       user_id)
       .then(function() {
         res.redirect('/expense/' + expense_id);
       });
