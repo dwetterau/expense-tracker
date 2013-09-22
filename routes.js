@@ -188,7 +188,8 @@ exports.install_routes = function(app) {
     });
   });
 
-  app.post('/expense/:expense_id/pay/:user_id', function(req, res) {
+  // TODO: this should be a post
+  app.get('/expense/:expense_id/pay/:user_id', function(req, res) {
     // Mark the expense as paid for user user_id
     var expense_id = req.params.expense_id;
     var user_id = req.params.user_id;

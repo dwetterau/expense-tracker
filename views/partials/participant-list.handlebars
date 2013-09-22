@@ -8,7 +8,10 @@
           {{# if this.paid }}
             <li class="participant-paid"> {{ this.name }} - paid </li>
           {{ else }}
-            <li class="participant-unpaid"> {{ this.name }} - unpaid </li>
+            <li class="participant-unpaid">
+              {{ this.name }} - unpaid
+              <a href="{{ this.pay_link }}"> mark paid </a>
+             </li>
           {{/if}}
         {{/if}}
       {{/each}}

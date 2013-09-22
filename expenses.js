@@ -11,10 +11,15 @@ var expense_states = {
 };
 
 function update_status(expense_id, user_id, status) {
-  return db.execute_cql('UPDATE expense_status ' +
-                     'SET status=? ' +
-                     'WHERE expense_id=? and user_id=?',
-                     [status, expense_id, user_id ]);
+  var status_update = db.execute_cql('UPDATE expense_status ' +
+                                     'SET status=? ' +
+                                     'WHERE expense_id=? and user_id=?',
+                                     [status, expense_id, user_id ]);
+  var expense_update = db.execute_cql('UPDATE expenses ' +
+                                      ' SET participants[?] = ?' +
+                                      'WHERE expense_id=?',
+                                      [user_id, status, expense_id]);
+  return Q.all([status_update, expense_update]);
 }
 
 function mark_paid(expense_id, owner_id, user_id) {
@@ -134,6 +139,7 @@ function get_expense(id, user_id) {
               }
               user_object.status = participants_status[uuid];
               user_object.paid = user_object.status != expense_states.WAITING;
+              user_object.pay_link = "/expense/" + id + "/pay/" + uuid;
               return user_object;
             });
           }
