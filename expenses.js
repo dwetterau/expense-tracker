@@ -1,4 +1,4 @@
-var db = require('./db');
+var db = require('./db')();
 var Q = require('q');
 var users = require('./users');
 var uuid = require('node-uuid');

@@ -1,10 +1,11 @@
-var db = require('./db');
+var db = require('./db')();
 var Q = require('q');
 
+// TODO: get keyspace name from db
 function get_schema(table_name) {
   return db.execute_cql('SELECT * from system.schema_columns ' +
                         'where keyspace_name=? and columnfamily_name=?',
-                        ['expense_tracker', table_name]);
+                        [db.keyspace, table_name]);
 }
 
 function create_new_table(schema) {

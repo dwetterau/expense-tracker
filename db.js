@@ -1,40 +1,38 @@
 var Client = require('node-cassandra-cql').Client;
-var cql_client = new Client({
-  hosts: ['localhost:9042'],
-  keyspace: 'expense_tracker',
-  version: '3.0.0',
-  getAConnectionTimeout: 1000
-});
-var Q = require('q');
-var execute_cql = Q.nbind(cql_client.execute, cql_client);
+var default_keyspace = 'expense_tracker';
+var testing_keyspace = 'expense_tracker_test';
 
-var test_keyspace = 'expense_tracker_test';
+module.exports = function(keyspace_name) {
+  if (keyspace_name == 'default' || keyspace_name === undefined) {
+    keyspace_name = process.env.NODE_ENV == 'testing' ? testing_keyspace : default_keyspace;
+  }
 
-function setup() {
-  // Try to create the keyspace for the tests
-  return execute_cql(
-    "CREATE KEYSPACE " + test_keyspace + " " +
-      "WITH replication = {'class':'SimpleStrategy', 'replication_factor':1}").then(function(result) {
-      return result;
-    }, function(err) {
-      if (err.message.indexOf('Cannot add existing keyspace') != -1) {
-        return undefined;
-      }
-      return err;
-    });
-}
-
-function set_client_testing() {
-  cql_client = new Client({hosts: ['localhost:9042'],
-    keyspace: test_keyspace,
+  var cql_client = new Client({
+    hosts: ['localhost:9042'],
+    keyspace: keyspace_name,
     version: '3.0.0',
-    getAConnectionTimeout: 1000});
-  execute_cql = Q.nbind(cql_client.execute, cql_client);
-  // Reset exports
-  exports.cql_client = cql_client;
-  exports.execute_cql = execute_cql;
-}
+    getAConnectionTimeout: 1000
+  });
+  var Q = require('q');
+  var execute_cql = Q.nbind(cql_client.execute, cql_client);
 
-exports.execute_cql = execute_cql;
-exports.set_client_testing = set_client_testing;
-exports.setup = setup;
+  function setup() {
+    // Try to create the keyspace
+    return execute_cql(
+      "CREATE KEYSPACE " + keyspace_name + " " +
+        "WITH replication = {'class':'SimpleStrategy', 'replication_factor':1}").then(function(result) {
+          return result;
+        }, function(err) {
+          if (err.message.indexOf('Cannot add existing keyspace') != -1) {
+            return;
+          }
+          return err;
+        });
+  }
+
+  return {
+    execute_cql: execute_cql,
+    setup: setup,
+    keyspace: keyspace_name
+  };
+};

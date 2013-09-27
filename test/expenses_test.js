@@ -1,5 +1,6 @@
 var assert = require('assert');
-var db = require('../db');
+process.env.NODE_ENV = 'testing';
+var db = require('../db')();
 var expenses = require('../expenses');
 var schema = require('../schema');
 var users = require('../users');
@@ -11,9 +12,6 @@ Q.longStackSupport = true;
 describe('expenses', function() {
   before(function(done) {
     this.timeout(30000);
-    db.set_client_testing();
-    expenses.db.set_client_testing();
-    users.db.set_client_testing();
     db.setup().then(function() {
       return schema.create_new_table(schema.schemas.users);
     }).then(function() {
