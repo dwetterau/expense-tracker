@@ -1,12 +1,12 @@
-var assert = require('assert');
 process.env.NODE_ENV = 'testing';
+var assert = require('assert');
 var db = require('../db')();
 var expenses = require('../expenses');
 var schema = require('../schema');
 var users = require('../users');
 var uuid = require('node-uuid');
 var Q = require('q');
-// TODO: This should be enabled for all tests
+// TODO: refactor all of this stuff into a common test file
 Q.longStackSupport = true;
 
 describe('expenses', function() {

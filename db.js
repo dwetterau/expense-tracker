@@ -30,9 +30,30 @@ module.exports = function(keyspace_name) {
         });
   }
 
+  function insert(columnfamily_name, data) {
+    var keys = [];
+    var values = [];
+    for (var key in data) {
+      if (!data.hasOwnProperty(key)) {
+        continue;
+      }
+      keys.push(key);
+      values.push(data[key]);
+    }
+    var question_marks = keys.map(function() {
+      return '?';
+    }).join(', ');
+
+    return execute_cql('INSERT INTO ' + columnfamily_name + ' (' +
+                       keys.join(', ') + ') ' +
+                       'VALUES (' + question_marks + ')',
+                       values);
+  }
+
   return {
     execute_cql: execute_cql,
     setup: setup,
-    keyspace: keyspace_name
+    keyspace: keyspace_name,
+    insert: insert
   };
 };
