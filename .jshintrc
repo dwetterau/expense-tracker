@@ -6,5 +6,6 @@
 	         "before": false,
 	         "after": false,
 	         "describe": false,
-                 "module": false }
+                 "module": false,
+                 "afterEach": false }
 }

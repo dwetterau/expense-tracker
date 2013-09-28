@@ -60,32 +60,20 @@ function store_expense(expense) {
     // Store user_status as a map
     var cql_users_status = {value: users_status,
                             hint: 'map'};
-    return db.execute_cql('INSERT INTO expenses ' +
-                          '(expense_id, title, value, participants, owner) ' +
-                          'VALUES (?, ?, ?, ?, ?)',
-                          [id,
-                           expense.title,
-                           parseInt(expense.value, 10),
-                           cql_users_status,
-                           expense.owner]);
-  }).then(function() {
-    // TODO: abstract this out
-    // this is messy
+    var cql_expense_data = {
+      expense_id: id,
+      title: expense.title,
+      value: parseInt(expense.value, 10),
+      participants: cql_users_status,
+      owner: expense.owner
+    };
     if (expense.description) {
-      return db.execute_cql('UPDATE expenses ' +
-                            'SET description=? ' +
-                            'WHERE expense_id=?',
-                            [expense.description, id]
-                           );
+      cql_expense_data.description = expense.description;
     }
-  }).then(function() {
     if (expense.receipt_image) {
-      return db.execute_cql('UPDATE expenses ' +
-                            'SET receipt_image=? ' +
-                            'WHERE expense_id=?',
-                            [expense.receipt_image, id]
-                           );
+      cql_expense_data.receipt_image = expense.receipt_image;
     }
+    return db.insert('expenses', cql_expense_data);
   }).then(function() {
     return user_ids.map(function(user_id) {
       if (user_id == expense.owner) {

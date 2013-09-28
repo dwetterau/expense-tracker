@@ -170,20 +170,15 @@ describe('expenses', function() {
     it('will pay the expense if the user is the owner', function(done) {
       expenses.mark_paid(expense2_id, user1_id, user2_id)
         .then(function() {
+          // If successful, unmark the expense as paid, then accept
+          return db.insert('expenses', expense2);
+        })
+        .then(function() {
           done();
-        }, function(err) {
+        })
+        .fail(function(err) {
           done(err);
         });
-      afterEach(function(done) {
-        // unmark the expense as paid
-        db.insert('expenses', expense2)
-          .then(function() {
-            done();
-          }, function(err) {
-            console.warn('could not reset expense2!' + err);
-            done();
-          });
-      });
     });
 
     it('will not pay the expense if the user is not the owner', function(done) {
