@@ -174,7 +174,7 @@ describe('expenses', function() {
         }, function(err) {
           done(err);
         });
-      after(function(done) {
+      afterEach(function(done) {
         // unmark the expense as paid
         db.insert('expenses', expense2)
           .then(function() {
