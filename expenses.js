@@ -75,13 +75,13 @@ function store_expense(expense) {
     }
     return db.insert('expenses', cql_expense_data);
   }).then(function() {
-    return user_ids.map(function(user_id) {
+    return Q.all(user_ids.map(function(user_id) {
       if (user_id == expense.owner) {
         return update_status(id, user_id, expense_states.OWNED);
       } else {
-        return update_status(id, user_id, expense_states.PAID);
+        return update_status(id, user_id, expense_states.WAITING);
       }
-    });
+    }));
   }).then(function() {
     return id;
   });
@@ -103,6 +103,7 @@ function get_expense(id, user_id) {
         // User is not part of this expense, don't return it.
         return;
       }
+      var owned = participants_status[user_id] === expense_states.OWNED;
       var template_data = {
         expense_id: row.get('expense_id'),
         title: row.get('title'),
@@ -127,7 +128,9 @@ function get_expense(id, user_id) {
               }
               user_object.status = participants_status[uuid];
               user_object.paid = user_object.status != expense_states.WAITING;
-              user_object.pay_link = "/expense/" + id + "/pay/" + uuid;
+              if (owned) {
+                user_object.pay_link = "/expense/" + id + "/pay/" + uuid;
+              }
               return user_object;
             });
           }

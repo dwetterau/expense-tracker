@@ -10,7 +10,9 @@
           {{ else }}
             <li class="participant-unpaid">
               {{ this.name }} - unpaid
-              <a href="{{ this.pay_link }}"> mark paid </a>
+              {{# if this.pay_link }}
+                <a href="{{ this.pay_link }}"> mark paid </a>
+              {{/if}}
              </li>
           {{/if}}
         {{/if}}

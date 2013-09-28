@@ -126,6 +126,35 @@ describe('expenses', function() {
         done(err);
       });
     });
+
+    it('should store multiuser expenses correctly', function(done) {
+      var test_expense = {
+        value: 0,
+        participants: ['a@a.com', 'b@b.com'], // user1, user2
+        title: 'test title',
+        description: 'test description',
+        receipt_image: undefined,
+        owner: user1_id
+      };
+      expenses.store_expense(test_expense).then(function(expense_id) {
+        assert(expense_id);
+        return db.execute_cql('SELECT * from expenses where expense_id=?',
+                              [expense_id]);
+      }).then(function(result) {
+        var row = result.rows[0];
+        assert.equal(row.get('value'), 0);
+        assert.equal(row.get('title'), 'test title');
+        assert.equal(row.get('description'), 'test description');
+        var expected_participants = {};
+        expected_participants[user1_id] = expenses.states.OWNED;
+        expected_participants[user2_id] = expenses.states.WAITING;
+        assert.deepEqual(row.get('participants'), expected_participants);
+      }).then(function() {
+        done();
+      }, function(err) {
+        done(err);
+      });
+    });
   });
 
   describe('get_expense', function() {
