@@ -1,4 +1,4 @@
-var db = require('./db');
+var db = require('./db')();
 var Q = require('q');
 var users = require('./users');
 var uuid = require('node-uuid');
@@ -11,10 +11,26 @@ var expense_states = {
 };
 
 function update_status(expense_id, user_id, status) {
-  return db.execute_cql('UPDATE expense_status ' +
-                     'SET status=? ' +
-                     'WHERE expense_id=? and user_id=?',
-                     [status, expense_id, user_id ]);
+  var status_update = db.execute_cql('UPDATE expense_status ' +
+                                     'SET status=? ' +
+                                     'WHERE expense_id=? and user_id=?',
+                                     [status, expense_id, user_id ]);
+  var expense_update = db.execute_cql('UPDATE expenses ' +
+                                      ' SET participants[?] = ?' +
+                                      'WHERE expense_id=?',
+                                      [user_id, status, expense_id]);
+  return Q.all([status_update, expense_update]);
+}
+
+function mark_paid(expense_id, owner_id, user_id) {
+  return db.execute_cql('SELECT owner FROM expenses WHERE expense_id=?',
+                        [expense_id])
+    .then(function(result) {
+      if (result.rows[0].get('owner') != owner_id) {
+        throw Error("User: " + user_id + " not owner of expense.");
+      }
+      return update_status(expense_id, user_id, expense_states.PAID);
+    });
 }
 
 function store_expense(expense) {
@@ -44,40 +60,28 @@ function store_expense(expense) {
     // Store user_status as a map
     var cql_users_status = {value: users_status,
                             hint: 'map'};
-    return db.execute_cql('INSERT INTO expenses ' +
-                          '(expense_id, title, value, participants, owner) ' +
-                          'VALUES (?, ?, ?, ?, ?)',
-                          [id,
-                           expense.title,
-                           parseInt(expense.value, 10),
-                           cql_users_status,
-                           expense.owner]);
-  }).then(function() {
-    // TODO: abstract this out
-    // this is messy
+    var cql_expense_data = {
+      expense_id: id,
+      title: expense.title,
+      value: parseInt(expense.value, 10),
+      participants: cql_users_status,
+      owner: expense.owner
+    };
     if (expense.description) {
-      return db.execute_cql('UPDATE expenses ' +
-                            'SET description=? ' +
-                            'WHERE expense_id=?',
-                            [expense.description, id]
-                           );
+      cql_expense_data.description = expense.description;
     }
-  }).then(function() {
     if (expense.receipt_image) {
-      return db.execute_cql('UPDATE expenses ' +
-                            'SET receipt_image=? ' +
-                            'WHERE expense_id=?',
-                            [expense.receipt_image, id]
-                           );
+      cql_expense_data.receipt_image = expense.receipt_image;
     }
+    return db.insert('expenses', cql_expense_data);
   }).then(function() {
-    return user_ids.map(function(user_id) {
+    return Q.all(user_ids.map(function(user_id) {
       if (user_id == expense.owner) {
         return update_status(id, user_id, expense_states.OWNED);
       } else {
-        return update_status(id, user_id, expense_states.PAID);
+        return update_status(id, user_id, expense_states.WAITING);
       }
-    });
+    }));
   }).then(function() {
     return id;
   });
@@ -94,22 +98,23 @@ function get_expense(id, user_id) {
         return;
       }
       var row = result.rows[0];
-      var template_data = {
-        expense_id: row.get('expense_id'),
-        title: row.get('title'),
-        description: row.get('description'),
-        receipt_image: row.get('receipt_image')
-      };
       var participants_status = row.get('participants');
       if (!participants_status.hasOwnProperty(user_id)) {
         // User is not part of this expense, don't return it.
         return;
       }
+      var owned = participants_status[user_id] === expense_states.OWNED;
+      var template_data = {
+        expense_id: row.get('expense_id'),
+        title: row.get('title'),
+        description: row.get('description'),
+        receipt_image: row.get('receipt_image'),
+        value: row.get('value')
+      };
       var participant_uuids = [];
       for (var uuid in participants_status) {
         participant_uuids.push(uuid);
       }
-      template_data.value = row.get('value');
       return Q.all(
         participant_uuids.map(
           function(uuid) {
@@ -123,6 +128,9 @@ function get_expense(id, user_id) {
               }
               user_object.status = participants_status[uuid];
               user_object.paid = user_object.status != expense_states.WAITING;
+              if (owned) {
+                user_object.pay_link = "/expense/" + id + "/pay/" + uuid;
+              }
               return user_object;
             });
           }
@@ -190,6 +198,7 @@ exports.get_expense = get_expense;
 exports.get_user_expenses = get_user_expenses;
 exports.update_status = update_status;
 exports.states = expense_states;
+exports.mark_paid = mark_paid;
 
 // export for testing
 exports.db = db;

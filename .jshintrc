@@ -5,5 +5,7 @@
                  "process": false,
 	         "before": false,
 	         "after": false,
-	         "describe": false }
+	         "describe": false,
+                 "module": false,
+                 "afterEach": false }
 }

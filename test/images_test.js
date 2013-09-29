@@ -1,14 +1,13 @@
 var assert = require('assert');
 var images = require('../images');
-var db = require('../db');
+process.env.NODE_ENV = 'testing';
+var db = require('../db')();
 var schema = require('../schema');
 var fs = require('fs');
 var Q = require('q');
 
 describe('images', function(){
   before(function(done) {
-    db.set_client_testing();
-    images.db.set_client_testing();
     db.setup().then(function() {
       return schema.create_new_table(schema.schemas.images);
     }).then(function() {

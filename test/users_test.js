@@ -1,13 +1,12 @@
 var assert = require('assert');
-var db = require('../db');
+process.env.NODE_ENV = 'testing';
+var db = require('../db')();
 var schema = require('../schema');
 var users = require('../users');
 var uuid = require('node-uuid');
 
 describe('users', function() {
   before(function(done) {
-    db.set_client_testing();
-    users.db.set_client_testing();
     db.setup().then(function() {
       return schema.create_new_table(schema.schemas.users);
     }).then(function() {

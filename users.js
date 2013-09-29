@@ -1,5 +1,5 @@
 var auth = require('./auth');
-var db = require('./db');
+var db = require('./db')();
 var uuid = require('node-uuid');
 var Q = require('q');
 
@@ -7,7 +7,7 @@ function user_object(row) {
   return {
     name: row.get('name'),
     user_id: row.get('user_id'),
-    email: row.get('email'),
+    email: row.get('email')
   };
 }
 
@@ -64,7 +64,7 @@ function create_user(user) {
       user_id = uuid.v4();
       return db.execute_cql(
         'INSERT INTO users' +
-          '(email, password, salt, user_id, name)' +
+          '(email, password, salt, user_id, name) ' +
           'VALUES (?, ?, ?, ?, ?)',
         [user.email, hashed_password, salt, user_id, user.name]);
     })
