@@ -23,7 +23,6 @@ exports.install_routes = function(app) {
   app.get('/', auth.check_auth, function(req, res) {
     var user_id = req.session.user_id;
     expenses.get_user_expenses(user_id).then(function(expense_templates) {
-      console.log(expense_templates);
       res.render("index", {
         title: "Expense Tracker",
         email: req.session.email,
