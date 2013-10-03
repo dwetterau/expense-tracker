@@ -45,7 +45,8 @@ function alter_table_add(table_name, column_name, column_type) {
 }
 
 function migrate_to_schema(schema) {
-  // CAVEAT EMPTOR: because of how cassandra works, this only adds columns, and does not drop columns or
+  // TODO: Cassandra 2.0 adds dropping of columns, update this comment and the code to allow us to do that.
+  // CAVEAT EMPTOR: <strikethrough>because of how cassandra works,</strikethrough> this only adds columns, and does not drop columns or
   // modify types or something of that nature.
   var name = schema.name;
   return get_schema(name)
