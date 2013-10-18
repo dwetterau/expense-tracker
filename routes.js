@@ -29,7 +29,8 @@ exports.install_routes = function(app) {
         name: req.session.name,
         owned_unfinished_expenses: expense_templates.owned_unfinished,
         unfinished_expenses: expense_templates.unfinished,
-        other_expenses: expense_templates.other
+        other_expenses: expense_templates.other,
+        logged_in: true
       });
     }, function(err) {
       send_error(res, 'An error occurred while retrieving the expenses: ', err);
@@ -45,7 +46,9 @@ exports.install_routes = function(app) {
       return;
     }
     users.get_user(user_id).then(function(user) {
-      res.render('user', { title: user.get('email'), email: user.get('email')});
+      res.render('user', { logged_in: true,
+                           title: user.get('email'),
+                           email: user.get('email')});
     }, function(err) {
       send_error(res, 'An error occurred while retrieving the user: ', err);
     });
@@ -144,7 +147,7 @@ exports.install_routes = function(app) {
 
   // Expenses routes
   app.get('/create_expense', auth.check_auth, function(req, res) {
-    res.render('create_expense', {title: 'Create new expense'});
+    res.render('create_expense', {title: 'Create new expense', logged_in: true});
   });
 
   app.post('/create_expense', auth.check_auth, function(req, res) {
@@ -184,7 +187,7 @@ exports.install_routes = function(app) {
         send_error(res, 'Expense not found ', new Error('Expense not found'));
         return;
       }
-      res.render('expense', {title: 'Expense detail', expense: expense});
+      res.render('expense', {title: 'Expense detail', expense: expense, logged_in: true});
     }, function(err) {
       send_error(res, 'An error occurred retrieving the expense: ', err);
     });

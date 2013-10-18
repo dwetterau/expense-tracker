@@ -7,6 +7,9 @@
     <link type="text/css" rel="stylesheet" href="/fonts/foundation_icons_all/foundation_icons_general/stylesheets/general_foundicons.css">
   </head>
   <body>
+    {{#if logged_in}}
+      <a href="/create_expense/">Create Expense</a>
+    {{/if}}
     {{{body}}}
   </body>
 </html>
