@@ -76,7 +76,7 @@ exports.install_routes = function(app) {
   });
 
   app.get('/logout', auth.check_auth, function(req, res) {
-    res.render('logout');
+    res.render('logout', { logged_in: true });
   });
 
   app.post('/create_account', function(req, res) {

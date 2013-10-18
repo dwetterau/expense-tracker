@@ -8,7 +8,12 @@
   </head>
   <body>
     {{#if logged_in}}
+      <a href="/">Home</a>
       <a href="/create_expense/">Create Expense</a>
+      <a href="/logout/">Logout</a>
+    {{else}}
+      <a href="/login/">Login</a>
+      <a href="/create_account/">Create Account</a>
     {{/if}}
     {{{body}}}
   </body>
