@@ -7,11 +7,11 @@
     "node-uuid": "*",
     "node-cassandra-cql": "*",
     "exif": "*",
-    "imagemagick": "*",
     "express3-handlebars": "*",
     "helenus": "*",
     "connect-cassandra": "*",
-    "mocha": "*"
+    "mocha": "*",
+    "gm": "*"
   },
   "scripts": {"test": "mocha test/*_test.js --reporter spec"}
 }

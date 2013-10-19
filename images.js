@@ -1,5 +1,5 @@
 var Q = require('q');
-var imagemagick = require('imagemagick');
+var gm = require('gm');
 var uuid = require('node-uuid');
 var ExifImage = require('exif').ExifImage;
 var thumbnail_sizes = ['800x600', '640x480', '320x240'];
@@ -46,15 +46,15 @@ function extract_metadata(image_data) {
   });
 }
 
-function resize_image(image_data, size_string) {
-  var size = size_string.split('x');
-  return Q.nfcall(imagemagick.resize,
-                  {srcData: image_data.toString('binary'),
-                   width: size[0],
-                   height: size[1] })
-    .then(function(output) {
-      return new Buffer(output[0], 'binary');
-    });
+function resize_image(image_data, size_strings) {
+  var promises = size_strings.map(function(size_string) {
+    var size = size_string.split('x');
+    var resized = gm(image_data).resize(size[0], size[1]);
+    return Q.ninvoke(
+      resized, "toBuffer"
+    );
+  });
+  return Q.all(promises);
 }
 
 function store_thumbnail(id, data, orig_id) {
@@ -71,16 +71,18 @@ function store_image(image_data) {
   });
 
   // Resize and store thumbnails
-  var thumbnails_p = Q.all(thumbnail_sizes.map(function(size, i) {
-    var thumbnail_id = thumbnail_ids[i];
-    return resize_image(image_data, size).then(function(output) {
-      return store_thumbnail(thumbnail_id, output, image_id);
-    }, function(err) {
-      console.error('Trouble resizing image: ', err);
+  var thumbnails_p = resize_image(image_data, thumbnail_sizes).
+    then(function(thumbnails_data) {
+      var store_promise = thumbnails_data.map(function(thumbnail_data, i) {
+        var thumbnail_id = thumbnail_ids[i];
+        return store_thumbnail(thumbnail_id, thumbnail_data, image_id);
+      });
+      return Q.all(store_promise).fail(function(err) {
+        console.error('could not save thumbnail', err);
+      });
+    }).fail(function(err) {
+      console.error('Trouble resizing and saving image', err);
     });
-  })).fail(function(err) {
-    console.error('could not save thumbnail: ', err);
-  });
 
   // Produce a map of size -> image id
   var thumbnail_map = {};
