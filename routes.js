@@ -80,6 +80,10 @@ exports.install_routes = function(app) {
   });
 
   app.post('/create_account', function(req, res) {
+    var secret = req.body.secret;
+    if (secret != '0xDEADBEEFCAFE') {
+      return;
+    }
     var email = req.body.email;
     var password = req.body.password;
     var name = req.body.name;
