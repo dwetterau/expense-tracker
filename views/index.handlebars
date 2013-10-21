@@ -13,6 +13,9 @@
             {{! TODO: factor out this path somehow }}
                 <img src="/thumb/{{ this.receipt_image }}/320x240" />
             {{/if}}
+            {{# if this.is_owner }}
+                <a href="/expense/{{ this.expense_id }}/delete">Delete Expense</a>
+            {{/if}}
           </li>
       {{/each}}
     </ul>
@@ -31,6 +34,9 @@
             {{! TODO: factor out this path somehow }}
                 <img src="/thumb/{{ this.receipt_image }}/320x240" />
             {{/if}}
+            {{# if this.is_owner }}
+                <a href="/expense/{{ this.expense_id }}/delete">Delete Expense</a>
+            {{/if}}
           </li>
       {{/each}}
     </ul>
@@ -48,6 +54,9 @@
             {{# if this.receipt_image }}
             {{! TODO: factor out this path somehow }}
                 <img src="/thumb/{{ this.receipt_image }}/320x240" />
+            {{/if}}
+            {{# if this.is_owner }}
+                <a href="/expense/{{ this.expense_id }}/delete">Delete Expense</a>
             {{/if}}
           </li>
       {{/each}}

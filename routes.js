@@ -179,7 +179,6 @@ exports.install_routes = function(app) {
     }).then(function(expense_id) {
         res.redirect('/expense/' + expense_id);
       }, function(err) {
-        console.log(err.stack);
         send_error(res, 'An error occurred making the expense: ', err);
       });
   });
@@ -209,6 +208,17 @@ exports.install_routes = function(app) {
       .then(function() {
         res.redirect('/expense/' + expense_id);
       });
+  });
+
+  // TODO: Make this a post also
+  app.get('/expense/:expense_id/delete', auth.check_auth, function(req, res) {
+    var expense_id = req.params.expense_id;
+    var user_id = req.session.user_id;
+    expenses.lazy_delete_expense(expense_id, user_id).then(function() {
+      res.redirect('/');
+    }, function(err) {
+      send_error(res, 'An error occurred while trying to lazy delete the expense: ', err);
+    });
   });
 
   var port = process.env.PORT || 3000;

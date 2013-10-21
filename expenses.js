@@ -5,6 +5,7 @@ var uuid = require('node-uuid');
 
 // constants for expense state
 var expense_states = {
+  DELETED: -1,
   WAITING: 0,
   PAID: 1,
   OWNED: 2
@@ -103,13 +104,18 @@ function get_expense(id, user_id) {
         // User is not part of this expense, don't return it.
         return;
       }
+      if (participants_status[row.get('owner')] === expense_states.DELETED) {
+        // Expense has been deleted, don't show it
+        return;
+      }
       var owned = participants_status[user_id] === expense_states.OWNED;
       var template_data = {
         expense_id: row.get('expense_id'),
         title: row.get('title'),
         description: row.get('description'),
         receipt_image: row.get('receipt_image'),
-        value: row.get('value')
+        value: row.get('value'),
+        is_owner: owned
       };
       var participant_uuids = [];
       for (var uuid in participants_status) {
@@ -142,6 +148,37 @@ function get_expense(id, user_id) {
     });
 }
 
+function lazy_delete_expense(id, user_id) {
+  return db.execute_cql('SELECT * ' +
+      'FROM expenses ' +
+      'WHERE expense_id=?',
+      [id])
+    .then(function(result) {
+      if (!result.rows[0]) {
+        // Didn't find the expense, return nothing
+        return;
+      }
+      var row = result.rows[0];
+      var participants_status = row.get('participants');
+      if (!participants_status.hasOwnProperty(user_id)) {
+        // User is not part of this expense, don't return it.
+        return;
+      }
+      var owned = participants_status[user_id] === expense_states.OWNED;
+      if (!owned) {
+        // Only the owner can delete for now
+        throw Error("User: " + user_id + " not owner of expense.");
+      }
+      participants_status[user_id] = expense_states.DELETED;
+      var new_participants = {value: participants_status,
+                              hint: 'map'};
+      return db.execute_cql('UPDATE expenses ' +
+                            'SET participants=? ' +
+                            'WHERE expense_id=?',
+                            [new_participants, id]);
+    });
+}
+
 function get_user_expenses(user_id) {
   return db.execute_cql('SELECT expense_id ' +
                         'FROM expense_status ' +
@@ -160,27 +197,29 @@ function get_user_expenses(user_id) {
         var unfinished = [];
         var other = [];
         expense_templates.forEach(function(expense) {
-          var done = true;
-          var my_status;
-          expense.participants_status.forEach(function(status) {
-            done = done && status.status != expense_states.WAITING;
-            if (status.user_id == user_id) {
-              my_status = status.status;
-            }
-          });
-          if (done) {
-            //TODO split up finished expenses you owned and ones you didn't
-            other.push(expense);
-          } else {
-            if (my_status == expense_states.OWNED) {
-              // Owner and waiting on someone still
-              owned_unfinished.push(expense);
-            } else if (my_status == expense_states.WAITING) {
-              // You still need to pay
-              unfinished.push(expense);
-            } else if (my_status == expense_states.PAID) {
-              // You're done but it's still not over, put it in other
+          if (expense) {
+            var done = true;
+            var my_status;
+            expense.participants_status.forEach(function(status) {
+              done = done && status.status != expense_states.WAITING;
+              if (status.user_id == user_id) {
+                my_status = status.status;
+              }
+            });
+            if (done) {
+              //TODO split up finished expenses you owned and ones you didn't
               other.push(expense);
+            } else {
+              if (my_status == expense_states.OWNED) {
+                // Owner and waiting on someone still
+                owned_unfinished.push(expense);
+              } else if (my_status == expense_states.WAITING) {
+                // You still need to pay
+                unfinished.push(expense);
+              } else if (my_status == expense_states.PAID) {
+                // You're done but it's still not over, put it in other
+                other.push(expense);
+              }
             }
           }
         });
@@ -199,6 +238,7 @@ exports.get_user_expenses = get_user_expenses;
 exports.update_status = update_status;
 exports.states = expense_states;
 exports.mark_paid = mark_paid;
+exports.lazy_delete_expense = lazy_delete_expense;
 
 // export for testing
 exports.db = db;
