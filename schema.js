@@ -44,10 +44,12 @@ function alter_table_add(table_name, column_name, column_type) {
                         ' ADD ' + column_name + ' ' + column_type);
 }
 
+function alter_table_drop(table_name, column_name) {
+  return db.execute_cql('ALTER TABLE ' + table_name +
+                        ' DROP ' + column_name);
+}
+
 function migrate_to_schema(schema) {
-  // TODO: Cassandra 2.0 adds dropping of columns, update this comment and the code to allow us to do that.
-  // CAVEAT EMPTOR: <strikethrough>because of how cassandra works,</strikethrough> this only adds columns, and does not drop columns or
-  // modify types or something of that nature.
   var name = schema.name;
   return get_schema(name)
     .then(function(results) {
@@ -63,6 +65,16 @@ function migrate_to_schema(schema) {
       var all_changes = [];
 
       var needed_columns = schema.columns;
+
+      // Check for old columns
+      for (var present_column in present_columns) {
+        // Drop old columns that are no longer needed
+        if (!needed_columns.hasOwnProperty(present_column)) {
+          console.log('Dropping column ' + present_column);
+          all_changes.push(alter_table_drop(name, present_column));
+        }
+      }
+
       // Check for new added columns
       for (var column in needed_columns) {
         // don't consider primary key
