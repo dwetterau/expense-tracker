@@ -144,7 +144,8 @@ var users_schema = {
     password: 'text',
     salt: 'text',
     user_id: 'uuid',
-    name: 'text'
+    name: 'text',
+    deleted: 'int'
   },
   index: {
     name: 'users_user_id',

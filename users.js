@@ -2,6 +2,7 @@ var auth = require('./auth');
 var db = require('./db')();
 var dbobj = require('./dbobj');
 var uuid = require('node-uuid');
+var Q = require('q');
 
 var users = new dbobj.db_type();
 dbobj.deletable(users);
@@ -12,13 +13,13 @@ users.db_to_user = function(db_data) {
     // not sure if good idea.
     return undefined;
   }
-  return {
+  return Q({
     name: row.get('name'),
     user_id: row.get('user_id'),
     email: row.get('email'),
     password: row.get('password'),
     salt: row.get('salt')
-  };
+  });
 };
 
 users.columnfamily_name = 'users';

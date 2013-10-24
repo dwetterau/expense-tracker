@@ -1,5 +1,6 @@
 // Base database object
 var db = require('./db')();
+var Q = require('q');
 
 // A generic database object
 var db_obj = {
@@ -20,14 +21,15 @@ var db_obj = {
 
   user_to_db: function(data) {
     // This translates user formated data to db data
+    // returns a promise that is fulfilled with the relevent data
     // Overridden by subclasses
-    return data;
+    return Q(data);
   },
 
   db_to_user: function(data) {
     // This translates db formated data to user data
     // overridden by subclasses
-    return data;
+    return Q(data);
   },
 
   get: function(key_or_index) {
@@ -37,15 +39,19 @@ var db_obj = {
   },
 
   create: function(data) {
-    var db_data = this.user_to_db(data);
+    // Convert data, then insert if not exists
+    return this.user_to_db(data).then(function(db_data) {
     // We want to insert if not exists:
-    return db.insert(this.columnfamily_name, db_data, 'IF NOT EXISTS');
+      return db.insert(this.columnfamily_name, db_data, 'IF NOT EXISTS');
+    }.bind(this));
   },
 
   update: function(data) {
-    var db_data = this.user_to_db(data);
-    // We want to insert regardless of existence:
-    return db.insert(this.columnfamily_name, db_data);
+    return this.user_to_db(data)
+      .then(function(db_data) {
+        // We want to insert regardless of existence:
+        return db.insert(this.columnfamily_name, db_data);
+      }.bind(this));
   }
 };
 
