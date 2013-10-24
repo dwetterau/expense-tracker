@@ -30,7 +30,7 @@ module.exports = function(keyspace_name) {
         });
   }
 
-  function insert(columnfamily_name, data) {
+  function insert(columnfamily_name, data, if_cond) {
     var keys = [];
     var values = [];
     for (var key in data) {
@@ -44,16 +44,29 @@ module.exports = function(keyspace_name) {
       return '?';
     }).join(', ');
 
+    // If if_ne is specified, we need to append it (with a space) to our insert
+    var if_cond_append = '';
+    if (if_cond) {
+      if_cond_append = ' ' + if_cond;
+    }
+
     return execute_cql('INSERT INTO ' + columnfamily_name + ' (' +
                        keys.join(', ') + ') ' +
-                       'VALUES (' + question_marks + ')',
+                       'VALUES (' + question_marks + ')' + if_cond_append,
                        values);
+  }
+
+  // Get by primary key value
+  function get_by_key(columnfamily_name, key_name, key_value) {
+    return execute_cql('SELECT * FROM ' + columnfamily_name + ' WHERE ' +
+                       key_name + '=?', [key_value]);
   }
 
   return {
     execute_cql: execute_cql,
     setup: setup,
     keyspace: keyspace_name,
-    insert: insert
+    insert: insert,
+    get_by_key: get_by_key
   };
 };
