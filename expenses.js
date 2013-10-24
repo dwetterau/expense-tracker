@@ -39,7 +39,7 @@ function store_expense(expense) {
   return Q.all(
     // Convert emails to uuids
     expense.participants.map(function(email) {
-      return users.users.get({email: email}).then(function(result) {
+      return users.users.get(email).then(function(result) {
         if (!result) {
           throw Error("User: " + email + " does not exist.");
         }
@@ -118,7 +118,7 @@ function get_expense(id, user_id) {
       return Q.all(
         participant_uuids.map(
           function(uuid) {
-            return users.users.get(uuid).then(function(user) {
+            return users.users.get({user_id: uuid}).then(function(user) {
               var user_object = user;
               if (uuid == row.get('owner')) {
                 template_data.owner = user_object;

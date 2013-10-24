@@ -34,7 +34,11 @@ var db_obj = {
 
   get: function(key_or_index) {
     return this.get_db_data(key_or_index).then(function(data) {
-      return this.db_to_user(data);
+      if (data) {
+        return this.db_to_user(data);
+      } else {
+        return undefined;
+      }
     }.bind(this));
   },
 
@@ -59,16 +63,25 @@ exports.db_type = function() {};
 exports.db_type.prototype = db_obj;
 
 // A mixin for deletable database objects
-exports.deletable = function() {
-  this.delete = function(key) {
-    var update_obj = { 'deleted' : 1 };
-    update_obj[this.primary_key_name] = key;
+exports.deletable = function(type) {
+  type.delete = function(key_or_index) {
+    var update_obj;
+    if (typeof(key_or_index) == 'object') {
+      update_obj = key_or_index;
+    } else {
+      update_obj = {};
+      update_obj[this.primary_key_name] = key_or_index;
+    }
+    update_obj.deleted = 1;
     return this.update(update_obj);
   };
 
-  this.get_db_data =  function() {
-    Object.getPrototypeOf(this).get_db_data.apply(arguments)
+  type.get_db_data = function() {
+    return Object.getPrototypeOf(this).get_db_data.apply(this, arguments)
     .then(function(db_data) {
+      if (!db_data || !db_data.rows[0]) {
+        return db_data;
+      }
       if (db_data.rows[0].get('deleted')) {
         return undefined;
       } else {

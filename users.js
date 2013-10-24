@@ -23,11 +23,11 @@ users.db_to_user = function(db_data) {
 };
 
 users.columnfamily_name = 'users';
-users.primary_key_name = 'user_id';
+users.primary_key_name = 'email';
 
 function login(user) {
   var retrieved_user;
-  return users.get({email: user.email}).then(function(result) {
+  return users.get(user.email).then(function(result) {
     if (!result) {
       throw new Error('Invalid email or password'); // Email not found
     }
@@ -53,7 +53,7 @@ function create_user(user) {
   return auth.hash_password(user.password, salt)
     .then(function(hash_result) {
       hashed_password = hash_result;
-      return users.get({email: user.email});
+      return users.get(user.email);
     })
     .then(function(retrieved_user) {
       if (retrieved_user) {

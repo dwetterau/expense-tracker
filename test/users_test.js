@@ -101,7 +101,7 @@ describe('users', function() {
 
   describe('get_user', function() {
     it('should retrieve test user', function(done) {
-      users.users.get(user1.user_id).then(function(user) {
+      users.users.get({user_id: user1.user_id}).then(function(user) {
         assert.equal(user.user_id, user1.user_id);
         assert.equal(user.email, user1.email);
         done();
@@ -111,7 +111,7 @@ describe('users', function() {
     });
 
     it('should return undefined for unknown user', function(done) {
-      users.users.get(uuid.v4()).then(function(user) {
+      users.users.get({user_id: uuid.v4()}).then(function(user) {
         assert(!user);
         done();
       }, function (err) {
@@ -122,7 +122,7 @@ describe('users', function() {
 
   describe('get_by_email', function() {
     it('should retrieve test user', function(done) {
-      users.users.get({email: user1.email}).then(function(user) {
+      users.users.get(user1.email).then(function(user) {
         assert.equal(user.user_id, user1.user_id);
         assert.equal(user.email, user1.email);
         done();
@@ -132,10 +132,32 @@ describe('users', function() {
     });
 
     it('should return undefined for unknown user', function(done) {
-      users.users.get({email: user1.email + 'A'}).then(function(user) {
+      users.users.get(user1.email + 'A').then(function(user) {
         assert(!user);
         done();
       }, function (err) {
+        done(err);
+      });
+    });
+
+    it('should support deleting a user', function(done) {
+      var deleter = {
+        email: 'deleter@a.com',
+        name: 'deleterName',
+        password: 'asdf'
+      };
+      var id;
+      users.create_user(deleter)
+      .then(function(user_id) {
+        assert(user_id);
+        id = user_id;
+        return users.users.delete('deleter@a.com');
+      }).then(function() {
+        return users.users.get('deleter@a.com');
+      }).then(function(result) {
+        assert(!result);
+        done();
+      }).fail(function(err) {
         done(err);
       });
     });
