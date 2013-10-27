@@ -80,24 +80,6 @@ describe('expenses', function() {
 
   });
   describe('store_expense', function() {
-    it('won\'t store the expense because the user can\'t be found', function(done) {
-      var test_expense = {
-        value: 0,
-        participants: ['c@c.com'], // Some random email
-        title: 'title',
-        description: 'description'
-      };
-      expenses.store_expense(test_expense).then(function() {
-        throw new Error('Should not have allowed expense to be created');
-      }, function(err) {
-        assert.equal(err.message, "User: c@c.com does not exist.");
-      }).then(function() {
-        done();
-      }, function(err) {
-        done(err);
-      });
-    });
-
     it('should be stored correctly', function(done) {
       var expense_id = uuid.v4();
       var test_expense = {
@@ -130,15 +112,19 @@ describe('expenses', function() {
     });
 
     it('should store multiuser expenses correctly', function(done) {
+      var expense_id = uuid.v4();
       var test_expense = {
         value: 0,
-        participants: ['a@a.com', 'b@b.com'], // user1, user2
+        participants: [user1, user2],
         title: 'test title',
         description: 'test description',
         receipt_image: undefined,
-        owner: user1_id
+        owner: user1,
+        waiting: [user2],
+        paid: [],
+        expense_id: expense_id
       };
-      expenses.store_expense(test_expense).then(function(expense_id) {
+      expenses.expenses.create(test_expense).then(function() {
         assert(expense_id);
         return db.execute_cql('SELECT * from expenses where expense_id=?',
                               [expense_id]);
@@ -163,7 +149,7 @@ describe('expenses', function() {
 
     it('will return undefined if no expense is found', function(done) {
       // Random expense_id, user1
-      expenses.get_expense(uuid.v4(), user1_id).then(function(template_data) {
+      expenses.expenses.get(uuid.v4(), user1_id).then(function(template_data) {
         assert(!template_data);
         done();
       }, function(err) {

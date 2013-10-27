@@ -46,24 +46,25 @@ expenses.user_to_db = function(user_data) {
 };
 
 expenses.db_to_user = function(db_data) {
+  var row = db_data.rows[0];
   var user_data = {
-    expense_id: db_data.expense_id,
-    receipt_image: db_data.receipt_image,
-    description: db_data.description,
-    title: db_data.title,
-    value: db_data.value,
+    expense_id: row.expense_id,
+    receipt_image: row.receipt_image,
+    description: row.description,
+    title: row.title,
+    value: row.value,
     waiting: [],
     paid: [],
     participants: []
   };
   var user_get_promises = [];
-  for (var user_id in db_data.participants) {
+  for (var user_id in row.participants) {
     user_get_promises.push(users.users.get({user_id: user_id}));
   }
   return Q.all(user_get_promises).then(function(users_data) {
     users_data.forEach(function(user_info) {
       user_data.participants.push(user_info);
-      var status = db_data.participants[user_info.user_id];
+      var status = row.participants[user_info.user_id];
       switch (status) {
       case expense_states.WAITING:
         user_data.waiting.push(user_info);

@@ -34,7 +34,7 @@ var db_obj = {
 
   get: function(key_or_index) {
     return this.get_db_data(key_or_index).then(function(data) {
-      if (data) {
+      if (data && data.rows && data.rows.length) {
         return this.db_to_user(data);
       } else {
         return undefined;
