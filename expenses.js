@@ -48,23 +48,24 @@ expenses.user_to_db = function(user_data) {
 expenses.db_to_user = function(db_data) {
   var row = db_data.rows[0];
   var user_data = {
-    expense_id: row.expense_id,
-    receipt_image: row.receipt_image,
-    description: row.description,
-    title: row.title,
-    value: row.value,
+    expense_id: row.get('expense_id'),
+    receipt_image: row.get('receipt_image'),
+    description: row.get('description'),
+    title: row.get('title'),
+    value: row.get('value'),
     waiting: [],
     paid: [],
     participants: []
   };
   var user_get_promises = [];
-  for (var user_id in row.participants) {
+  var participants = row.get('participants');
+  for (var user_id in participants) {
     user_get_promises.push(users.users.get({user_id: user_id}));
   }
   return Q.all(user_get_promises).then(function(users_data) {
     users_data.forEach(function(user_info) {
       user_data.participants.push(user_info);
-      var status = row.participants[user_info.user_id];
+      var status = participants[user_info.user_id];
       switch (status) {
       case expense_states.WAITING:
         user_data.waiting.push(user_info);
@@ -213,58 +214,16 @@ function store_expense(expense) {
 }
 
 function get_expense(id, user_id) {
-  return db.execute_cql('SELECT * ' +
-                        'FROM expenses ' +
-                        'WHERE expense_id=?',
-                        [id])
-    .then(function(result) {
-      if (!result.rows[0]) {
-        // Didn't find the expense, return nothing
-        return;
-      }
-      var row = result.rows[0];
-      var participants_status = row.get('participants');
-      if (!participants_status.hasOwnProperty(user_id)) {
-        // User is not part of this expense, don't return it.
-        return;
-      }
-      var owned = participants_status[user_id] === expense_states.OWNED;
-      var template_data = {
-        expense_id: row.get('expense_id'),
-        title: row.get('title'),
-        description: row.get('description'),
-        receipt_image: row.get('receipt_image'),
-        value: row.get('value')
-      };
-      var participant_uuids = [];
-      for (var uuid in participants_status) {
-        participant_uuids.push(uuid);
-      }
-      return Q.all(
-        participant_uuids.map(
-          function(uuid) {
-            return users.users.get({user_id: uuid}).then(function(user) {
-              var user_object = user;
-              if (uuid == row.get('owner')) {
-                template_data.owner = user_object;
-                user_object.owner = true;
-              } else {
-                user_object.owner = false;
-              }
-              user_object.status = participants_status[uuid];
-              user_object.paid = user_object.status != expense_states.WAITING;
-              if (owned) {
-                user_object.pay_link = "/expense/" + id + "/pay/" + uuid;
-              }
-              return user_object;
-            });
-          }
-        )
-      ).then(function(email_status) {
-        template_data.participants_status = email_status;
-        return template_data;
-      });
+  return expenses.get(id).then(function(expense) {
+    var participant_ids = expense.participants.map(function(p) {
+      return p.user_id;
     });
+    if (participant_ids.indexOf(user_id) == -1) {
+      return undefined;
+    } else {
+      return expense;
+    }
+  });
 }
 
 function get_user_expenses(user_id) {

@@ -149,8 +149,8 @@ describe('expenses', function() {
 
     it('will return undefined if no expense is found', function(done) {
       // Random expense_id, user1
-      expenses.expenses.get(uuid.v4(), user1_id).then(function(template_data) {
-        assert(!template_data);
+      expenses.expenses.get(uuid.v4()).then(function(expense) {
+        assert(!expense);
         done();
       }, function(err) {
         done(err);
@@ -159,8 +159,8 @@ describe('expenses', function() {
 
     it('will return undefined if user not in participants', function(done) {
       // expense1_id, random user
-      expenses.get_expense(expense1_id, uuid.v4()).then(function(template_data) {
-        assert(!template_data);
+      expenses.get_expense(expense1_id, uuid.v4()).then(function(expense) {
+        assert(!expense);
         done();
       }, function(err) {
         done(err);
@@ -168,14 +168,14 @@ describe('expenses', function() {
     });
 
     it('will retrieve the expense successfully', function(done) {
-      expenses.get_expense(expense1_id, user1_id).then(function(template_data) {
-        assert.equal(template_data.expense_id,expense1_id);
-        assert.equal(template_data.title, expense1.title);
-        assert.equal(template_data.description, expense1.description);
-        assert.equal(template_data.value, expense1.value);
-        assert(!template_data.receipt_image);
-        assert.equal(template_data.participants_status[0].email, user1.email);
-        assert.equal(template_data.participants_status[0].status, expenses.states.OWNED);
+      expenses.get_expense(expense1_id, user1_id).then(function(expense) {
+        assert.equal(expense.expense_id,expense1_id);
+        assert.equal(expense.title, expense1.title);
+        assert.equal(expense.description, expense1.description);
+        assert.equal(expense.value, expense1.value);
+        assert(!expense.receipt_image);
+        assert.equal(expense.participants[0].email, user1.email);
+        assert.equal(expense.owner.user_id, user1_id);
         done();
       }).fail(function(err) {
         done(err);
