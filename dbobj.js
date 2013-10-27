@@ -42,20 +42,22 @@ var db_obj = {
     }.bind(this));
   },
 
-  create: function(data) {
-    // Convert data, then insert if not exists
+  modify: function(data, not_exists) {
+    var condition = not_exists ? 'IF NOT EXISTS' : undefined;
+    // Convert data, then insert with condition
     return this.user_to_db(data).then(function(db_data) {
-    // We want to insert if not exists:
-      return db.insert(this.columnfamily_name, db_data, 'IF NOT EXISTS');
+      return db.insert(this.columnfamily_name, db_data, condition);
     }.bind(this));
   },
 
+  create: function(data) {
+    // modify with not exists
+    return this.modify(data, this.create_check);
+  },
+
   update: function(data) {
-    return this.user_to_db(data)
-      .then(function(db_data) {
-        // We want to insert regardless of existence:
-        return db.insert(this.columnfamily_name, db_data);
-      }.bind(this));
+    // modify without not exists
+    return this.modify(data, false);
   }
 };
 

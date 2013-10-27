@@ -2,12 +2,136 @@ var db = require('./db')();
 var Q = require('q');
 var users = require('./users');
 var uuid = require('node-uuid');
+var dbobj = require('./dbobj');
 
 // constants for expense state
 var expense_states = {
   WAITING: 0,
   PAID: 1,
   OWNED: 2
+};
+
+var expenses = new dbobj.db_type();
+expenses.columnfamily_name = 'expenses';
+expenses.primary_key_name = 'expense_id';
+
+// For some reason, map insertions don't work with the create check.
+// Since we don't really need a create check, I'm going to skip it.
+expenses.create_check = false;
+
+expenses.user_to_db = function(user_data) {
+  var participants = {};
+  participants[user_data.owner.user_id] = expense_states.OWNED;
+  user_data.paid.forEach(function(user_info) {
+    participants[user_info.user_id] = expense_states.PAID;
+  });
+
+  user_data.waiting.forEach(function(user_info) {
+    participants[user_info.user_id] = expense_states.WAITING;
+  });
+
+  var cql_particpants = {hint: 'map',
+                         value: participants};
+  // TODO: Abstract this sorta crap out with a library
+  var db_data = {
+    expense_id: user_data.expense_id,
+    description: user_data.description,
+    owner: user_data.owner.user_id,
+    title: user_data.title,
+    value: user_data.value,
+    participants: cql_particpants
+  };
+
+  return Q(db_data);
+};
+
+expenses.db_to_user = function(db_data) {
+  var user_data = {
+    expense_id: db_data.expense_id,
+    receipt_image: db_data.receipt_image,
+    description: db_data.description,
+    title: db_data.title,
+    value: db_data.value,
+    waiting: [],
+    paid: [],
+    participants: []
+  };
+  var user_get_promises = [];
+  for (var user_id in db_data.participants) {
+    user_get_promises.push(users.users.get({user_id: user_id}));
+  }
+  return Q.all(user_get_promises).then(function(users_data) {
+    users_data.forEach(function(user_info) {
+      user_data.participants.push(user_info);
+      var status = db_data.participants[user_info.user_id];
+      switch (status) {
+      case expense_states.WAITING:
+        user_data.waiting.push(user_info);
+        break;
+      case expense_states.PAID:
+        user_data.paid.push(user_info);
+        break;
+      case expense_states.OWNED:
+        user_data.owner = user_info;
+        break;
+      }
+    });
+    return user_data;
+  });
+};
+
+expenses.modify = function(data, not_exists) {
+  // Need to update statuses when things are modified as well.
+  var condition = not_exists ? 'IF NOT EXISTS' : undefined;
+  var statuses = [];
+  data.waiting.forEach(function(user_info) {
+    statuses.push({user_id: user_info.user_id,
+                   expense_id: data.expense_id,
+                   status: expense_states.WAITING
+                  });
+  });
+  data.paid.forEach(function(user_info) {
+    statuses.push({user_id: user_info.user_id,
+                   expense_id: data.expense_id,
+                   status: expense_states.PAID
+                  });
+  });
+  statuses.push({user_id: data.owner.user_id,
+                 expense_id: data.expense_id,
+                 status: expense_states.OWNED
+                });
+  // Need to do a normal modify, then create all of the statuses
+  return Object.getPrototypeOf(this).modify.call(this, data, not_exists)
+    .then(function() {
+      status_promises = statuses.map(function(status) {
+        return db.insert('expense_status', status, condition);
+      });
+      return Q.all(status_promises);
+    });
+};
+
+dbobj.deletable(expenses);
+
+// Override the default delete to also delete linked statuses
+var original_delete = expenses.delete;
+expenses.delete = function(key_or_index) {
+  // Need to delete the linked statuses, then delete the data
+  return this.get(key_or_index).then(function(expense) {
+    var status_update_data = expense.participants.map(function(participant) {
+      return {user_id: participant.user_id,
+              expense_id: expense.expense_id,
+              deleted: 1
+             };
+    });
+    var update_promises = status_update_data.map(function(update_data) {
+      db.insert('expense_status', update_data);
+    });
+    return Q.all(update_promises);
+  })
+  .then(function() {
+    // Delete the original expense
+    return original_delete.call(this, key_or_index);
+  });
 };
 
 function update_status(expense_id, user_id, status) {
@@ -199,6 +323,7 @@ exports.get_user_expenses = get_user_expenses;
 exports.update_status = update_status;
 exports.states = expense_states;
 exports.mark_paid = mark_paid;
+exports.expenses = expenses;
 
 // export for testing
 exports.db = db;

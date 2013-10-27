@@ -24,6 +24,7 @@ users.db_to_user = function(db_data) {
 
 users.columnfamily_name = 'users';
 users.primary_key_name = 'email';
+users.create_check = true;
 
 function login(user) {
   var retrieved_user;

@@ -3,7 +3,6 @@ var assert = require('assert');
 var db = require('../db')();
 var expenses = require('../expenses');
 var schema = require('../schema');
-var users = require('../users');
 var uuid = require('node-uuid');
 var Q = require('q');
 // TODO: refactor all of this stuff into a common test file
@@ -100,16 +99,19 @@ describe('expenses', function() {
     });
 
     it('should be stored correctly', function(done) {
+      var expense_id = uuid.v4();
       var test_expense = {
+        expense_id: expense_id,
         value: 0,
-        participants: ['a@a.com'], // user1
+        participants: [user1],
+        waiting: [],
+        paid: [],
         title: 'test title',
         description: 'test description',
         receipt_image: undefined,
-        owner: user1_id
+        owner: user1
       };
-      expenses.store_expense(test_expense).then(function(expense_id) {
-        assert(expense_id);
+      expenses.expenses.create(test_expense).then(function() {
         return db.execute_cql('SELECT * from expenses where expense_id=?',
                               [expense_id]);
       }).then(function(result) {
