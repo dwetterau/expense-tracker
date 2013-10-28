@@ -187,8 +187,14 @@ describe('expenses', function() {
     it('will pay the expense if the user is the owner', function(done) {
       expenses.mark_paid(expense2_id, user1_id, user2_id)
         .then(function() {
-          // If successful, unmark the expense as paid, then accept
-          return db.insert('expenses', expense2);
+          // If successful, check that things were appropriately marked, then
+          // unmark the expense as paid
+          return expenses.expenses.get(expense2_id).then(function(expense) {
+            assert.equal(expense.waiting.length, 0);
+            assert.equal(expense.paid[0].user_id, user2_id);
+          }).fin(function() {
+            return db.insert('expenses', expense2);
+          });
         })
         .then(function() {
           done();

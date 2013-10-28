@@ -4,6 +4,7 @@ var auth = require('./auth');
 var expenses = require('./expenses');
 var images = require('./images');
 var users = require('./users');
+var uuid = require('node-uuid');
 
 // Error sending
 function send_error(res, info, exception) {
@@ -157,26 +158,39 @@ exports.install_routes = function(app) {
   app.post('/create_expense', auth.check_auth, function(req, res) {
     var title = req.body.title;
     var description = req.body.description || undefined;
-    var value = req.body.value;
-    var owner = req.session.user_id;
-    var participants = [req.session.email];
+    var value = parseInt(req.body.value, 10);
+    var participant_emails = [req.session.email];
     var image_path = req.files.image && req.files.image.path;
+    var expense_id = uuid.v1();
     if (req.body.participants) {
-      participants = participants.concat(req.body.participants.split(','));
+      participant_emails = participant_emails.concat(req.body.participants.split(','));
     }
-    images.store_image_from_path(image_path).fail(function() {
+    var get_user_promises = participant_emails.map(function(participant_email) {
+      return users.users.get(participant_email);
+    });
+    var image_store_promise = images.store_image_from_path(image_path).fail(function() {
       // If this failed, do not use an image
       return undefined;
-    }).then(function(image_id) {
-      return expenses.store_expense(
-        { value: value,
+    });
+    var promises = get_user_promises.concat([image_store_promise]);
+    Q.all(promises).then(function(values) {
+      var image_id = values[values.length - 1];
+      var owner = values[0];
+      var participants = values.slice(0, values.length - 1);
+      // Every user aside from the owner is waiting
+      var waiting = values.slice(1, values.length - 1);
+      return expenses.expenses.create(
+        { expense_id: expense_id,
+          value: value,
           participants: participants,
           title: title,
           description: description,
           receipt_image: image_id,
-          owner: owner
+          owner: owner,
+          waiting: waiting,
+          paid: []
         });
-    }).then(function(expense_id) {
+    }).then(function() {
         res.redirect('/expense/' + expense_id);
       }, function(err) {
         console.log(err.stack);
