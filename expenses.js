@@ -42,6 +42,10 @@ expenses.user_to_db = function(user_data) {
     participants: cql_particpants
   };
 
+  if (user_data.receipt_image) {
+    db_data.receipt_image = user_data.receipt_image;
+  }
+
   return Q(db_data);
 };
 
