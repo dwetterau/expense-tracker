@@ -69,7 +69,6 @@ expenses.db_to_user = function(db_data) {
   }
   return Q.all(user_get_promises).then(function(users_data) {
     users_data.forEach(function(user_info) {
-      user_info.pay_link = user_data.expense_id + "/pay/" + user_info.user_id;
       user_data.participants.push(user_info);
       var status = participants[user_info.user_id];
       switch (status) {
