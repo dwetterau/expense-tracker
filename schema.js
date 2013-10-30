@@ -125,7 +125,8 @@ var expenses_schema = {
     participants: 'map<uuid, int>',
     receipt_image: 'uuid',
     owner: 'uuid'
-  }};
+  }
+};
 
 var expense_status_schema = {
   name: 'expense_status',
@@ -153,12 +154,24 @@ var users_schema = {
   }
 };
 
+var emails_schema = {
+  name: 'emails',
+  columns: {
+    email_id: 'uuid PRIMARY KEY',
+    sender: 'text',
+    receiver: 'text',
+    type: 'int',
+    data: 'map<text, text>'
+  }
+}
+
 var schemas = {
   images: images_schema,
   thumbnails: thumbnails_schema,
   expenses: expenses_schema,
   expense_status: expense_status_schema,
-  users: users_schema
+  users: users_schema,
+  emails: emails_schema
 };
 
 exports.install_all = function() {

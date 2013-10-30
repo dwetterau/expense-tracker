@@ -11,7 +11,8 @@
     "helenus": "*",
     "connect-cassandra": "*",
     "mocha": "*",
-    "gm": "*"
+    "gm": "*",
+    "nodemailer": "*"
   },
   "scripts": {"test": "mocha test/*_test.js --reporter spec"}
 }
