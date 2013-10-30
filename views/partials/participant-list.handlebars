@@ -3,7 +3,7 @@
     {{# each this.waiting }}
       <li class="participant-unpaid">
         {{ this.name }} - unpaid
-        {{# if this.pay_link }}
+        {{# if ../is_owner }}
           <a href="{{ this.pay_link }}"> mark paid </a>
         {{/if}}
        </li>

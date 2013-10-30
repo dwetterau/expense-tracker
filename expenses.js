@@ -59,7 +59,8 @@ expenses.db_to_user = function(db_data) {
     value: row.get('value'),
     waiting: [],
     paid: [],
-    participants: []
+    participants: [],
+    owner: row.get('owner')
   };
   var user_get_promises = [];
   var participants = row.get('participants');
@@ -68,6 +69,7 @@ expenses.db_to_user = function(db_data) {
   }
   return Q.all(user_get_promises).then(function(users_data) {
     users_data.forEach(function(user_info) {
+      user_info.pay_link = user_data.expense_id + "/pay/" + user_info.user_id;
       user_data.participants.push(user_info);
       var status = participants[user_info.user_id];
       switch (status) {
@@ -194,6 +196,10 @@ function get_expense(id, user_id) {
     if (participant_ids.indexOf(user_id) == -1) {
       return undefined;
     } else {
+      if (expense.owner.user_id == user_id) {
+        //TODO: Find a better home for this
+        expense.is_owner = true;
+      }
       return expense;
     }
   });
