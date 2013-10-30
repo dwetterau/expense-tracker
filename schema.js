@@ -124,7 +124,8 @@ var expenses_schema = {
     value: 'int',
     participants: 'map<uuid, int>',
     receipt_image: 'uuid',
-    owner: 'uuid'
+    owner: 'uuid',
+    deleted: 'int'
   }};
 
 var expense_status_schema = {
@@ -132,7 +133,8 @@ var expense_status_schema = {
   columns: {
     user_id: 'uuid',
     expense_id: 'uuid',
-    status: 'int'
+    status: 'int',
+    deleted: 'int'
   },
   extra: 'PRIMARY KEY (user_id, expense_id)'
 };
