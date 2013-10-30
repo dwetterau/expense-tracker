@@ -1,50 +1,9 @@
 var Q = require('q');
 var gm = require('gm');
 var uuid = require('node-uuid');
-var ExifImage = require('exif').ExifImage;
 var thumbnail_sizes = ['800x600', '640x480', '320x240'];
 var db = require('./db')();
 var fs = require('fs');
-
-function extract_exif(image_data) {
-  var deferred = Q.defer();
-  try {
-    // This library seems really stupid, replace this with something more sane
-    new ExifImage({image: image_data}, function(err, data) {
-      if (err) {
-        deferred.reject(err);
-      } else {
-        deferred.resolve(data);
-      }
-    });
-  } catch (err) {
-    deferred.reject(err);
-  }
-  return deferred.promise;
-}
-
-function extract_metadata(image_data) {
-  return extract_exif(image_data).then(function(exif_data) {
-    var location = '';
-    if (exif_data.gps) {
-      var full_latitude = exif_data.gps.GPSLatitude;
-      if (full_latitude) {
-        var latitude = full_latitude[0] + full_latitude[1] / 60 + full_latitude[2] / 3600;
-        var full_longitude = exif_data.gps.GPSLongitude;
-        var longitude = full_longitude[0] + full_longitude[1] / 60 + full_longitude[2] / 3600;
-        location = latitude + ',' + longitude;
-      }
-    }
-    var date = '';
-    if (exif_data.image && exif_data.image.ModifyDate) {
-      date = exif_data.image.ModifyDate;
-    }
-    return {'location': location, 'date': date};
-  }, function(err) {
-    console.error('Metadata extraction failed', err);
-    return {};
-  });
-}
 
 function resize_image(image_data, size_strings) {
   var promises = size_strings.map(function(size_string) {
@@ -93,16 +52,13 @@ function store_image(image_data) {
   // Store the image
   var thumbnail_map_cql = { value: thumbnail_map,
                             hint: 'map' };
-  var image_p = extract_metadata(image_data).then(function(metadata) {
-    var metadata_map_cql = { value: metadata,
-                             hint: 'map' };
-    return db.execute_cql('INSERT INTO images' +
-                          '(image_id, image_data, metadata, thumbnails)' +
-                          ' VALUES (?, ?, ?, ?)',
-                          [image_id, image_data, metadata_map_cql, thumbnail_map_cql]);
-  }).fail(function(err) {
-    console.error('Could not save image: ', err);
-  });
+  var image_p = db.execute_cql('INSERT INTO images' +
+                               '(image_id, image_data, thumbnails)' +
+                               ' VALUES (?, ?, ?)',
+                               [image_id, image_data, thumbnail_map_cql])
+    .fail(function(err) {
+      console.error('Could not save image: ', err);
+    });
 
   return Q.all([thumbnails_p, image_p]).then(function() {
     return image_id;
