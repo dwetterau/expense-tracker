@@ -215,6 +215,56 @@ describe('expenses', function() {
         });
     });
   });
+
+  // TODO: Factor out some of this nonsense
+  describe('delete expense', function() {
+    it('will correctly delete the expense', function(done) {
+      var expense_id = uuid.v4();
+      var test_expense = {
+        value: 0,
+        participants: [user1, user2],
+        title: 'test title',
+        description: 'test description',
+        receipt_image: undefined,
+        owner: user1,
+        waiting: [user2],
+        paid: [],
+        expense_id: expense_id
+      };
+      expenses.expenses.create(test_expense).then(function() {
+        return expenses.expenses.delete(expense_id);
+      }).then(function() {
+        return db.execute_cql('SELECT * from expenses where expense_id=?', [expense_id]);
+      }).then(function(result) {
+        // Assert that the expense is still correctly there
+        var row = result.rows[0];
+        assert.equal(row.get('value'), 0);
+        assert.equal(row.get('title'), 'test title');
+        assert.equal(row.get('description'), 'test description');
+        assert.equal(row.get('deleted'), 1);
+        var expected_participants = {};
+        expected_participants[user1_id] = expenses.states.OWNED;
+        expected_participants[user2_id] = expenses.states.WAITING;
+        assert.deepEqual(row.get('participants'), expected_participants);
+        // Lookup via get, assert that it finds nothing
+        return expenses.expenses.get(expense_id);
+      }).then(function(result) {
+        assert(result === undefined);
+        // Lookup the statuses, make sure they're deleted
+        return db.execute_cql('SELECT * FROM expense_status ' +
+                              'where user_id=? AND expense_id=?',
+                              [user1.user_id, expense_id]);
+      }).then(function(result) {
+        var row = result.rows[0];
+        assert.equal(row.get('deleted'), 1);
+      }).then(function() {
+        done();
+      }, function(err) {
+        done(err);
+      });
+    });
+  });
+
   describe('lazy_delete_expense', function() {
     it('will fail to delete expense for non-owner', function(done) {
       expenses.lazy_delete_expense(expense2_id, user2_id)
@@ -243,6 +293,7 @@ describe('expenses', function() {
         });
     });
   });
+
   after(function(done) {
     this.timeout(0);
     var drop_users = db.execute_cql("DROP COLUMNFAMILY users");

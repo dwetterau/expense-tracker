@@ -30,7 +30,7 @@ module.exports = function(keyspace_name) {
         });
   }
 
-  function insert(columnfamily_name, data, if_cond) {
+  function extract_data(data) {
     var keys = [];
     var values = [];
     for (var key in data) {
@@ -40,6 +40,14 @@ module.exports = function(keyspace_name) {
       keys.push(key);
       values.push(data[key]);
     }
+    return [keys, values];
+  }
+
+  function insert(columnfamily_name, data, if_cond) {
+    var extracted_data = extract_data(data);
+    var keys = extracted_data[0];
+    var values = extracted_data[1];
+
     var question_marks = keys.map(function() {
       return '?';
     }).join(', ');
@@ -56,6 +64,37 @@ module.exports = function(keyspace_name) {
                        values);
   }
 
+  function update(columnfamily_name, data, pk_names, if_cond) {
+    var pk_values = [];
+    pk_names.forEach(function(pk_name) {
+      pk_values.push(data[pk_name]);
+      delete data[pk_name];
+    });
+
+    var where_part = pk_names.map(function(pk_name) {
+      return pk_name + '=?';
+    }).join(' AND ');
+
+    var extracted_data = extract_data(data);
+    var keys = extracted_data[0];
+    var values = extracted_data[1];
+    values = values.concat(pk_values);
+
+    var set_statement = keys.map(function(key) {
+      return key + '=?';
+    }).join(', ');
+
+    // If if_ne is specified, we need to append it (with a space) to our insert
+    var if_cond_append = '';
+    if (if_cond) {
+      if_cond_append = ' ' + if_cond;
+    }
+
+    return execute_cql('UPDATE ' + columnfamily_name + ' SET ' +
+                       set_statement + ' WHERE ' + where_part,
+                       values);
+  }
+
   // Get by primary key value
   function get_by_key(columnfamily_name, key_name, key_value) {
     return execute_cql('SELECT * FROM ' + columnfamily_name + ' WHERE ' +
@@ -67,6 +106,7 @@ module.exports = function(keyspace_name) {
     setup: setup,
     keyspace: keyspace_name,
     insert: insert,
+    update: update,
     get_by_key: get_by_key
   };
 };

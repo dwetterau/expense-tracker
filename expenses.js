@@ -70,6 +70,7 @@ expenses.db_to_user = function(db_data) {
     users_data.forEach(function(user_info) {
       user_data.participants.push(user_info);
       var status = participants[user_info.user_id];
+      console.log(user_info.name, status);
       switch (status) {
       case expense_states.WAITING:
         user_data.waiting.push(user_info);
@@ -86,9 +87,7 @@ expenses.db_to_user = function(db_data) {
   });
 };
 
-expenses.modify = function(data, not_exists) {
-  // Need to update statuses when things are modified as well.
-  var condition = not_exists ? 'IF NOT EXISTS' : undefined;
+expenses.status_update_queries = function(data) {
   var statuses = [];
   data.waiting.forEach(function(user_info) {
     statuses.push({user_id: user_info.user_id,
@@ -106,37 +105,60 @@ expenses.modify = function(data, not_exists) {
                  expense_id: data.expense_id,
                  status: expense_states.OWNED
                 });
-  // Need to do a normal modify, then create all of the statuses
+  return statuses;
+};
+
+
+expenses.create = function(data, not_exists) {
+  // Need to update statuses when things are modified as well.
+  var condition = not_exists ? 'IF NOT EXISTS' : undefined;
+  var statuses = this.status_update_queries(data);
+  // Need to do a normal modify, then wait on all the statuses
   return Object.getPrototypeOf(this).modify.call(this, data, not_exists)
     .then(function() {
-      status_promises = statuses.map(function(status) {
+      var status_promises = statuses.map(function(status) {
         return db.insert('expense_status', status, condition);
       });
       return Q.all(status_promises);
     });
 };
 
+expenses.update = function(data) {
+  var statuses = this.status_update_queries(data);
+  return this.user_to_db(data).then(function(db_data) {
+    return db.update(this.columnfamily_name, db_data, [this.primary_key_name]);
+  }.bind(this)).then(function() {
+    var status_promises = statuses.map(function(status) {
+      return db.update('expense_status', status, ['user_id', 'expense_id']);
+    });
+    return Q.all(status_promises);
+  });
+};
+
 dbobj.deletable(expenses);
 
 // Override the default delete to also delete linked statuses
-var original_delete = expenses.delete;
 expenses.delete = function(key_or_index) {
   // Need to delete the linked statuses, then delete the data
+  var expense_id;
   return this.get(key_or_index).then(function(expense) {
-    var status_update_data = expense.participants.map(function(participant) {
-      return {user_id: participant.user_id,
-              expense_id: expense.expense_id,
-              deleted: 1
-             };
-    });
-    var update_promises = status_update_data.map(function(update_data) {
-      db.insert('expense_status', update_data);
+    expense_id = expense.expense_id;
+    var update_promises = expense.participants.map(function(participant) {
+      var update_data = {user_id: participant.user_id,
+                         expense_id: expense.expense_id,
+                         deleted: 1
+                        };
+      return db.insert('expense_status', update_data);
     });
     return Q.all(update_promises);
   })
   .then(function() {
     // Delete the original expense
-    return original_delete.call(this, key_or_index);
+    var update_obj = {
+      deleted: 1,
+      expense_id: expense_id
+    };
+    return db.update(expenses.columnfamily_name, update_obj, ['expense_id']);
   });
 };
 
@@ -167,12 +189,20 @@ function mark_paid(expense_id, owner_id, user_id) {
 
 function get_expense(id, user_id) {
   return expenses.get(id).then(function(expense) {
+    if (!expense) {
+      // expense was deleted
+      return expense;
+    }
     var participant_ids = expense.participants.map(function(p) {
       return p.user_id;
     });
     if (participant_ids.indexOf(user_id) == -1) {
       return undefined;
     } else {
+      if (expense.owner.user_id == user_id) {
+        //TODO: Find a better home for this
+        expense.is_owner = true;
+      }
       return expense;
     }
   });
@@ -205,6 +235,10 @@ function get_user_expenses(user_id) {
         var unfinished = [];
         var other = [];
         expenses.forEach(function(expense) {
+          if (!expense) {
+            // deleted expense...
+            return;
+          }
           if (expense.waiting.length === 0) {
             // If it's done, continue
             other.push(expense);
