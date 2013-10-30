@@ -1,9 +1,9 @@
-<h1> {{ expense.title }} </h1>
-{{# if expense.description }}
-  <p> {{ expense.description }} </p>
-{{/if }}
-<p> value: {{format_money expense.value }} </p>
-{{# with expense.participants_status }}
+{{# with expense }}
+  <h1> {{ this.title }} </h1>
+  {{# if this.description }}
+    <p> {{ this.description }} </p>
+  {{/if }}
+  <p> value: {{format_money this.value }} </p>
   {{> participant-list }}
 {{/with}}
 {{# if expense.receipt_image }}

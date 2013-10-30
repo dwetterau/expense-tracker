@@ -1,0 +1,7 @@
+<div><a href='/expense/{{this.expense_id}}'>{{ this.title }}</a> - {{ this.owner.name }}</div>
+<div> {{format_money this.value }} </div>
+{{> participant-list }}
+{{# if this.receipt_image }}
+  {{! TODO: factor out this path somehow }}
+  <img src="/thumb/{{ this.receipt_image }}/320x240" />
+{{/if}}

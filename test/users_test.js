@@ -4,11 +4,12 @@ var db = require('../db')();
 var schema = require('../schema');
 var users = require('../users');
 var uuid = require('node-uuid');
+var crypto = require('crypto');
 
 var user1_id = uuid.v4();
 
 // asdf hashed with asdf as salt
-var password_data = "pKz/Wd//4nNCSr+4s2FnDSxe3Zhr15w8ZeBpHiryJSmeoGd/0HjfiJyjy1m+YPiE4vrpTC7WwgLue9wHYtWzxWK/vzJB7fxUqdNkfs4pHPf8BQ/qLlk8t/HbToZ4NEHzgKEABirQe9nGZY9K1RObbegbVUT9kvBwTMMvz0vK6kTeQcrXAsq3TbZmBwELGwphRAHogksBgdWUW+xWDV1oEkq2lEKmGambFodz2z54XvyVgbBYaaPZNTZ5IrWOgqQiWsmSyTnlv6b9YHiiOjRMOSmTMRqRB4c/f7gwRjumOtXKZ4gIDn1SKWu2ioZ6/oCiKCw2jvn3qiYiFnLg7B1myLRWDuRj/QwJJfQEpDupfEkW70v4kKrKtA0AeClHlwvUS1O1dzggEF9pi6ptiIDwqW1ZAeZwI7rJbZ6ISXBDmKwmb/v6oJs+Un8dqE9bf5R+7oEC64j5AOkT5N5AkcB1/blcGexFi0bTj6b2ZFHA2mhJW2R6j+XRAmye/ev+gDAUIXW0yTviiwArwwOnzgUyigXYAxUqf6ccAsfPs4ISsVwRQIcpHaF3nOqqFZFgG8Ppe3O0+nKv6WJgGhLjzRSONkNO9h1NCisKbThiu8RsKb1MpOvt34LsiFd/Ga7vd6jByh8vQIplMHyHCNkPCOs9ofIpZmQ8evQSDfqr/uT8M7M=";
+var password_data = crypto.pbkdf2Sync('asdf', 'asdf', 10000, 512).toString('base64');
 
 var user1 = {
   email: 'a@a.com',
@@ -100,9 +101,9 @@ describe('users', function() {
 
   describe('get_user', function() {
     it('should retrieve test user', function(done) {
-      users.get_user(user1.user_id).then(function(user) {
-        assert.equal(user.get('user_id'), user1.user_id);
-        assert.equal(user.get('email'), user1.email);
+      users.users.get({user_id: user1.user_id}).then(function(user) {
+        assert.equal(user.user_id, user1.user_id);
+        assert.equal(user.email, user1.email);
         done();
       }, function (err) {
         done(err);
@@ -110,7 +111,7 @@ describe('users', function() {
     });
 
     it('should return undefined for unknown user', function(done) {
-      users.get_user(uuid.v4()).then(function(user) {
+      users.users.get({user_id: uuid.v4()}).then(function(user) {
         assert(!user);
         done();
       }, function (err) {
@@ -121,9 +122,9 @@ describe('users', function() {
 
   describe('get_by_email', function() {
     it('should retrieve test user', function(done) {
-      users.get_by_email(user1.email).then(function(user) {
-        assert.equal(user.get('user_id'), user1.user_id);
-        assert.equal(user.get('email'), user1.email);
+      users.users.get(user1.email).then(function(user) {
+        assert.equal(user.user_id, user1.user_id);
+        assert.equal(user.email, user1.email);
         done();
       }, function (err) {
         done(err);
@@ -131,10 +132,32 @@ describe('users', function() {
     });
 
     it('should return undefined for unknown user', function(done) {
-      users.get_by_email(user1.email + 'A').then(function(user) {
+      users.users.get(user1.email + 'A').then(function(user) {
         assert(!user);
         done();
       }, function (err) {
+        done(err);
+      });
+    });
+
+    it('should support deleting a user', function(done) {
+      var deleter = {
+        email: 'deleter@a.com',
+        name: 'deleterName',
+        password: 'asdf'
+      };
+      var id;
+      users.create_user(deleter)
+      .then(function(user_id) {
+        assert(user_id);
+        id = user_id;
+        return users.users.delete('deleter@a.com');
+      }).then(function() {
+        return users.users.get('deleter@a.com');
+      }).then(function(result) {
+        assert(!result);
+        done();
+      }).fail(function(err) {
         done(err);
       });
     });

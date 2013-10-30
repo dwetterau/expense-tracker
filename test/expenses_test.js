@@ -3,7 +3,6 @@ var assert = require('assert');
 var db = require('../db')();
 var expenses = require('../expenses');
 var schema = require('../schema');
-var users = require('../users');
 var uuid = require('node-uuid');
 var Q = require('q');
 // TODO: refactor all of this stuff into a common test file
@@ -81,35 +80,20 @@ describe('expenses', function() {
 
   });
   describe('store_expense', function() {
-    it('won\'t store the expense because the user can\'t be found', function(done) {
-      var test_expense = {
-        value: 0,
-        participants: ['c@c.com'], // Some random email
-        title: 'title',
-        description: 'description'
-      };
-      expenses.store_expense(test_expense).then(function() {
-        throw new Error('Should not have allowed expense to be created');
-      }, function(err) {
-        assert.equal(err.message, "User: c@c.com does not exist.");
-      }).then(function() {
-        done();
-      }, function(err) {
-        done(err);
-      });
-    });
-
     it('should be stored correctly', function(done) {
+      var expense_id = uuid.v4();
       var test_expense = {
+        expense_id: expense_id,
         value: 0,
-        participants: ['a@a.com'], // user1
+        participants: [user1],
+        waiting: [],
+        paid: [],
         title: 'test title',
         description: 'test description',
         receipt_image: undefined,
-        owner: user1_id
+        owner: user1
       };
-      expenses.store_expense(test_expense).then(function(expense_id) {
-        assert(expense_id);
+      expenses.expenses.create(test_expense).then(function() {
         return db.execute_cql('SELECT * from expenses where expense_id=?',
                               [expense_id]);
       }).then(function(result) {
@@ -128,15 +112,19 @@ describe('expenses', function() {
     });
 
     it('should store multiuser expenses correctly', function(done) {
+      var expense_id = uuid.v4();
       var test_expense = {
         value: 0,
-        participants: ['a@a.com', 'b@b.com'], // user1, user2
+        participants: [user1, user2],
         title: 'test title',
         description: 'test description',
         receipt_image: undefined,
-        owner: user1_id
+        owner: user1,
+        waiting: [user2],
+        paid: [],
+        expense_id: expense_id
       };
-      expenses.store_expense(test_expense).then(function(expense_id) {
+      expenses.expenses.create(test_expense).then(function() {
         assert(expense_id);
         return db.execute_cql('SELECT * from expenses where expense_id=?',
                               [expense_id]);
@@ -161,8 +149,8 @@ describe('expenses', function() {
 
     it('will return undefined if no expense is found', function(done) {
       // Random expense_id, user1
-      expenses.get_expense(uuid.v4(), user1_id).then(function(template_data) {
-        assert(!template_data);
+      expenses.expenses.get(uuid.v4()).then(function(expense) {
+        assert(!expense);
         done();
       }, function(err) {
         done(err);
@@ -171,8 +159,8 @@ describe('expenses', function() {
 
     it('will return undefined if user not in participants', function(done) {
       // expense1_id, random user
-      expenses.get_expense(expense1_id, uuid.v4()).then(function(template_data) {
-        assert(!template_data);
+      expenses.get_expense(expense1_id, uuid.v4()).then(function(expense) {
+        assert(!expense);
         done();
       }, function(err) {
         done(err);
@@ -180,14 +168,14 @@ describe('expenses', function() {
     });
 
     it('will retrieve the expense successfully', function(done) {
-      expenses.get_expense(expense1_id, user1_id).then(function(template_data) {
-        assert.equal(template_data.expense_id, expense1_id);
-        assert.equal(template_data.title, expense1.title);
-        assert.equal(template_data.description, expense1.description);
-        assert.equal(template_data.value, expense1.value);
-        assert(!template_data.receipt_image);
-        assert.equal(template_data.participants_status[0].email, user1.email);
-        assert.equal(template_data.participants_status[0].status, expenses.states.OWNED);
+      expenses.get_expense(expense1_id, user1_id).then(function(expense) {
+        assert.equal(expense.expense_id,expense1_id);
+        assert.equal(expense.title, expense1.title);
+        assert.equal(expense.description, expense1.description);
+        assert.equal(expense.value, expense1.value);
+        assert(!expense.receipt_image);
+        assert.equal(expense.participants[0].email, user1.email);
+        assert.equal(expense.owner.user_id, user1_id);
         done();
       }).fail(function(err) {
         done(err);
@@ -199,8 +187,14 @@ describe('expenses', function() {
     it('will pay the expense if the user is the owner', function(done) {
       expenses.mark_paid(expense2_id, user1_id, user2_id)
         .then(function() {
-          // If successful, unmark the expense as paid, then accept
-          return db.insert('expenses', expense2);
+          // If successful, check that things were appropriately marked, then
+          // unmark the expense as paid
+          return expenses.expenses.get(expense2_id).then(function(expense) {
+            assert.equal(expense.waiting.length, 0);
+            assert.equal(expense.paid[0].user_id, user2_id);
+          }).fin(function() {
+            return db.insert('expenses', expense2);
+          });
         })
         .then(function() {
           done();

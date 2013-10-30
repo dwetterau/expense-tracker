@@ -11,7 +11,7 @@ function check_auth(req, res, next) {
     // User is not logged in, take them to the login page
     res.redirect('/login');
   } else {
-    users.get_user(req.session.user_id).then(function(user) {
+    users.users.get(req.session.email).then(function(user) {
       next();
     }, function(err) {
       next(err);

@@ -4,18 +4,7 @@
     <ul class="expense-listing">
       {{#each owned_unfinished_expenses}}
           <li class="expense-listing-item">
-              <div><a href='expense/{{this.expense_id}}'>{{ this.title }}</a> - {{ this.owner.name }}</div>
-              <div> {{format_money this.value }} </div>
-            {{# with this.participants_status }}
-              {{> participant-list }}
-            {{/with}}
-            {{# if this.receipt_image }}
-            {{! TODO: factor out this path somehow }}
-                <img src="/thumb/{{ this.receipt_image }}/320x240" />
-            {{/if}}
-            {{# if this.is_owner }}
-                <a href="/expense/{{ this.expense_id }}/delete">Delete Expense</a>
-            {{/if}}
+            {{> expense}}
           </li>
       {{/each}}
     </ul>
@@ -25,18 +14,7 @@
     <ul class="expense-listing">
       {{#each unfinished_expenses}}
           <li class="expense-listing-item">
-              <div><a href='expense/{{this.expense_id}}'>{{ this.title }}</a> - {{ this.owner.name }}</div>
-              <div> {{format_money this.value }} </div>
-            {{# with this.participants_status }}
-              {{> participant-list }}
-            {{/with}}
-            {{# if this.receipt_image }}
-            {{! TODO: factor out this path somehow }}
-                <img src="/thumb/{{ this.receipt_image }}/320x240" />
-            {{/if}}
-            {{# if this.is_owner }}
-                <a href="/expense/{{ this.expense_id }}/delete">Delete Expense</a>
-            {{/if}}
+            {{> expense}}
           </li>
       {{/each}}
     </ul>
@@ -46,18 +24,7 @@
     <ul class="expense-listing">
       {{#each other_expenses}}
           <li class="expense-listing-item">
-              <div><a href='expense/{{this.expense_id}}'>{{ this.title }}</a> - {{ this.owner.name }}</div>
-              <div> {{format_money this.value }} </div>
-            {{# with this.participants_status }}
-              {{> participant-list }}
-            {{/with}}
-            {{# if this.receipt_image }}
-            {{! TODO: factor out this path somehow }}
-                <img src="/thumb/{{ this.receipt_image }}/320x240" />
-            {{/if}}
-            {{# if this.is_owner }}
-                <a href="/expense/{{ this.expense_id }}/delete">Delete Expense</a>
-            {{/if}}
+            {{> expense}}
           </li>
       {{/each}}
     </ul>
