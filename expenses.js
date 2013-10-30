@@ -70,7 +70,6 @@ expenses.db_to_user = function(db_data) {
     users_data.forEach(function(user_info) {
       user_data.participants.push(user_info);
       var status = participants[user_info.user_id];
-      console.log(user_info.name, status);
       switch (status) {
       case expense_states.WAITING:
         user_data.waiting.push(user_info);

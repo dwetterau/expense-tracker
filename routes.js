@@ -204,7 +204,6 @@ exports.install_routes = function(app) {
         send_error(res, 'Expense not found ', new Error('Expense not found'));
         return;
       }
-      console.log(expense);
       res.render('expense', {title: 'Expense detail', expense: expense, logged_in: true});
     }, function(err) {
       send_error(res, 'An error occurred retrieving the expense: ', err);
