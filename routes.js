@@ -115,9 +115,9 @@ exports.install_routes = function(app) {
 
   app.get('/images/:uuid', function(req, res) {
     var image_id = req.params.uuid;
-    images.get_image(image_id).then(function(image_data) {
+    images.images.get(image_id).then(function(image) {
       res.set('Content-Type', 'image/jpeg');
-      res.send(image_data);
+      res.send(image.image_data);
     }, function(err) {
       send_error(res, 'An error occurred getting the image: ', err);
     });
@@ -126,9 +126,9 @@ exports.install_routes = function(app) {
   app.get('/thumb/:uuid/:size', function(req, res) {
     var image_id = req.params.uuid;
     var size_string = req.params.size;
-    images.get_thumbnail(image_id, size_string).then(function(image_data) {
+    images.get_thumbnail(image_id, size_string).then(function(thumbnail) {
       res.set('Content-Type', 'image/jpeg');
-      res.send(image_data);
+      res.send(thumbnail.image_data);
     }, function(err) {
       send_error(res, 'An error occurred getting the image: ', err);
     });
@@ -137,9 +137,8 @@ exports.install_routes = function(app) {
   app.post('/upload_image', auth.check_auth, function(req, res) {
     // Not happy about reading it from the disk
     var path = req.files.image.path;
-    Q.nfcall(fs.readFile, path).then(function(data) {
-      return images.store_image(data);
-    }).then(function(image_id) {
+    return images.store_image(path)
+    .then(function(image_id) {
       res.redirect('/images/' + image_id);
     }, function(err) {
       send_error(res, 'An error occurred uploading the image: ', err);
@@ -168,7 +167,7 @@ exports.install_routes = function(app) {
     var get_user_promises = participant_emails.map(function(participant_email) {
       return users.users.get(participant_email);
     });
-    var image_store_promise = images.store_image_from_path(image_path).fail(function() {
+    var image_store_promise = images.store_image(image_path).fail(function() {
       // If this failed, do not use an image
       return undefined;
     });
