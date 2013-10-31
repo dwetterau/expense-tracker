@@ -72,7 +72,7 @@ exports.deletable = function(type) {
       update_obj = key_or_index;
     } else {
       update_obj = {};
-      update_obj[this.primary_key_name] = key_or_index;
+      update_obj[type.primary_key_name] = key_or_index;
     }
     update_obj.deleted = 1;
     return type.update(update_obj);

@@ -5,8 +5,11 @@
   {{/if }}
   <p> value: {{format_money this.value }} </p>
   {{> participant-list }}
-  {{# if this.receipt_image }}
-    {{! TODO: factor out this path somehow }}
-    <img src="/thumb/{{ this.receipt_image }}/640x480" />
-  {{/if}}
 {{/with}}
+{{# if expense.receipt_image }}
+  {{! TODO: factor out this path somehow }}
+  <img src="/thumb/{{ expense.receipt_image }}/640x480" />
+{{/if}}
+{{# if expense.is_owner }}
+  <a href="/expense/{{ expense.expense_id }}/delete">Delete Expense</a>
+{{/if}}

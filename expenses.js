@@ -59,8 +59,7 @@ expenses.db_to_user = function(db_data) {
     value: row.get('value'),
     waiting: [],
     paid: [],
-    participants: [],
-    owner: row.get('owner')
+    participants: []
   };
   var user_get_promises = [];
   var participants = row.get('participants');
@@ -189,6 +188,10 @@ function mark_paid(expense_id, owner_id, user_id) {
 
 function get_expense(id, user_id) {
   return expenses.get(id).then(function(expense) {
+    if (!expense) {
+      // expense was deleted
+      return expense;
+    }
     var participant_ids = expense.participants.map(function(p) {
       return p.user_id;
     });
@@ -202,6 +205,15 @@ function get_expense(id, user_id) {
       return expense;
     }
   });
+}
+
+function lazy_delete_expense(id, user_id) {
+  return expenses.get(id).then(function(expense) {
+    if (expense.owner.user_id != user_id) {
+      throw Error("User: " + user_id + " not owner of expense.");
+    }
+    return expenses.delete(id);
+  })
 }
 
 function get_user_expenses(user_id) {
@@ -222,6 +234,10 @@ function get_user_expenses(user_id) {
         var unfinished = [];
         var other = [];
         expenses.forEach(function(expense) {
+          if (!expense) {
+            // deleted expense...
+            return;
+          }
           if (expense.waiting.length === 0) {
             // If it's done, continue
             other.push(expense);
@@ -254,6 +270,7 @@ exports.get_expense = get_expense;
 exports.get_user_expenses = get_user_expenses;
 exports.states = expense_states;
 exports.mark_paid = mark_paid;
+exports.lazy_delete_expense = lazy_delete_expense;
 exports.expenses = expenses;
 
 // export for testing

@@ -183,7 +183,7 @@ describe('expenses', function() {
     });
   });
 
-  describe('pay expense', function() {
+  describe('pay_expense', function() {
     it('will pay the expense if the user is the owner', function(done) {
       expenses.mark_paid(expense2_id, user1_id, user2_id)
         .then(function() {
@@ -262,6 +262,35 @@ describe('expenses', function() {
       }, function(err) {
         done(err);
       });
+    });
+  });
+
+  describe('lazy_delete_expense', function() {
+    it('will fail to delete expense for non-owner', function(done) {
+      expenses.lazy_delete_expense(expense2_id, user2_id)
+        .then(function() {
+          done('Fail - should have not allowed the non-owner to delete the expense');
+        }, function(err) {
+          assert.notEqual(err, undefined);
+          done();
+        });
+    });
+    it('will delete expense for owner', function(done) {
+      expenses.lazy_delete_expense(expense2_id, user1_id)
+        .then(function() {
+          done();
+        }, function(err) {
+          done(err);
+        });
+    });
+    it('will return null for further expense queries', function(done) {
+      expenses.get_expense(expense2_id, user1_id)
+        .then(function(template_data) {
+          assert(!template_data);
+          done();
+        }, function(err) {
+          done(err);
+        });
     });
   });
 
