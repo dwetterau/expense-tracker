@@ -124,16 +124,17 @@ var expenses_schema = {
     value: 'int',
     participants: 'map<uuid, int>',
     receipt_image: 'uuid',
-    owner: 'uuid'
-  }
-};
+    owner: 'uuid',
+    deleted: 'int'
+  }};
 
 var expense_status_schema = {
   name: 'expense_status',
   columns: {
     user_id: 'uuid',
     expense_id: 'uuid',
-    status: 'int'
+    status: 'int',
+    deleted: 'int'
   },
   extra: 'PRIMARY KEY (user_id, expense_id)'
 };
@@ -161,9 +162,15 @@ var emails_schema = {
     sender: 'text',
     receiver: 'text',
     type: 'int',
-    data: 'map<text, text>'
+    data: 'map<text, text>',
+    sent_time: 'timestamp',
+    sent: 'boolean'
+  },
+  index: {
+    name: 'pending_emails',
+    target: 'emails (sent)'
   }
-}
+};
 
 var schemas = {
   images: images_schema,

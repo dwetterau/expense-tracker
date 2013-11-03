@@ -1,55 +1,42 @@
 var Q = require('q');
 var gm = require('gm');
 var uuid = require('node-uuid');
-var ExifImage = require('exif').ExifImage;
 var thumbnail_sizes = ['800x600', '640x480', '320x240'];
 var db = require('./db')();
+var dbobj = require('./dbobj');
 var fs = require('fs');
 
-function extract_exif(image_data) {
-  var deferred = Q.defer();
-  try {
-    // This library seems really stupid, replace this with something more sane
-    new ExifImage({image: image_data}, function(err, data) {
-      if (err) {
-        deferred.reject(err);
-      } else {
-        deferred.resolve(data);
-      }
-    });
-  } catch (err) {
-    deferred.reject(err);
-  }
-  return deferred.promise;
-}
+var images = new dbobj.db_type();
+images.columnfamily_name = 'images';
+images.primary_key_name = 'image_id';
 
-function extract_metadata(image_data) {
-  return extract_exif(image_data).then(function(exif_data) {
-    var location = '';
-    if (exif_data.gps) {
-      var full_latitude = exif_data.gps.GPSLatitude;
-      if (full_latitude) {
-        var latitude = full_latitude[0] + full_latitude[1] / 60 + full_latitude[2] / 3600;
-        var full_longitude = exif_data.gps.GPSLongitude;
-        var longitude = full_longitude[0] + full_longitude[1] / 60 + full_longitude[2] / 3600;
-        location = latitude + ',' + longitude;
-      }
-    }
-    var date = '';
-    if (exif_data.image && exif_data.image.ModifyDate) {
-      date = exif_data.image.ModifyDate;
-    }
-    return {'location': location, 'date': date};
-  }, function(err) {
-    console.error('Metadata extraction failed', err);
-    return {};
-  });
-}
+images.db_to_user = function(data) {
+  var row = data.rows[0];
+  return {
+    image_id: row.get('image_id'),
+    image_data: row.get('image_data'),
+    metadata: row.get('metadata'),
+    thumbnails: row.get('thumbnails')
+  };
+};
 
-function resize_image(image_data, size_strings) {
+var thumbnails = new dbobj.db_type();
+thumbnails.columnfamily_name = 'thumbnails';
+thumbnails.primary_key_name = 'thumbnail_id';
+
+thumbnails.db_to_user = function(data) {
+  var row = data.rows[0];
+  return {
+    thumbnail_id: row.get('thumbnail_id'),
+    image_data: row.get('image_data'),
+    orig_image: row.get('orig_image')
+  };
+};
+
+function resize_image(image_path, size_strings) {
   var promises = size_strings.map(function(size_string) {
     var size = size_string.split('x');
-    var resized = gm(image_data).resize(size[0], size[1]);
+    var resized = gm(image_path).resize(size[0], size[1]);
     return Q.ninvoke(
       resized, "toBuffer"
     );
@@ -57,25 +44,20 @@ function resize_image(image_data, size_strings) {
   return Q.all(promises);
 }
 
-function store_thumbnail(id, data, orig_id) {
-  return db.execute_cql('INSERT INTO thumbnails' +
-                        '(thumbnail_id, image_data, orig_image)' +
-                        'VALUES (?, ?, ?)',
-                        [id, data, orig_id]);
-}
-
-function store_image(image_data) {
+function store_image(image_path) {
   var image_id = uuid.v4();
   var thumbnail_ids = thumbnail_sizes.map(function() {
     return uuid.v4();
   });
 
   // Resize and store thumbnails
-  var thumbnails_p = resize_image(image_data, thumbnail_sizes).
+  var thumbnails_p = resize_image(image_path, thumbnail_sizes).
     then(function(thumbnails_data) {
       var store_promise = thumbnails_data.map(function(thumbnail_data, i) {
         var thumbnail_id = thumbnail_ids[i];
-        return store_thumbnail(thumbnail_id, thumbnail_data, image_id);
+        return thumbnails.create({thumbnail_id: thumbnail_id,
+                                  image_data: thumbnail_data,
+                                  orig_image: image_id});
       });
       return Q.all(store_promise).fail(function(err) {
         console.error('could not save thumbnail', err);
@@ -93,13 +75,13 @@ function store_image(image_data) {
   // Store the image
   var thumbnail_map_cql = { value: thumbnail_map,
                             hint: 'map' };
-  var image_p = extract_metadata(image_data).then(function(metadata) {
-    var metadata_map_cql = { value: metadata,
-                             hint: 'map' };
-    return db.execute_cql('INSERT INTO images' +
-                          '(image_id, image_data, metadata, thumbnails)' +
-                          ' VALUES (?, ?, ?, ?)',
-                          [image_id, image_data, metadata_map_cql, thumbnail_map_cql]);
+
+  var image_p = Q.nfcall(fs.readFile, image_path).then(function(image_data) {
+    return  images.create({
+      image_id: image_id,
+      image_data: image_data,
+      thumbnails: thumbnail_map_cql
+    });
   }).fail(function(err) {
     console.error('Could not save image: ', err);
   });
@@ -109,38 +91,15 @@ function store_image(image_data) {
   });
 }
 
-function get_image(image_id) {
-  return db.execute_cql('SELECT image_data FROM images' +
-                        ' WHERE image_id=?', [image_id])
-  .then(function(result) {
-    return result.rows[0].get('image_data');
-  });
-}
-
 function get_thumbnail(image_id, size_string) {
-  return db.execute_cql('SELECT thumbnails FROM images' +
-                        ' WHERE image_id=?', [image_id])
-  .then(function(result) {
-    var thumbnail_id = result.rows[0].get('thumbnails')[size_string];
-    return db.execute_cql('SELECT image_data FROM thumbnails' +
-                          ' WHERE thumbnail_id=?', [thumbnail_id]);
-  }).then(function(result) {
-    return result.rows[0].get('image_data');
+  return images.get(image_id)
+  .then(function(image) {
+    var thumbnail_id = image.thumbnails[size_string];
+    return thumbnails.get(thumbnail_id);
   });
 }
 
-function store_image_from_path(image_path) {
-  return Q.nfcall(fs.readFile, image_path).then(function(image_data) {
-    if (image_data && image_data.length) {
-      return store_image(image_data);
-    } else {
-      throw Error("Empty image");
-    }
-  });
-}
-
+exports.images = images;
 exports.store_image = store_image;
-exports.store_image_from_path = store_image_from_path;
-exports.get_image = get_image;
 exports.get_thumbnail = get_thumbnail;
 exports.db = db;
