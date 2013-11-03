@@ -162,7 +162,7 @@ var emails_schema = {
     sender: 'text',
     receiver: 'text',
     type: 'int',
-    data: 'map<text, text>',
+    html: 'text',
     sent_time: 'timestamp',
     sent: 'boolean'
   },

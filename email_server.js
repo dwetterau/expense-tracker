@@ -1,4 +1,5 @@
 var nodemailer = require("nodemailer");
+var simplesmtp = require("simplesmtp");
 
 var smtpTransport = nodemailer.createTransport("SMTP", {
   service: "Gmail",
@@ -16,6 +17,7 @@ var mailOptions= {
   //html: "The message body in html"
 };
 
+/*
 smtpTransport.sendMail(mailOptions, function(err, response) {
   if (err) {
     console.log("failed to send email");
@@ -23,3 +25,6 @@ smtpTransport.sendMail(mailOptions, function(err, response) {
     console.log("Sent email", response.message);
   }
 });
+*/
+
+
