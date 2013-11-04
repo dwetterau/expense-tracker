@@ -12,7 +12,8 @@
     "connect-cassandra": "*",
     "mocha": "*",
     "gm": "*",
-    "nodemailer": "*"
+    "nodemailer": "*",
+    "simplesmtp": "*"
   },
   "scripts": {"test": "mocha test/*_test.js --reporter spec"}
 }

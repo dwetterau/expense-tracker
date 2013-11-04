@@ -32,16 +32,46 @@ emails.primary_key_name = 'email_id';
 
 function create_email(email) {
   // check that email has the right form
-  if (!email_types[email.type]) {
+  var is_valid_type = false;
+  for (var type in email_types) {
+    if (email_types.hasOwnProperty(type) && email_types[type] == email.type) {
+      is_valid_type = true;
+      break;
+    }
+  }
+  if (!is_valid_type) {
     throw new Error("Email must have type");
   }
   if (!email.sender || !email.receiver) {
     throw new Error("Email must have sender / receiver");
   }
   if (!email.html) {
-    throw new Error("Email must have a body")
+    throw new Error("Email must have a body");
   }
-  email.email_id = uuid.v4();
+  if (!email.email_id) {
+    throw new Error("Email must have an id");
+  }
   email.sent = false;
-  return emails.create(email);
+  return emails.create(email).then(function() {
+    return email.email_id;
+  });
 }
+
+function get_unsent_emails() {
+  return emails.get_db_data({'sent' : false}).then(function(db_data) {
+    var email_objs = [];
+    while(db_data.rows.length > 0) {
+      var email_obj = emails.db_to_user({rows: db_data.rows.splice(0, 1)});
+      email_objs.push(email_obj);
+    }
+    return Q.all(email_objs);
+  })
+}
+
+exports.email_types = email_types;
+exports.create_email = create_email;
+exports.get_unsent_emails = get_unsent_emails;
+exports.emails = emails;
+
+// Export for testing
+exports.db = db;
