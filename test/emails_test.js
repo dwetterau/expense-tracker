@@ -147,6 +147,20 @@ describe('emails', function() {
     });
   });
 
+  describe('sent_email', function() {
+    it('should mark a found email as sent', function(done) {
+      emails.sent_email(email1_id).then(function(expense_id) {
+        return emails.get_unsent_emails();
+      }).then(function(email_list) {
+        assert.equal(email_list.length, 1);
+        assert.equal(email_list[0].email_id, email2_id);
+        done();
+      }, function(err) {
+        done(err);
+      });
+    });
+  });
+
   after(function(done) {
     db.execute_cql("DROP COLUMNFAMILY emails").then(function() {
       done();

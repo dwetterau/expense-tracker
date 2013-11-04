@@ -6,7 +6,7 @@ var Q = require('q');
 
 var email_types = {
   EXPENSE_NOTIFICATION: 1
-}
+};
 
 var emails = new dbobj.db_type();
 emails.db_to_user = function(db_data) {
@@ -21,7 +21,7 @@ emails.db_to_user = function(db_data) {
     sender: row.get('sender'),
     receiver: row.get('receiver'),
     type: row.get('type'),
-    data: row.get('data'),
+    html: row.get('html'),
     sent_time: row.get('sent_time'),
     sent: row.get('sent')
   });
@@ -58,19 +58,32 @@ function create_email(email) {
 }
 
 function get_unsent_emails() {
-  return emails.get_db_data({'sent' : false}).then(function(db_data) {
-    var email_objs = [];
-    while(db_data.rows.length > 0) {
-      var email_obj = emails.db_to_user({rows: db_data.rows.splice(0, 1)});
-      email_objs.push(email_obj);
-    }
-    return Q.all(email_objs);
-  })
+  return emails.get_db_data({'sent' : false})
+    .then(function(db_data) {
+      var email_objs = [];
+      while(db_data.rows.length > 0) {
+        var email_obj = emails.db_to_user({rows: db_data.rows.splice(0, 1)});
+        email_objs.push(email_obj);
+      }
+      return Q.all(email_objs);
+  });
+}
+
+function sent_email(email_id) {
+  return emails.get(email_id)
+    .then(function(email) {
+      email.sent = true;
+      //email.sent_time = new Date();
+      return emails.update(email);
+    }).then(function() {
+      return email_id;
+    });
 }
 
 exports.email_types = email_types;
 exports.create_email = create_email;
 exports.get_unsent_emails = get_unsent_emails;
+exports.sent_email = sent_email;
 exports.emails = emails;
 
 // Export for testing
