@@ -1,6 +1,7 @@
 var handlebars = require("handlebars");
 var nodemailer = require("nodemailer");
 var emails = require("./emails");
+var Q = require('q');
 
 // Email template includes
 var expense_emails = require('./email_views/expense_emails');
@@ -26,7 +27,6 @@ var mailOptions= {
 function getSubjectAndBody(email) {
   // find the right map based off the type
   var template;
-  console.log(email_templates);
   email_templates.forEach(function(template_file) {
     if (template_file.subject_map[email.type] != undefined) {
       template = template_file;
@@ -39,18 +39,21 @@ function getSubjectAndBody(email) {
   var subject_template = handlebars.compile(template.subject_map[email.type]);
   var body_template = handlebars.compile(template.body_map[email.type]);
   return {
-    subject : subject_template(email),
-    body: body_template(email)
+    subject : subject_template(email.data),
+    body: body_template(email.data)
   };
 }
+
+console.log("Email server started.");
 // Check for emails to send loop
 setInterval(function() {
-  emails.get_unsent_emails().then(function(emails) {
-    if (!emails) {
+  emails.get_unsent_emails().then(function(emails_to_send) {
+    if (!emails_to_send || emails_to_send.length == 0) {
       return;
     }
+    console.log("Found", emails_to_send.length, "emails to send.");
     var markSentPromises = [];
-    emails.forEach(function(email) {
+    emails_to_send.forEach(function(email) {
       var subjectAndBody = getSubjectAndBody(email);
       var mailOptions = {
         from: email.sender,
@@ -58,21 +61,21 @@ setInterval(function() {
         subject: subjectAndBody.subject,
         html: subjectAndBody.body
       };
-      smtpTransport.sendMail(mailOptions, function(err, response) {
+      smtpTransport.sendMail(mailOptions, function(err) {
         if (!err) {
           markSentPromises.push(emails.sent_email(email.email_id));
         } else {
-          console.log("failed to send email", email.email_id);
+          console.log("Failed to send email", email.email_id);
         }
       });
     });
     Q.all(markSentPromises).then(function() {
-      console.log("Successfully sent ", markSentPromises.length, " emails.");
+      console.log("Successfully sent emails.");
     }, function(err) {
       console.log("Failed to mark some sent emails as sent:", err);
     });
   }, function(err) {
-    console.log("lost connection with cassandra");
+    console.log("Lost connection with cassandra", err);
   });
 }, 5000);
 

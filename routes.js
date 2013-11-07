@@ -5,9 +5,8 @@ var emails= require('./emails');
 var expenses = require('./expenses');
 var images = require('./images');
 var users = require('./users');
+var config = require('./config');
 var uuid = require('node-uuid');
-
-var DOMAIN = 'localhost';
 
 // Error sending
 function send_error(res, info, exception) {
@@ -195,14 +194,14 @@ exports.install_routes = function(app) {
     }).then(function() {
       var email = {
         email_id : uuid.v4(),
+        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
         sender: req.session.email,
         receiver: req.body.participants,
         data: {
           sender: req.session.email,
-          expense_link: DOMAIN + '/expense/' + expense_id
+          expense_link: config.values.hostname + '/expense/' + expense_id
         }
       };
-      console.log("doing this email creation thing");
       return emails.create_email(email);
     }).then(function() {
         res.redirect('/expense/' + expense_id);

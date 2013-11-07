@@ -9,6 +9,13 @@ var email_types = {
 };
 
 var emails = new dbobj.db_type();
+emails.user_to_db = function(email) {
+  email.data = {hint: 'map',
+    value: email.data
+  };
+  return Q(email);
+}
+
 emails.db_to_user = function(db_data) {
   var row = db_data.rows[0];
   if (row === undefined) {
@@ -73,7 +80,7 @@ function sent_email(email_id) {
   return emails.get(email_id)
     .then(function(email) {
       email.sent = true;
-      //email.sent_time = new Date();
+      email.sent_time = new Date();
       return emails.update(email);
     }).then(function() {
       return email_id;

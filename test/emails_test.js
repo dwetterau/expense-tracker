@@ -1,5 +1,5 @@
-var assert = require('assert');
 process.env.NODE_ENV = 'testing';
+var assert = require('assert');
 var db = require('../db')();
 var schema = require('../schema');
 var emails = require('../emails');
@@ -13,10 +13,16 @@ var email1 = {
   sender: 'a@a.com',
   receiver: 'b@b.com',
   type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-  data: {hint: 'map',
-    value: {}
-  },
+  data : {hint: 'map', value: {subject: 'some data'}},
   sent: false
+};
+
+var email2 = {
+  email_id : email2_id,
+  sender: 'b@b.com',
+  receiver: 'a@a.com',
+  type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
+  data : {subject: 'some data'}
 };
 
 describe('emails', function() {
@@ -39,15 +45,7 @@ describe('emails', function() {
   });
   describe('create_email', function() {
     it('should create an email successfully', function(done) {
-      var test_email = {
-        email_id : email2_id,
-        sender: 'b@b.com',
-        receiver: 'a@a.com',
-        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-        data: {hint: 'map',
-          value: {}
-        }
-      };
+      var test_email = JSON.parse(JSON.stringify(email2));
       emails.create_email(test_email).then(function(email_id) {
         // Make sure this is a uuid
         assert.equal(email_id.length, 36);
@@ -57,14 +55,8 @@ describe('emails', function() {
       });
     });
     it('should not create an email without a type', function(done) {
-      var test_email = {
-        email_id : email2_id,
-        sender: 'b@b.com',
-        receiver: 'a@a.com',
-        data: {hint: 'map',
-          value: {}
-        }
-      };
+      var test_email = JSON.parse(JSON.stringify(email2));
+      test_email.type = undefined;
       try {
         emails.create_email(test_email).then(function(email_id) {
           done(new Error('allowed email to be created'));
@@ -75,14 +67,8 @@ describe('emails', function() {
       }
     });
     it('should not create an email without a sender', function(done) {
-      var test_email = {
-        email_id : email2_id,
-        receiver: 'a@a.com',
-        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-        data: {hint: 'map',
-          value: {}
-        }
-      };
+      var test_email = JSON.parse(JSON.stringify(email2));
+      test_email.sender = undefined;
       try {
         emails.create_email(test_email).then(function(email_id) {
           done(new Error('allowed email to be created'));
@@ -93,14 +79,8 @@ describe('emails', function() {
       }
     });
     it('should not create an email without a receiver', function(done) {
-      var test_email = {
-        email_id : email2_id,
-        sender: 'b@b.com',
-        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-        data: {hint: 'map',
-          value: {}
-        }
-      };
+      var test_email = JSON.parse(JSON.stringify(email2));
+      test_email.receiver = undefined;
       try {
         emails.create_email(test_email).then(function(email_id) {
           done(new Error('allowed email to be created'));
@@ -110,13 +90,9 @@ describe('emails', function() {
         done();
       }
     });
-    it('should not create an email without a body', function(done) {
-      var test_email = {
-        email_id : email2_id,
-        sender: 'b@b.com',
-        receiver: 'a@a.com',
-        type: emails.email_types.NEW_EXPENSE_NOTIFICATION
-      };
+    it('should not create an email without data', function(done) {
+      var test_email = JSON.parse(JSON.stringify(email2));
+      test_email.data = undefined;
       try {
         emails.create_email(test_email).then(function(email_id) {
           done(new Error('allowed email to be created'));
@@ -127,14 +103,8 @@ describe('emails', function() {
       }
     });
     it('should not create an email without an id', function(done) {
-      var test_email = {
-        sender: 'b@b.com',
-        receiver: 'a@a.com',
-        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-        data: {hint: 'map',
-          value: {}
-        }
-      };
+      var test_email = JSON.parse(JSON.stringify(email2));
+      test_email.email_id = undefined;
       try {
         emails.create_email(test_email).then(function(email_id) {
           done(new Error('allowed email to be created'));

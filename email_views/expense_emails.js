@@ -2,9 +2,9 @@ var emails = require('../emails');
 
 var new_expense_subject = "{{sender}} made a new expense with you"; //TODO: Make this less awkward
 var new_expense_body = "<body>" +
-  '<h3>You have a new expense with {{sender}}</h3>' +
-  '<br>Click <a href="{{expense_link}}">here</a> to view it.</br>' +
-  '<br>© ExpenseTracker 2013</br>' +
+  '<h3>You have a new expense with {{sender}}!</h3>' +
+  '<div>Click <a href="{{expense_link}}">here</a> to view it.</div>' +
+  '<footer>© ExpenseTracker 2013</footer>' +
   '</body>';
 
 var expense_subject_map = {};
