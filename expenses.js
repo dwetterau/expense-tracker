@@ -35,7 +35,6 @@ expenses.user_to_db = function(user_data) {
   // TODO: Abstract this sorta crap out with a library
   var db_data = {
     expense_id: user_data.expense_id,
-    description: user_data.description,
     owner: user_data.owner.user_id,
     title: user_data.title,
     value: user_data.value,
@@ -44,6 +43,10 @@ expenses.user_to_db = function(user_data) {
 
   if (user_data.receipt_image) {
     db_data.receipt_image = user_data.receipt_image;
+  }
+
+  if (user_data.description) {
+    db_data.description = user_data.description;
   }
 
   return Q(db_data);
