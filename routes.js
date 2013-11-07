@@ -167,7 +167,15 @@ exports.install_routes = function(app) {
     var get_user_promises = participant_emails.map(function(participant_email) {
       return users.users.get(participant_email);
     });
-    var image_store_promise = images.store_image(image_path).fail(function() {
+    var image_store_promise = Q.nfcall(fs.stat, image_path)
+      .then(function(file_stats) {
+        if (file_stats.size === 0) {
+          return undefined;
+        } else {
+          return images.store_image(image_path);
+        }
+      })
+    .fail(function() {
       // If this failed, do not use an image
       return undefined;
     });
