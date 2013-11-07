@@ -18,8 +18,6 @@ var pool = new helenus.ConnectionPool({
     timeout : 3000
 });
 
-
-
 app.use(express.bodyParser());
 app.use(express.cookieParser());
 app.engine('handlebars', exphbs({defaultLayout: 'main',

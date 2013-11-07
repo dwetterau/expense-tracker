@@ -2,7 +2,7 @@ var assert = require('assert');
 process.env.NODE_ENV = 'testing';
 var db = require('../db')();
 var schema = require('../schema');
-var emails = require('../emails')
+var emails = require('../emails');
 var uuid = require('node-uuid');
 
 var email1_id = uuid.v4();
@@ -12,8 +12,10 @@ var email1 = {
   email_id : email1_id,
   sender: 'a@a.com',
   receiver: 'b@b.com',
-  type: emails.email_types.EXPENSE_NOTIFICATION,
-  html: "test html body",
+  type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
+  data: {hint: 'map',
+    value: {}
+  },
   sent: false
 };
 
@@ -41,8 +43,10 @@ describe('emails', function() {
         email_id : email2_id,
         sender: 'b@b.com',
         receiver: 'a@a.com',
-        type: emails.email_types.EXPENSE_NOTIFICATION,
-        html: "test html body 2"
+        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
+        data: {hint: 'map',
+          value: {}
+        }
       };
       emails.create_email(test_email).then(function(email_id) {
         // Make sure this is a uuid
@@ -57,7 +61,9 @@ describe('emails', function() {
         email_id : email2_id,
         sender: 'b@b.com',
         receiver: 'a@a.com',
-        html: "test html body 2"
+        data: {hint: 'map',
+          value: {}
+        }
       };
       try {
         emails.create_email(test_email).then(function(email_id) {
@@ -72,8 +78,10 @@ describe('emails', function() {
       var test_email = {
         email_id : email2_id,
         receiver: 'a@a.com',
-        type: emails.email_types.EXPENSE_NOTIFICATION,
-        html: "test html body 2"
+        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
+        data: {hint: 'map',
+          value: {}
+        }
       };
       try {
         emails.create_email(test_email).then(function(email_id) {
@@ -88,8 +96,10 @@ describe('emails', function() {
       var test_email = {
         email_id : email2_id,
         sender: 'b@b.com',
-        type: emails.email_types.EXPENSE_NOTIFICATION,
-        html: "test html body 2"
+        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
+        data: {hint: 'map',
+          value: {}
+        }
       };
       try {
         emails.create_email(test_email).then(function(email_id) {
@@ -105,14 +115,14 @@ describe('emails', function() {
         email_id : email2_id,
         sender: 'b@b.com',
         receiver: 'a@a.com',
-        type: emails.email_types.EXPENSE_NOTIFICATION
+        type: emails.email_types.NEW_EXPENSE_NOTIFICATION
       };
       try {
         emails.create_email(test_email).then(function(email_id) {
           done(new Error('allowed email to be created'));
         });
       } catch(err) {
-        assert.equal(err.message, 'Email must have a body');
+        assert.equal(err.message, 'Email must have data');
         done();
       }
     });
@@ -120,8 +130,10 @@ describe('emails', function() {
       var test_email = {
         sender: 'b@b.com',
         receiver: 'a@a.com',
-        type: emails.email_types.EXPENSE_NOTIFICATION,
-        html: "test html body 2"
+        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
+        data: {hint: 'map',
+          value: {}
+        }
       };
       try {
         emails.create_email(test_email).then(function(email_id) {

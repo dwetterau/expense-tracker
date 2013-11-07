@@ -5,7 +5,7 @@ var uuid = require('node-uuid');
 var Q = require('q');
 
 var email_types = {
-  EXPENSE_NOTIFICATION: 1
+  NEW_EXPENSE_NOTIFICATION: 1
 };
 
 var emails = new dbobj.db_type();
@@ -21,7 +21,7 @@ emails.db_to_user = function(db_data) {
     sender: row.get('sender'),
     receiver: row.get('receiver'),
     type: row.get('type'),
-    html: row.get('html'),
+    data: row.get('data'),
     sent_time: row.get('sent_time'),
     sent: row.get('sent')
   });
@@ -45,8 +45,8 @@ function create_email(email) {
   if (!email.sender || !email.receiver) {
     throw new Error("Email must have sender / receiver");
   }
-  if (!email.html) {
-    throw new Error("Email must have a body");
+  if (!email.data) {
+    throw new Error("Email must have data");
   }
   if (!email.email_id) {
     throw new Error("Email must have an id");

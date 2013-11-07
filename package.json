@@ -13,7 +13,8 @@
     "mocha": "*",
     "gm": "*",
     "nodemailer": "*",
-    "simplesmtp": "*"
+    "simplesmtp": "*",
+    "handlebars": "*"
   },
   "scripts": {"test": "mocha test/*_test.js --reporter spec"}
 }
