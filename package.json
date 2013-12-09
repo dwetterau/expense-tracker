@@ -11,7 +11,11 @@
     "helenus": "*",
     "connect-cassandra": "*",
     "mocha": "*",
-    "gm": "*"
+    "gm": "*",
+    "knex": "*",
+    "bookshelf": "*",
+    "pg": "*",
+    "sqlite3": "*"
   },
   "scripts": {"test": "mocha test/*_test.js --reporter spec"}
 }

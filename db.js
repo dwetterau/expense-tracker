@@ -1,4 +1,16 @@
-var Client = require('node-cassandra-cql').Client;
+var bookshelf = require('bookshelf');
+var settings = require('./settings');
+
+
+var bookshelf = bookshelf.initialize({
+  client: settings.database_client,
+  connection: settings.database_connection
+});
+
+module.exports = {
+  bookshelf: bookshelf,
+};
+/*var Client = require('node-cassandra-cql').Client;
 var default_keyspace = 'expense_tracker';
 var testing_keyspace = 'expense_tracker_test';
 
@@ -110,3 +122,4 @@ module.exports = function(keyspace_name) {
     get_by_key: get_by_key
   };
 };
+*/

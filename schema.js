@@ -1,4 +1,19 @@
-var db = require('./db')();
+var db = require('./db');
+var knex = db.bookshelf.knex;
+
+exports.create_users = function() {
+  return knex.schema.createTable('users', function(table) {
+    table.string('email').index().unique();
+    table.text('password');
+    table.text('salt');
+    table.string('name');
+    table.increments('id');
+    table.timestamps();
+  });
+};
+
+
+/*
 var Q = require('q');
 
 // TODO: get keyspace name from db
@@ -185,3 +200,4 @@ exports.drop_all = function() {
 
 exports.create_new_table = create_new_table;
 exports.schemas = schemas;
+*/

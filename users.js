@@ -1,10 +1,52 @@
+var db = require('./db');
 var auth = require('./auth');
+var User = db.bookshelf.Model.extend({
+  tableName: 'users',
+
+  hasTimestamps: ['created_at', 'updated_at'],
+
+  login: function(password) {
+    return auth.hash_password(password, this.get('salt')).then(
+      function(hashed_password) {
+        if (this.get('password') == hashed_password) {
+          return this;
+        } else {
+          throw new Error("Invalid email or password");
+        }
+      }.bind(this)
+    );
+  },
+
+  salt_and_hash: function() {
+    var salt = auth.generate_salt(128);
+    this.set('salt', salt);
+    return auth.hash_password(this.get('password'), salt)
+      .then(function(hash_result) {
+        this.set('password', hash_result);
+      }.bind(this));
+  }
+}, {
+  login: function(email, password) {
+    var u = new User({email: email});
+    return u.fetch().then(function() {
+      return u.login(password);
+    }).catch(function(err) {
+      throw new Error("Invalid email or password");
+    });
+  }
+});
+
+
+exports.User = User;
+
+/*var auth = require('./auth');
 var db = require('./db')();
 var dbobj = require('./dbobj');
 var uuid = require('node-uuid');
-var Q = require('q');
+var Q = require('q');*/
 
-var users = new dbobj.db_type();
+
+/*var users = new dbobj.db_type();
 dbobj.deletable(users);
 users.db_to_user = function(db_data) {
   var row = db_data.rows[0];
@@ -87,3 +129,4 @@ exports.users = users;
 
 // export for testing
 exports.db = db;
+*/
