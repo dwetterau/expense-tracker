@@ -1,10 +1,10 @@
 var fs = require('fs');
 var Q = require('q');
 var auth = require('./auth');
-var expenses = require('./expenses');
-var images = require('./images');
+//var expenses = require('./expenses');
+//var images = require('./images');
 var users = require('./users');
-var uuid = require('node-uuid');
+//var uuid = require('node-uuid');
 
 // Error sending
 function send_error(res, info, exception) {
@@ -21,7 +21,7 @@ function send_error(res, info, exception) {
 
 exports.install_routes = function(app) {
   // Main route
-  app.get('/', auth.check_auth, function(req, res) {
+  /*app.get('/', auth.check_auth, function(req, res) {
     var user_id = req.session.user_id;
     expenses.get_user_expenses(user_id).then(function(expense_templates) {
       res.render("index", {
@@ -55,11 +55,12 @@ exports.install_routes = function(app) {
     });
   });
 
+  */
   app.post('/login', function(req, res) {
     var email = req.body.email;
     var password = req.body.password;
-    users.login({email: email, password: password}).then(function(user) {
-      users.create_session(req, user);
+    users.User.login(email, password).then(function(user) {
+      req.session.user = user;
       res.redirect('/');
     }, function(err) {
       send_error(res, 'Login error: ', err);
@@ -83,25 +84,24 @@ exports.install_routes = function(app) {
   app.post('/create_account', function(req, res) {
     var secret = req.body.secret;
     if (secret != '0xDEADBEEFCAFE') {
+      console.log('oh dear!');
       return;
     }
     var email = req.body.email;
     var password = req.body.password;
     var name = req.body.name;
-    var new_user = {
+    var new_user = new users.User({
       email: email,
       password: password,
       name: name
-    };
+    });
     Q.ninvoke(req.session, 'regenerate').then(function() {
-      return users.create_user(new_user);
+      return new_user.salt_and_hash();
     }).then(function() {
-      users.login({email: email, password: password}).then(function(user) {
-        users.create_session(req, user);
-        res.redirect('/');
-      }, function(err) {
-        send_error(res, 'An error occurred while auto logging in new account: ', err);
-      });
+      return new_user.save();
+    }).then(function() {
+      req.session.user = new_user;
+      res.redirect('/');
     }, function(err) {
       send_error(res, 'An error occurred while creating the account: ', err);
     });
@@ -111,6 +111,7 @@ exports.install_routes = function(app) {
     res.render('create_account');
   });
 
+  /*
   // Image routes
 
   app.get('/images/:uuid', function(req, res) {
@@ -241,9 +242,11 @@ exports.install_routes = function(app) {
       send_error(res, 'An error occurred while trying to lazy delete the expense: ', err);
     });
   });
+  */
 
   var port = process.env.PORT || 3000;
   app.listen(port, function() {
     console.log("Listening on", port);
   });
+
 };

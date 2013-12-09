@@ -33,7 +33,7 @@ var User = db.bookshelf.Model.extend({
     }).catch(function(err) {
       throw new Error("Invalid email or password");
     });
-  }
+  },
 });
 
 
