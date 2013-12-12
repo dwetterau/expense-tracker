@@ -1,8 +1,5 @@
-var db = require('./db')();
-var Q = require('q');
-var users = require('./users');
-var uuid = require('node-uuid');
-var dbobj = require('./dbobj');
+var db = require('./db');
+var User = require('./users').User;
 
 // constants for expense state
 var expense_states = {
@@ -10,6 +7,45 @@ var expense_states = {
   PAID: 1,
   OWNED: 2
 };
+
+var ExpenseStatus = db.bookshelf.Model.extend({
+  tableName: 'expense_status',
+
+  user: function() {
+    return this.belongsTo(User);
+  },
+
+  expense: function() {
+    return this.belongsTo(Expense);
+  }
+});
+
+var Expense = db.bookshelf.Model.extend({
+  tableName: 'expenses',
+
+  hasTimestamps: ['created_at', 'updated_at'],
+
+  owner: function() {
+    return this.belongsTo(User, 'owner_id');
+  },
+
+  participants: function() {
+    return this.belongsToMany(User, 'expense_status')
+      .through(ExpenseStatus)
+      .withPivot('status');
+  }
+});
+
+exports.Expense = Expense;
+exports.ExpenseStatus = ExpenseStatus;
+exports.expense_states = expense_states;
+
+/*var db = require('./db')();
+var Q = require('q');
+var users = require('./users');
+var uuid = require('node-uuid');
+var dbobj = require('./dbobj');
+
 
 var expenses = new dbobj.db_type();
 expenses.columnfamily_name = 'expenses';
@@ -278,3 +314,4 @@ exports.expenses = expenses;
 
 // export for testing
 exports.db = db;
+*/

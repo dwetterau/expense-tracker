@@ -16,14 +16,14 @@ var user1 = {
 
 describe('users', function() {
   before(function(done) {
-    schema.create_users().then(function() {
+    /*schema.create_users().then(function() {
       var u = new users.User(user1);
       return u.save();
     }).then(function() {
       done();
     }, function(err) {
       console.error('error creating users', err);
-    });
+    });*/
   });
 
   describe('create user', function() {

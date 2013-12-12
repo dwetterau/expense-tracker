@@ -1,9 +1,13 @@
 var fs = require('fs');
 var Q = require('q');
 var auth = require('./auth');
-//var expenses = require('./expenses');
+var expenses = require('./expenses');
+var Expense = expenses.Expense;
+var ExpenseStatus = expenses.ExpenseStatus;
+
 //var images = require('./images');
 var users = require('./users');
+var User = users.User;
 //var uuid = require('node-uuid');
 
 // Error sending
@@ -149,6 +153,7 @@ exports.install_routes = function(app) {
   app.get('/upload_image', auth.check_auth, function(req, res) {
     res.render('upload_image');
   });
+  */
 
   // Expenses routes
   app.get('/create_expense', auth.check_auth, function(req, res) {
@@ -159,16 +164,52 @@ exports.install_routes = function(app) {
     var title = req.body.title;
     var description = req.body.description || undefined;
     var value = parseInt(req.body.value, 10);
-    var participant_emails = [req.session.email];
+    var owner = req.session.user;
+    var participants = [];
     var image_path = req.files.image && req.files.image.path;
-    var expense_id = uuid.v1();
+
     if (req.body.participants) {
-      participant_emails = participant_emails.concat(req.body.participants.split(','));
+      var participant_emails = req.body.participants.split(',');
+      participants = participant_emails.map(function(email) {
+        return new User({email: email});
+      });
     }
-    var get_user_promises = participant_emails.map(function(participant_email) {
-      return users.users.get(participant_email);
+
+    var fetch_user_promises = participants.map(function(participant) {
+      return participant.fetch();
     });
-    var image_store_promise = Q.nfcall(fs.stat, image_path)
+
+    var expense = new Expense({
+      owner_id: owner.id,
+      title: title,
+      description: description,
+      value: value,
+    });
+
+    expense.save().then(function() {
+      var status_promises = fetch_user_promises.map(function(fetch_user_promise, i) {
+        fetch_user_promise.then(function() {
+          var participant = participants[i];
+          var new_status = new ExpenseStatus({
+            user_id: participant.get('id'),
+            expense_id: expense.get('id'),
+            status: expenses.expense_states.WAITING
+          });
+          return new_status.save();
+        });
+      });
+
+      return Q.all(status_promises);
+    }).then(function() {
+      res.redirect('/expense/' + expense.get('id'));
+    }, function(err) {
+      send_error(res, 'An error occurred making the expense: ', err);
+    });
+
+  });
+
+
+    /*var image_store_promise = Q.nfcall(fs.stat, image_path)
       .then(function(file_stats) {
         if (file_stats.size === 0) {
           return undefined;
@@ -181,6 +222,7 @@ exports.install_routes = function(app) {
       return undefined;
     });
     var promises = get_user_promises.concat([image_store_promise]);
+
     Q.all(promises).then(function(values) {
       var image_id = values[values.length - 1];
       var owner = values[0];
@@ -203,7 +245,9 @@ exports.install_routes = function(app) {
       }, function(err) {
         send_error(res, 'An error occurred making the expense: ', err);
       });
-  });
+  });*/
+
+/*
 
   app.get('/expense/:expense_id', auth.check_auth, function(req, res) {
     var expense_id = req.params.expense_id;

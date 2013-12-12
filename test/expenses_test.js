@@ -1,10 +1,14 @@
-/*process.env.NODE_ENV = 'testing';
+process.env.NODE_ENV = 'testing';
 var assert = require('assert');
-var db = require('../db')();
-var expenses = require('../expenses');
+var db = require('../db');
 var schema = require('../schema');
 var uuid = require('node-uuid');
 var Q = require('q');
+
+var User = require('../users').User;
+var expenses = require('../expenses');
+var Expense = expenses.Expense;
+var ExpenseStatus = expenses.ExpenseStatus;
 // TODO: refactor all of this stuff into a common test file
 Q.longStackSupport = true;
 
@@ -13,21 +17,19 @@ var user2_id = uuid.v4();
 var expense1_id = uuid.v4();
 var expense2_id = uuid.v4();
 
-var user1 = {
+var user1 = new User({
   email: 'a@a.com',
   password: 'password',
   name: 'testMan1',
-  user_id: user1_id
-};
+});
 
-var user2 = {
+var user2 = new User({
   email: 'b@b.com',
   password: 'password',
   name: 'testMan2',
-  user_id: user2_id
-};
+});
 
-var expense1 = {
+/*var expense1 = {
   expense_id: expense1_id,
   value: 1,
   participants: {hint: 'map',
@@ -51,6 +53,69 @@ var expense2 = {
 };
 expense2.participants.value[user1_id] = expenses.states.OWNED;
 expense2.participants.value[user2_id] = expenses.states.WAITING;
+*/
+
+describe('expenses', function() {
+  before(function(done) {
+    Q.all([schema.create_users(),
+           schema.create_expenses(),
+           schema.create_expense_status()])
+      .then(function() {
+        return Q.all([user1.save(), user2.save()]);
+      }).then(function() { done(); },
+              function(err) { done(err); });
+  });
+
+  describe('participants', function() {
+    it('should allow an owner to be retreived correctly', function(done) {
+      var e = new Expense({title: 't',
+                           value: 10,
+                           owner_id: user1.get('id')
+                          });
+
+      e.save().then(function() {
+        return e.related('owner').fetch();
+      }).then(function() {
+        var owner = e.related('owner');
+        assert.equal(owner.get('email'), 'a@a.com');
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should allow a participant to be added correctly', function(done) {
+      var e = new Expense({title: 't',
+                           value: 10,
+                           owner_id: user1.get('id')
+                          });
+      var es;
+      e.save().then(function() {
+        es = new ExpenseStatus({ user_id: user2.get('id'),
+                                 expense_id: e.get('id'),
+                                 status: expenses.expense_states.WAITING
+                               });
+        return es.save();
+      }).then(function() {
+        return e.related('participants').fetch();
+      }).then(function() {
+        var p = e.related('participants');
+        assert.equal(p.length, 1);
+        var status = p.at(0).pivot.get('status');
+        assert.equal(status, expenses.expense_states.WAITING);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+  });
+
+});
+
+
+
+/*
 
 describe('expenses', function() {
   before(function(done) {

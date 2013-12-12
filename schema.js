@@ -1,6 +1,8 @@
 var db = require('./db');
 var knex = db.bookshelf.knex;
 
+// TODO: add foreign key constraints
+
 exports.create_users = function() {
   return knex.schema.createTable('users', function(table) {
     table.string('email').index().unique();
@@ -11,6 +13,32 @@ exports.create_users = function() {
     table.timestamps();
   });
 };
+
+exports.create_expenses = function() {
+  return knex.schema.createTable('expenses', function(table) {
+    table.increments('id');
+    table.integer('owner_id').index().notNullable();
+    table.text('title').notNullable();
+    table.text('description');
+    table.integer('value').notNullable();
+    table.integer('image_id');
+    table.timestamps();
+  });
+};
+
+exports.create_expense_status = function() {
+  return knex.schema.createTable('expense_status', function(table) {
+    table.increments('id');
+    table.integer('user_id').notNullable();
+    table.integer('expense_id').notNullable();
+    table.integer('status').notNullable();
+  }).then(function() {
+    // Can't create this index using knex directly
+    return knex.raw('CREATE UNIQUE INDEX UIX_expense_status ' +
+                    'on expense_status (user_id, expense_id)');
+  });
+};
+
 
 
 /*

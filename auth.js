@@ -3,7 +3,7 @@ var Q = require('q');
 var users = require('./users');
 
 function is_logged_in(req) {
-  return req.session.user_id !== undefined;
+  return req.session.user !== undefined;
 }
 
 function check_auth(req, res, next) {
