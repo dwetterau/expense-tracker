@@ -12,10 +12,10 @@ var ExpenseStatus = expenses.ExpenseStatus;
 // TODO: refactor all of this stuff into a common test file
 Q.longStackSupport = true;
 
-var user1_id = uuid.v4();
-var user2_id = uuid.v4();
-var expense1_id = uuid.v4();
-var expense2_id = uuid.v4();
+// var user1_id = uuid.v4();
+// var user2_id = uuid.v4();
+// var expense1_id = uuid.v4();
+// var expense2_id = uuid.v4();
 
 var user1 = new User({
   email: 'a@a.com',
@@ -28,6 +28,37 @@ var user2 = new User({
   password: 'password',
   name: 'testMan2',
 });
+
+// Owned by 1, participation with 2 where 2 is WAITING
+var expense1 = new Expense({
+  value: 1,
+  title: 'Test title1',
+  description: 'test description1'
+});
+
+// This will connect user2 to expense1
+var expensestatus1 = new ExpenseStatus({
+  status: expenses.expense_states.WAITING
+});
+
+// Owned by 1
+var expense2 = new Expense({
+  value: 1,
+  title: 'Test title2',
+  description: 'test description2'
+});
+
+// Owned by 1, participation with 2 where 2 is PAID
+var expense3 = new Expense({
+  value: 1,
+  title: 'Test title3',
+  description: 'test description3'
+});
+
+var expensestatus3 = new ExpenseStatus({
+  status: expenses.expense_states.PAID
+});
+
 
 /*var expense1 = {
   expense_id: expense1_id,
@@ -62,6 +93,17 @@ describe('expenses', function() {
            schema.create_expense_status()])
       .then(function() {
         return Q.all([user1.save(), user2.save()]);
+      }).then(function() {
+        expense1.set('owner_id', user1.get('id'));
+        expense2.set('owner_id', user1.get('id'));
+        expense3.set('owner_id', user1.get('id'));
+        expensestatus1.set('user_id', user2.get('id'));
+        expensestatus3.set('user_id', user2.get('id'));
+        return Q.all([expense1.save(), expense2.save(), expense3.save()]);
+      }).then(function() {
+        expensestatus1.set('expense_id', expense1.get('id'));
+        expensestatus3.set('expense_id', expense3.get('id'));
+        return Q.all([expensestatus1.save(), expensestatus3.save()]);
       }).then(function() { done(); },
               function(err) { done(err); });
   });
@@ -103,6 +145,75 @@ describe('expenses', function() {
         assert.equal(p.length, 1);
         var status = p.at(0).pivot.get('status');
         assert.equal(status, expenses.expense_states.WAITING);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+  });
+
+  describe('retrieving expenses', function() {
+    it('should get the expense with users correctly', function(done) {
+      var e = new Expense({ 'id': expense1.get('id')});
+      e.getWithAllParticipants().then(function() {
+        var owner = e.related('owner');
+        assert.equal(owner.get('name'), 'testMan1');
+        var participant = e.related('participants').at(0);
+        assert.equal(participant.get('name'), 'testMan2');
+        assert.equal(participant.status(), expenses.expense_states.WAITING);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should get the owned expenses for a user correctly', function(done) {
+      user1.related('owned_expenses').fetch().then(function() {
+        var owned_expenses = user1.related('owned_expenses');
+        var e1 = owned_expenses.get(expense1.get('id'));
+        var e2 = owned_expenses.get(expense2.get('id'));
+        assert(e1 && e2);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should get the participated expenses for a user correctly', function(done) {
+      var pe = user2.related('participant_expenses');
+      pe.fetch().then(function() {
+        var e1 = pe.get(expense1.get('id'));
+        assert(e1);
+        assert.equal(e1.pivot.get('status'), expenses.expense_states.WAITING);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should get the paid expenses for a user correctly', function(done) {
+      var pe = user2.paid_expenses();
+      pe.fetch().then(function() {
+        var e3 = pe.get(expense3.get('id'));
+        assert(e3);
+        // This should be undefined, as this should only get paid expenses
+        var e1 = pe.get(expense1.get('id'));
+        assert(e1 === undefined);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should get the unpaid expenses for a user correctly', function(done) {
+      var ue = user2.unpaid_expenses();
+      ue.fetch().then(function() {
+        var e1 = ue.get(expense1.get('id'));
+        assert(e1);
+        // This should be undefined, as this should only get paid expenses
+        var e3 = ue.get(expense3.get('id'));
+        assert(e3 === undefined);
         done();
       }).catch(function(err) {
         done(err);

@@ -33,7 +33,12 @@ var Expense = db.bookshelf.Model.extend({
     return this.belongsToMany(User, 'expense_status')
       .through(ExpenseStatus)
       .withPivot('status');
+  },
+
+  getWithAllParticipants: function() {
+    return this.fetch({withRelated: ['owner', 'participants']});
   }
+
 });
 
 exports.Expense = Expense;
