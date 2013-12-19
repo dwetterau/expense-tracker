@@ -1,5 +1,6 @@
 var db = require('./db');
 var auth = require('./auth');
+var knex = require('knex');
 
 var User = db.bookshelf.Model.extend({
   tableName: 'users',
@@ -70,19 +71,30 @@ var User = db.bookshelf.Model.extend({
       });
   },
 
-  // TODO: Finish this
-  finished_expenses: function() {
-    // Expenses where the user is the owner and all have paid
+  // Used in finished_expenses and unfinished expenses
+  _with_waiting: function() {
     var expenses = require('./expenses');
-    return this.owned_expenses()
-      .query(function(qb) {
-        // TODO: Do a nested select to find if finished or not
-        //qb.where(
-      });
+    this.select('id')
+      .from('expense_status')
+      .whereRaw('expenses.id = expense_status.expense_id')
+      .andWhere('expense_status.status', '=', expenses.expense_states.WAITING);
   },
 
+
+  // Expenses where the user is the owner and all have paid
+  finished_expenses: function() {
+    return this.owned_expenses()
+      .query(function(qb) {
+        qb.whereNotExists(this._with_waiting);
+      }.bind(this));
+  },
+
+  // Expenses where the user is the owner and all have not paid
   unfinished_expenses: function() {
-    // Expenses where the user is the owner and all have not paid
+    return this.owned_expenses()
+      .query(function(qb) {
+        qb.whereExists(this._with_waiting);
+      }.bind(this));
   }
 
 }, {

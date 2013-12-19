@@ -4,7 +4,8 @@ var settings = require('./settings');
 
 var bookshelf = bookshelf.initialize({
   client: settings.database_client,
-  connection: settings.database_connection
+  connection: settings.database_connection,
+  debug: settings.debug
 });
 
 module.exports = {

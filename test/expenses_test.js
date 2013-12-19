@@ -88,6 +88,7 @@ expense2.participants.value[user2_id] = expenses.states.WAITING;
 
 describe('expenses', function() {
   before(function(done) {
+    this.timeout(1000000);
     Q.all([schema.create_users(),
            schema.create_expenses(),
            schema.create_expense_status()])
@@ -213,6 +214,34 @@ describe('expenses', function() {
         assert(e1);
         // This should be undefined, as this should only get paid expenses
         var e3 = ue.get(expense3.get('id'));
+        assert(e3 === undefined);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should get the finished expenses for a user correctly', function(done) {
+      var fe = user1.finished_expenses();
+      fe.fetch().then(function() {
+        // This should include expense3 but not expense1
+        var e1 = fe.get(expense1.get('id'));
+        var e3 = fe.get(expense3.get('id'));
+        assert(e3);
+        assert(e1 === undefined);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should get the unfinished expenses for a user correctly', function(done) {
+      var ue = user1.unfinished_expenses();
+      ue.fetch().then(function() {
+        // This should include expense1, but not expense3
+        var e1 = ue.get(expense1.get('id'));
+        var e3 = ue.get(expense3.get('id'));
+        assert(e1);
         assert(e3 === undefined);
         done();
       }).catch(function(err) {

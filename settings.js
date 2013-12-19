@@ -15,3 +15,5 @@ if (process.env.NODE_ENV == 'testing') {
     native: true,
   };
 }
+// Set to true in order to see all queries issued
+exports.debug = false;
