@@ -25,9 +25,34 @@ function send_error(res, info, exception) {
 
 exports.install_routes = function(app) {
   // Main route
-  /*app.get('/', auth.check_auth, function(req, res) {
-    var user_id = req.session.user_id;
-    expenses.get_user_expenses(user_id).then(function(expense_templates) {
+  app.get('/', auth.check_auth, function(req, res) {
+    var user = new User(req.session.user);
+    var unfinished = user.unfinished_expenses();
+    var unpaid = user.unpaid_expenses();
+
+    Q.all([unfinished.fetch({withRelated: ['owner', 'participants']}),
+           unpaid.fetch({withRelated: ['owner', 'participants']})])
+      .then(function() {
+        var template_unfinished = unfinished.map(function(x) {
+          return expenses.templateify(x, user.get('id'));
+        });
+        var template_unpaid = unpaid.map(function(x) {
+          return expenses.templateify(x, user.get('id'));
+        });
+
+        res.render("index", {
+          title: "Expense Tracker",
+          email: user.get('email'),
+          name: user.get('name'),
+          unfinished_expenses: template_unfinished,
+          unpaid_expenses: template_unpaid,
+          logged_in: true
+        });
+
+      }).catch(function(err) {
+        send_error(res, 'An error occurred while retrieving the expenses: ', err);
+      });
+    /*expenses.get_user_expenses(user_id).then(function(expense_templates) {
       res.render("index", {
         title: "Expense Tracker",
         email: req.session.email,
@@ -39,8 +64,9 @@ exports.install_routes = function(app) {
       });
     }, function(err) {
       send_error(res, 'An error occurred while retrieving the expenses: ', err);
-    });
+    });*/
   });
+ /*
 
   // User routes
   app.get('/user/:id', auth.check_auth, function(req, res) {

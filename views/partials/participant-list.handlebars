@@ -4,7 +4,7 @@
       <li class="participant-unpaid">
         {{ this.name }} - unpaid
         {{# if ../is_owner }}
-          <a href="{{ pay_link ../../expense_id this.user_id }}"> mark paid </a>
+          <a href="{{ pay_link ../../id this.id }}"> mark paid </a>
         {{/if}}
        </li>
      {{/each}}

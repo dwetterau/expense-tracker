@@ -45,6 +45,31 @@ exports.Expense = Expense;
 exports.ExpenseStatus = ExpenseStatus;
 exports.expense_states = expense_states;
 
+function filter_participants(participants, status) {
+  return participants.filter(function(participant) {
+    return participant.pivot.get('status') == status;
+  }).map(function(participant) {
+    return participant.toJSON();
+  });
+}
+
+exports.templateify = function(expense, user_id) {
+  var data = expense.toJSON();
+  data.waiting = filter_participants(expense.related('participants'),
+                                     expense_states.WAITING);
+  data.paid = filter_participants(expense.related('participants'),
+                                  expense_states.PAID);
+
+  data.owner = expense.related('owner').toJSON();
+
+  data.is_owner = user_id == data.owner.id;
+
+  return data;
+
+};
+
+
+
 /*var db = require('./db')();
 var Q = require('q');
 var users = require('./users');
