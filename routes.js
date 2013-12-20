@@ -273,20 +273,23 @@ exports.install_routes = function(app) {
       });
   });*/
 
-/*
-
   app.get('/expense/:expense_id', auth.check_auth, function(req, res) {
     var expense_id = req.params.expense_id;
-    expenses.get_expense(expense_id, req.session.user_id).then(function(expense) {
+    var user = new User(req.session.user);
+    Expense.getWithPermissionCheck(expense_id, user.get('id')).then(function(expense) {
       if (!expense) {
         send_error(res, 'Expense not found ', new Error('Expense not found'));
         return;
       }
-      res.render('expense', {title: 'Expense detail', expense: expense, logged_in: true});
+      res.render('expense', {title: 'Expense detail',
+                             expense: expenses.templateify(expense, user.get('id')),
+                             logged_in: true});
     }, function(err) {
       send_error(res, 'An error occurred retrieving the expense: ', err);
     });
   });
+
+  /*
 
   // TODO: this should be a post
   app.get('/expense/:expense_id/pay/:user_id', function(req, res) {

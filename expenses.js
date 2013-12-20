@@ -39,7 +39,21 @@ var Expense = db.bookshelf.Model.extend({
     return this.fetch({withRelated: ['owner', 'participants']});
   }
 
-});
+}, {
+  getWithPermissionCheck: function(expense_id, user_id) {
+    var e = new Expense({id: expense_id});
+    return e.getWithAllParticipants().then(function() {
+      if (user_id == e.related('owner').get('id')) {
+        return e;
+      } else if (e.related('participants').get(user_id)) {
+        return e;
+      } else {
+        throw new Error('Insufficient permissions');
+      }
+    });
+  }
+}
+);
 
 exports.Expense = Expense;
 exports.ExpenseStatus = ExpenseStatus;

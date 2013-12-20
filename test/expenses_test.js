@@ -251,6 +251,38 @@ describe('expenses', function() {
 
   });
 
+  describe('Get with permission check', function() {
+    it('should allow owners to view expense', function(done) {
+      Expense.getWithPermissionCheck(expense1.get('id'), user1.get('id'))
+      .then(function(result) {
+        assert(result);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should allow participants to view expense', function(done) {
+      Expense.getWithPermissionCheck(expense1.get('id'), user2.get('id'))
+      .then(function(result) {
+        assert(result);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should not allow unrelated participants to view expense', function(done) {
+      Expense.getWithPermissionCheck(expense1.get('id'), 12345)
+      .then(function(result) {
+        done(new Error('Returned ' + result));
+      }, function(err) {
+        assert.equal(err.message, 'Insufficient permissions');
+        done();
+      });
+    });
+  });
+
 });
 
 
