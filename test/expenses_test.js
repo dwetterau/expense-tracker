@@ -283,6 +283,64 @@ describe('expenses', function() {
     });
   });
 
+  describe('Pay expense', function() {
+    var expense;
+    // Set up expense with user1 as owner and user2 as participant
+    beforeEach(function(done) {
+      expense = new Expense({ title: 'pay test',
+                              value: 1,
+                              description: 'pay test desc',
+                              owner_id: user1.get('id')
+                            });
+      expense.save().then(function() {
+        var status = new ExpenseStatus({
+          user_id: user2.get('id'),
+          expense_id: expense.get('id'),
+          status: expenses.expense_states.WAITING
+        });
+        return status.save();
+      }).then(function() {
+        return expense.getWithAllParticipants();
+      }).then(function() {
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should allow owner to mark user paid', function(done) {
+      expense.mark_paid(user1.get('id'), user2.get('id')).then(function() {
+        var participant = expense.related('participants').at(0);
+        assert.equal(participant.pivot.get('status'), expenses.expense_states.PAID);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should not allow owner to mark random paid', function(done) {
+      expense.mark_paid(user1.get('id'), 12345).then(function() {
+        done('Marked random as paid??!?');
+      }).catch(function(err) {
+        assert.equal(err.message, 'User is not included on given expense');
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should not allow user to mark self paid', function(done) {
+      expense.mark_paid(user2.get('id'), user2.get('id')).then(function() {
+        done('Marked self as paid');
+      }).catch(function(err) {
+        assert.equal(err.message, 'User is not owner of this expense');
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+  });
+
 });
 
 

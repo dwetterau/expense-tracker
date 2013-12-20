@@ -289,22 +289,22 @@ exports.install_routes = function(app) {
     });
   });
 
-  /*
-
   // TODO: this should be a post
   app.get('/expense/:expense_id/pay/:user_id', function(req, res) {
     // Mark the expense as paid for user user_id
-    var expense_id = req.params.expense_id;
+    var expense = new Expense({'id': req.params.expense_id});
     var user_id = req.params.user_id;
-    var owner_id = req.session.user_id;
-    expenses.mark_paid(expense_id,
-                       owner_id,
-                       user_id)
-      .then(function() {
-        res.redirect('/expense/' + expense_id);
-      });
+    var owner_id = req.session.user.id;
+    expense.getWithAllParticipants().then(function() {
+      expense.mark_paid(owner_id,
+                        user_id)
+        .then(function() {
+          res.redirect('/expense/' + expense.get('id'));
+        });
+    });
   });
 
+  /*
   // TODO: Make this a post also
   app.get('/expense/:expense_id/delete', auth.check_auth, function(req, res) {
     var expense_id = req.params.expense_id;

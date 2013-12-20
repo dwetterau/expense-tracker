@@ -1,5 +1,6 @@
 var db = require('./db');
 var User = require('./users').User;
+var Q = require('q');
 
 // constants for expense state
 var expense_states = {
@@ -37,6 +38,22 @@ var Expense = db.bookshelf.Model.extend({
 
   getWithAllParticipants: function() {
     return this.fetch({withRelated: ['owner', 'participants']});
+  },
+
+  mark_paid: function(owner_id, user_id) {
+    var deferred = Q.defer();
+    if(this.get('owner_id') != owner_id) {
+      deferred.reject(new Error('User is not owner of this expense'));
+      return deferred.promise;
+    }
+    var user = this.related('participants').get(user_id);
+    if(user === undefined) {
+      deferred.reject(new Error('User is not included on given expense'));
+      return deferred.promise;
+    }
+    var status = user.pivot;
+    status.set('status', expense_states.PAID);
+    return status.save();
   }
 
 }, {
