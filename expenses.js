@@ -95,6 +95,10 @@ exports.templateify = function(expense, user_id) {
 
   data.is_owner = user_id == data.owner.id;
 
+  if(expense.get('image_id')) {
+    data.receipt_image = expense.get('image_id');
+  }
+
   return data;
 
 };

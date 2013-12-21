@@ -6,9 +6,9 @@
   <p> value: {{format_money this.value }} </p>
   {{> participant-list }}
 {{/with}}
-{{# if expense.receipt_image }}
+{{# if expense.image_id }}
   {{! TODO: factor out this path somehow }}
-  <img src="/thumb/{{ expense.receipt_image }}/640x480" />
+  <img src="/thumb/{{ expense.image_id }}/640x480" />
 {{/if}}
 {{# if expense.is_owner }}
   <a href="/expense/{{ expense.id }}/delete">Delete Expense</a>

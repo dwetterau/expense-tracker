@@ -5,7 +5,9 @@ var expenses = require('./expenses');
 var Expense = expenses.Expense;
 var ExpenseStatus = expenses.ExpenseStatus;
 
-//var images = require('./images');
+var images = require('./images');
+var Image = images.Image;
+
 var users = require('./users');
 var User = users.User;
 //var uuid = require('node-uuid');
@@ -141,29 +143,31 @@ exports.install_routes = function(app) {
     res.render('create_account');
   });
 
-  /*
   // Image routes
 
-  app.get('/images/:uuid', function(req, res) {
-    var image_id = req.params.uuid;
-    images.images.get(image_id).then(function(image) {
+  app.get('/images/:id', function(req, res) {
+    var image_id = req.params.id;
+    var image = new Image({id: image_id});
+    image.fetch().then(function(image) {
       res.set('Content-Type', 'image/jpeg');
-      res.send(image.image_data);
+      res.send(image.get('data'));
     }, function(err) {
       send_error(res, 'An error occurred getting the image: ', err);
     });
   });
 
-  app.get('/thumb/:uuid/:size', function(req, res) {
-    var image_id = req.params.uuid;
+  app.get('/thumb/:id/:size', function(req, res) {
+    var image_id = req.params.id;
     var size_string = req.params.size;
     images.get_thumbnail(image_id, size_string).then(function(thumbnail) {
       res.set('Content-Type', 'image/jpeg');
-      res.send(thumbnail.image_data);
+      res.send(thumbnail.get('data'));
     }, function(err) {
       send_error(res, 'An error occurred getting the image: ', err);
     });
   });
+
+/*
 
   app.post('/upload_image', auth.check_auth, function(req, res) {
     // Not happy about reading it from the disk
@@ -212,7 +216,24 @@ exports.install_routes = function(app) {
       value: value,
     });
 
-    expense.save().then(function() {
+    var image_store_promise = Q.nfcall(fs.stat, image_path)
+      .then(function(file_stats) {
+        if (file_stats.size === 0) {
+          return undefined;
+        } else {
+          return images.store_image(image_path);
+        }
+      })
+    .fail(function(err) {
+      console.log('ERROR ' + err);
+      // If this failed, do not use an image
+      return undefined;
+    });
+
+    image_store_promise.then(function(image) {
+      image && expense.set('image_id', image.get('id'));
+      return expense.save();
+    }).then(function() {
       var status_promises = fetch_user_promises.map(function(fetch_user_promise, i) {
         fetch_user_promise.then(function() {
           var participant = participants[i];

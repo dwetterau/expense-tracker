@@ -39,6 +39,19 @@ exports.create_expense_status = function() {
   });
 };
 
+exports.create_images = function() {
+  return knex.schema.createTable('images', function(table) {
+    table.increments('id');
+    table.binary('data').notNullable();
+    table.integer('thumbnail_of');
+    table.string('size');
+    table.timestamps();
+  }).then(function() {
+    // Can't create this index using knex directly
+    return knex.raw('CREATE UNIQUE INDEX UIX_thumbnails ' +
+                    'on images (thumbnail_of, size)');
+  });
+};
 
 
 /*
