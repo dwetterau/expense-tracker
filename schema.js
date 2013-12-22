@@ -53,6 +53,13 @@ exports.create_images = function() {
   });
 };
 
+exports.create_sessions = function() {
+  return knex.schema.createTable('sessions', function(table) {
+    table.string('sid').primary();
+    table.text('sess');
+  });
+};
+
 
 /*
 var Q = require('q');
