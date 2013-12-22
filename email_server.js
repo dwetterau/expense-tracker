@@ -16,14 +16,6 @@ var smtpTransport = nodemailer.createTransport("SMTP", {
   }
 });
 
-var mailOptions= {
-  from: "Test notification blahblah",
-  to: "conderoga@gmail.com",
-  subject: "you have been notified",
-  text: "The message body in plaintext..."
-  //html: "The message body in html"
-};
-
 function getSubjectAndBody(email) {
   // find the right map based off the type
   var template;
