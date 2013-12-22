@@ -10,7 +10,6 @@ var Image = images.Image;
 
 var users = require('./users');
 var User = users.User;
-//var uuid = require('node-uuid');
 
 // Error sending
 function send_error(res, info, exception) {
@@ -54,40 +53,8 @@ exports.install_routes = function(app) {
       }).catch(function(err) {
         send_error(res, 'An error occurred while retrieving the expenses: ', err);
       });
-    /*expenses.get_user_expenses(user_id).then(function(expense_templates) {
-      res.render("index", {
-        title: "Expense Tracker",
-        email: req.session.email,
-        name: req.session.name,
-        owned_unfinished_expenses: expense_templates.owned_unfinished,
-        unfinished_expenses: expense_templates.unfinished,
-        other_expenses: expense_templates.other,
-        logged_in: true
-      });
-    }, function(err) {
-      send_error(res, 'An error occurred while retrieving the expenses: ', err);
-    });*/
-  });
- /*
-
-  // User routes
-  app.get('/user/:id', auth.check_auth, function(req, res) {
-    var user_id = req.params.id;
-    if (user_id == 'me') {
-      user_id = req.session.user_id;
-      res.redirect('/user/' + user_id);
-      return;
-    }
-    users.get_user(user_id).then(function(user) {
-      res.render('user', { logged_in: true,
-                           title: user.get('email'),
-                           email: user.get('email')});
-    }, function(err) {
-      send_error(res, 'An error occurred while retrieving the user: ', err);
-    });
   });
 
-  */
   app.post('/login', function(req, res) {
     var email = req.body.email;
     var password = req.body.password;
@@ -167,24 +134,6 @@ exports.install_routes = function(app) {
     });
   });
 
-/*
-
-  app.post('/upload_image', auth.check_auth, function(req, res) {
-    // Not happy about reading it from the disk
-    var path = req.files.image.path;
-    return images.store_image(path)
-    .then(function(image_id) {
-      res.redirect('/images/' + image_id);
-    }, function(err) {
-      send_error(res, 'An error occurred uploading the image: ', err);
-    });
-  });
-
-  app.get('/upload_image', auth.check_auth, function(req, res) {
-    res.render('upload_image');
-  });
-  */
-
   // Expenses routes
   app.get('/create_expense', auth.check_auth, function(req, res) {
     res.render('create_expense', {title: 'Create new expense', logged_in: true});
@@ -254,45 +203,6 @@ exports.install_routes = function(app) {
     });
 
   });
-
-
-    /*var image_store_promise = Q.nfcall(fs.stat, image_path)
-      .then(function(file_stats) {
-        if (file_stats.size === 0) {
-          return undefined;
-        } else {
-          return images.store_image(image_path);
-        }
-      })
-    .fail(function() {
-      // If this failed, do not use an image
-      return undefined;
-    });
-    var promises = get_user_promises.concat([image_store_promise]);
-
-    Q.all(promises).then(function(values) {
-      var image_id = values[values.length - 1];
-      var owner = values[0];
-      var participants = values.slice(0, values.length - 1);
-      // Every user aside from the owner is waiting
-      var waiting = values.slice(1, values.length - 1);
-      return expenses.expenses.create(
-        { expense_id: expense_id,
-          value: value,
-          participants: participants,
-          title: title,
-          description: description,
-          receipt_image: image_id,
-          owner: owner,
-          waiting: waiting,
-          paid: []
-        });
-    }).then(function() {
-        res.redirect('/expense/' + expense_id);
-      }, function(err) {
-        send_error(res, 'An error occurred making the expense: ', err);
-      });
-  });*/
 
   app.get('/expense/:expense_id', auth.check_auth, function(req, res) {
     var expense_id = req.params.expense_id;
