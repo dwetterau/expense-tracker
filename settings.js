@@ -1,8 +1,15 @@
+
 if (process.env.NODE_ENV == 'testing') {
   exports.database_client = 'sqlite';
   exports.database_connection = {
     filename: ':memory:'
   };
+
+  // Run this function after databaes init
+  exports.after_init = function() {
+      var schema = require('./schema');
+      return schema.add_all();
+    };
 } else {
   exports.database_client = 'pg';
   exports.database_connection = {

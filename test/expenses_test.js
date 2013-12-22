@@ -18,13 +18,13 @@ Q.longStackSupport = true;
 // var expense2_id = uuid.v4();
 
 var user1 = new User({
-  email: 'a@a.com',
+  email: 'user1@user1.com',
   password: 'password',
   name: 'testMan1',
 });
 
 var user2 = new User({
-  email: 'b@b.com',
+  email: 'user2@user2.com',
   password: 'password',
   name: 'testMan2',
 });
@@ -89,12 +89,8 @@ expense2.participants.value[user2_id] = expenses.states.WAITING;
 describe('expenses', function() {
   before(function(done) {
     this.timeout(1000000);
-    Q.all([schema.create_users(),
-           schema.create_expenses(),
-           schema.create_expense_status()])
+    Q.all([user1.save(), user2.save()])
       .then(function() {
-        return Q.all([user1.save(), user2.save()]);
-      }).then(function() {
         expense1.set('owner_id', user1.get('id'));
         expense2.set('owner_id', user1.get('id'));
         expense3.set('owner_id', user1.get('id'));
@@ -120,7 +116,7 @@ describe('expenses', function() {
         return e.related('owner').fetch();
       }).then(function() {
         var owner = e.related('owner');
-        assert.equal(owner.get('email'), 'a@a.com');
+        assert.equal(owner.get('email'), 'user1@user1.com');
         done();
       }).catch(function(err) {
         done(err);

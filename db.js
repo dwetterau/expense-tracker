@@ -11,6 +11,8 @@ var bookshelf = bookshelf.initialize({
 module.exports = {
   bookshelf: bookshelf,
 };
+
+settings.after_init && settings.after_init();
 /*var Client = require('node-cassandra-cql').Client;
 var default_keyspace = 'expense_tracker';
 var testing_keyspace = 'expense_tracker_test';

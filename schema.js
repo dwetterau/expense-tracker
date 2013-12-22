@@ -1,5 +1,6 @@
 var db = require('./db');
 var knex = db.bookshelf.knex;
+var Q = require('q');
 
 // TODO: add foreign key constraints
 
@@ -59,6 +60,17 @@ exports.create_sessions = function() {
     table.text('sess');
   });
 };
+
+exports.add_all = function() {
+  return Q.all([
+    exports.create_users(),
+    exports.create_expenses(),
+    exports.create_expense_status(),
+    exports.create_images(),
+    exports.create_sessions()
+  ]);
+};
+
 
 
 /*
