@@ -23,6 +23,7 @@ exports.create_expenses = function() {
     table.text('description');
     table.integer('value').notNullable();
     table.integer('image_id');
+    table.boolean('deleted');
     table.timestamps();
   });
 };

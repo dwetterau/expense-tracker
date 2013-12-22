@@ -1,4 +1,5 @@
 var db = require('./db');
+var deletable = require('./deletable');
 var User = require('./users').User;
 var Q = require('q');
 
@@ -21,7 +22,7 @@ var ExpenseStatus = db.bookshelf.Model.extend({
   }
 });
 
-var Expense = db.bookshelf.Model.extend({
+var Expense = deletable.Deletable.extend({
   tableName: 'expenses',
 
   hasTimestamps: ['created_at', 'updated_at'],
@@ -60,7 +61,7 @@ var Expense = db.bookshelf.Model.extend({
   getWithPermissionCheck: function(expense_id, user_id) {
     var e = new Expense({id: expense_id});
     return e.getWithAllParticipants().then(function() {
-      if (user_id == e.related('owner').get('id')) {
+      if (user_id == e.get('owner_id')) {
         return e;
       } else if (e.related('participants').get(user_id)) {
         return e;

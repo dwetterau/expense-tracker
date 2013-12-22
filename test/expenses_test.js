@@ -305,4 +305,64 @@ describe('expenses', function() {
     });
   });
 
+  describe('Expense deletion', function() {
+    var e;
+    beforeEach(function(done) {
+      e = new Expense({owner_id: user1.id,
+                       title: 'expense title',
+                       value: 1234});
+
+      e.save().then(function() {
+        var es = new ExpenseStatus({ user_id: user2.id,
+                                     expense_id: e.id,
+                                     status: expenses.expense_states.WAITING
+                                   });
+        return es.save();
+      }).then(function() {
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should not return a deleted expense', function(done) {
+      var v;
+      e.destroy().then(function() {
+        v = new Expense({id: e.id});
+        return e.fetch();
+      }).then(function() {
+        assert.equal(v.get('title'), undefined);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should not return an owned deleted expense', function(done) {
+      var owned;
+      e.destroy().then(function() {
+        owned = user1.owned_expenses();
+        return owned.fetch();
+      }).then(function() {
+        assert.equal(owned.get(e.id), undefined);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should not return a participant deleted expense', function(done) {
+      var part;
+      e.destroy().then(function() {
+        part = user2.participant_expenses();
+        return part.fetch();
+      }).then(function() {
+        assert.equal(part.get(e.id), undefined);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+  });
+
 });

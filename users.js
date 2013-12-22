@@ -40,7 +40,10 @@ var User = db.bookshelf.Model.extend({
     // If I import this at the begining of the file, it creates a circular import, which
     // node seems to resolve by not importing User when expense.js is imported.
     var Expense = require('./expenses').Expense;
-    return this.hasMany(Expense, 'owner_id');
+    return this.hasMany(Expense, 'owner_id')
+      .query(function(qb) {
+        qb.whereNull('deleted');
+      });
   },
 
   participant_expenses: function() {
@@ -50,7 +53,9 @@ var User = db.bookshelf.Model.extend({
     var ExpenseStatus = expenses.ExpenseStatus;
     return this.belongsToMany(Expense)
       .through(ExpenseStatus)
-      .withPivot('status');
+      .withPivot('status').query(function(qb) {
+        qb.whereNull('deleted');
+      });
   },
 
   paid_expenses: function() {

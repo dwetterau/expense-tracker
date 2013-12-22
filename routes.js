@@ -235,18 +235,20 @@ exports.install_routes = function(app) {
     });
   });
 
-  /*
   // TODO: Make this a post also
   app.get('/expense/:expense_id/delete', auth.check_auth, function(req, res) {
-    var expense_id = req.params.expense_id;
-    var user_id = req.session.user_id;
-    expenses.lazy_delete_expense(expense_id, user_id).then(function() {
+    var expense = new Expense({id: req.params.expense_id});
+    var user_id = req.session.user.id;
+    expense.fetch().then(function() {
+      if (expense.get('owner_id') == user_id) {
+        return expense.destroy();
+      }
+    }).then(function() {
       res.redirect('/');
     }, function(err) {
-      send_error(res, 'An error occurred while trying to lazy delete the expense: ', err);
+      send_error(res, 'An error occurred while trying to delete the expense: ', err);
     });
   });
-  */
 
   var port = process.env.PORT || 3000;
   app.listen(port, function() {
