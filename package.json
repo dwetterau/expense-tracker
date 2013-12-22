@@ -12,7 +12,8 @@
     "knex": "*",
     "bookshelf": "*",
     "pg": "*",
-    "sqlite3": "*"
+    "sqlite3": "*",
+    "connect": "*"
   },
   "scripts": {"test": "mocha test/*_test.js --reporter spec"}
 }
