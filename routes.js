@@ -3,10 +3,15 @@ var Q = require('q');
 var auth = require('./auth');
 var emails= require('./emails');
 var expenses = require('./expenses');
+var Expense = expenses.Expense;
+var ExpenseStatus = expenses.ExpenseStatus;
+
 var images = require('./images');
+var Image = images.Image;
+
 var users = require('./users');
 var config = require('./config');
-var uuid = require('node-uuid');
+var User = users.User;
 
 // Error sending
 function send_error(res, info, exception) {
@@ -24,44 +29,39 @@ function send_error(res, info, exception) {
 exports.install_routes = function(app) {
   // Main route
   app.get('/', auth.check_auth, function(req, res) {
-    var user_id = req.session.user_id;
-    expenses.get_user_expenses(user_id).then(function(expense_templates) {
-      res.render("index", {
-        title: "Expense Tracker",
-        email: req.session.email,
-        name: req.session.name,
-        owned_unfinished_expenses: expense_templates.owned_unfinished,
-        unfinished_expenses: expense_templates.unfinished,
-        other_expenses: expense_templates.other,
-        logged_in: true
-      });
-    }, function(err) {
-      send_error(res, 'An error occurred while retrieving the expenses: ', err);
-    });
-  });
+    var user = new User(req.session.user);
+    var unfinished = user.unfinished_expenses();
+    var unpaid = user.unpaid_expenses();
 
-  // User routes
-  app.get('/user/:id', auth.check_auth, function(req, res) {
-    var user_id = req.params.id;
-    if (user_id == 'me') {
-      user_id = req.session.user_id;
-      res.redirect('/user/' + user_id);
-      return;
-    }
-    users.get_user(user_id).then(function(user) {
-      res.render('user', { logged_in: true,
-                           title: user.get('email'),
-                           email: user.get('email')});
-    }, function(err) {
-      send_error(res, 'An error occurred while retrieving the user: ', err);
-    });
+    Q.all([unfinished.fetch({withRelated: ['owner', 'participants']}),
+           unpaid.fetch({withRelated: ['owner', 'participants']})])
+      .then(function() {
+        var template_unfinished = unfinished.map(function(x) {
+          return expenses.templateify(x, user.get('id'));
+        });
+        var template_unpaid = unpaid.map(function(x) {
+          return expenses.templateify(x, user.get('id'));
+        });
+
+        res.render("index", {
+          title: "Expense Tracker",
+          email: user.get('email'),
+          name: user.get('name'),
+          unfinished_expenses: template_unfinished,
+          unpaid_expenses: template_unpaid,
+          logged_in: true
+        });
+
+      }).catch(function(err) {
+        send_error(res, 'An error occurred while retrieving the expenses: ', err);
+      });
   });
 
   app.post('/login', function(req, res) {
     var email = req.body.email;
     var password = req.body.password;
-    users.login({email: email, password: password}).then(function(user) {
-      users.create_session(req, user);
+    users.User.login(email, password).then(function(user) {
+      req.session.user = user;
       res.redirect('/');
     }, function(err) {
       send_error(res, 'Login error: ', err);
@@ -85,25 +85,24 @@ exports.install_routes = function(app) {
   app.post('/create_account', function(req, res) {
     var secret = req.body.secret;
     if (secret != '0xDEADBEEFCAFE') {
+      console.log('oh dear!');
       return;
     }
     var email = req.body.email;
     var password = req.body.password;
     var name = req.body.name;
-    var new_user = {
+    var new_user = new users.User({
       email: email,
       password: password,
       name: name
-    };
+    });
     Q.ninvoke(req.session, 'regenerate').then(function() {
-      return users.create_user(new_user);
+      return new_user.salt_and_hash();
     }).then(function() {
-      users.login({email: email, password: password}).then(function(user) {
-        users.create_session(req, user);
-        res.redirect('/');
-      }, function(err) {
-        send_error(res, 'An error occurred while auto logging in new account: ', err);
-      });
+      return new_user.save();
+    }).then(function() {
+      req.session.user = new_user;
+      res.redirect('/');
     }, function(err) {
       send_error(res, 'An error occurred while creating the account: ', err);
     });
@@ -115,40 +114,26 @@ exports.install_routes = function(app) {
 
   // Image routes
 
-  app.get('/images/:uuid', function(req, res) {
-    var image_id = req.params.uuid;
-    images.images.get(image_id).then(function(image) {
+  app.get('/images/:id', function(req, res) {
+    var image_id = req.params.id;
+    var image = new Image({id: image_id});
+    image.fetch().then(function(image) {
       res.set('Content-Type', 'image/jpeg');
-      res.send(image.image_data);
+      res.send(image.get('data'));
     }, function(err) {
       send_error(res, 'An error occurred getting the image: ', err);
     });
   });
 
-  app.get('/thumb/:uuid/:size', function(req, res) {
-    var image_id = req.params.uuid;
+  app.get('/thumb/:id/:size', function(req, res) {
+    var image_id = req.params.id;
     var size_string = req.params.size;
     images.get_thumbnail(image_id, size_string).then(function(thumbnail) {
       res.set('Content-Type', 'image/jpeg');
-      res.send(thumbnail.image_data);
+      res.send(thumbnail.get('data'));
     }, function(err) {
       send_error(res, 'An error occurred getting the image: ', err);
     });
-  });
-
-  app.post('/upload_image', auth.check_auth, function(req, res) {
-    // Not happy about reading it from the disk
-    var path = req.files.image.path;
-    return images.store_image(path)
-    .then(function(image_id) {
-      res.redirect('/images/' + image_id);
-    }, function(err) {
-      send_error(res, 'An error occurred uploading the image: ', err);
-    });
-  });
-
-  app.get('/upload_image', auth.check_auth, function(req, res) {
-    res.render('upload_image');
   });
 
   // Expenses routes
@@ -160,64 +145,78 @@ exports.install_routes = function(app) {
     var title = req.body.title;
     var description = req.body.description || undefined;
     var value = parseInt(req.body.value, 10);
-    var participant_emails = [req.session.email];
+    var owner = req.session.user;
+    var participants = [];
     var image_path = req.files.image && req.files.image.path;
-    var expense_id = uuid.v1();
+
     if (req.body.participants) {
-      participant_emails = participant_emails.concat(req.body.participants.split(','));
+      var participant_emails = req.body.participants.split(',');
+      participants = participant_emails.map(function(email) {
+        return new User({email: email});
+      });
     }
-    var get_user_promises = participant_emails.map(function(participant_email) {
-      return users.users.get(participant_email);
+
+    var fetch_user_promises = participants.map(function(participant) {
+      return participant.fetch();
     });
-    var image_store_promise = images.store_image(image_path).fail(function() {
+
+    var expense = new Expense({
+      owner_id: owner.id,
+      title: title,
+      description: description,
+      value: value,
+    });
+
+    var image_store_promise = Q.nfcall(fs.stat, image_path)
+      .then(function(file_stats) {
+        if (file_stats.size === 0) {
+          return undefined;
+        } else {
+          return images.store_image(image_path);
+        }
+      })
+    .fail(function(err) {
+      console.log('ERROR ' + err);
       // If this failed, do not use an image
       return undefined;
     });
-    var promises = get_user_promises.concat([image_store_promise]);
-    Q.all(promises).then(function(values) {
-      var image_id = values[values.length - 1];
-      var owner = values[0];
-      var participants = values.slice(0, values.length - 1);
-      // Every user aside from the owner is waiting
-      var waiting = values.slice(1, values.length - 1);
-      return expenses.expenses.create(
-        { expense_id: expense_id,
-          value: value,
-          participants: participants,
-          title: title,
-          description: description,
-          receipt_image: image_id,
-          owner: owner,
-          waiting: waiting,
-          paid: []
+
+    image_store_promise.then(function(image) {
+      image && expense.set('image_id', image.get('id'));
+      return expense.save();
+    }).then(function() {
+      var status_promises = fetch_user_promises.map(function(fetch_user_promise, i) {
+        fetch_user_promise.then(function() {
+          var participant = participants[i];
+          var new_status = new ExpenseStatus({
+            user_id: participant.get('id'),
+            expense_id: expense.get('id'),
+            status: expenses.expense_states.WAITING
+          });
+          return new_status.save();
         });
-    }).then(function() {
-      var email = {
-        email_id : uuid.v4(),
-        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-        sender: req.session.email,
-        receiver: req.body.participants,
-        data: {
-          sender: req.session.email,
-          expense_link: config.values.hostname + '/expense/' + expense_id
-        }
-      };
-      return emails.create_email(email);
-    }).then(function() {
-        res.redirect('/expense/' + expense_id);
-      }, function(err) {
-        send_error(res, 'An error occurred making the expense: ', err);
       });
+
+      return Q.all(status_promises);
+    }).then(function() {
+      res.redirect('/expense/' + expense.get('id'));
+    }, function(err) {
+      send_error(res, 'An error occurred making the expense: ', err);
+    });
+
   });
 
   app.get('/expense/:expense_id', auth.check_auth, function(req, res) {
     var expense_id = req.params.expense_id;
-    expenses.get_expense(expense_id, req.session.user_id).then(function(expense) {
+    var user = new User(req.session.user);
+    Expense.getWithPermissionCheck(expense_id, user.get('id')).then(function(expense) {
       if (!expense) {
         send_error(res, 'Expense not found ', new Error('Expense not found'));
         return;
       }
-      res.render('expense', {title: 'Expense detail', expense: expense, logged_in: true});
+      res.render('expense', {title: 'Expense detail',
+                             expense: expenses.templateify(expense, user.get('id')),
+                             logged_in: true});
     }, function(err) {
       send_error(res, 'An error occurred retrieving the expense: ', err);
     });
@@ -226,25 +225,30 @@ exports.install_routes = function(app) {
   // TODO: this should be a post
   app.get('/expense/:expense_id/pay/:user_id', function(req, res) {
     // Mark the expense as paid for user user_id
-    var expense_id = req.params.expense_id;
+    var expense = new Expense({'id': req.params.expense_id});
     var user_id = req.params.user_id;
-    var owner_id = req.session.user_id;
-    expenses.mark_paid(expense_id,
-                       owner_id,
-                       user_id)
-      .then(function() {
-        res.redirect('/expense/' + expense_id);
-      });
+    var owner_id = req.session.user.id;
+    expense.getWithAllParticipants().then(function() {
+      expense.mark_paid(owner_id,
+                        user_id)
+        .then(function() {
+          res.redirect('/expense/' + expense.get('id'));
+        });
+    });
   });
 
   // TODO: Make this a post also
   app.get('/expense/:expense_id/delete', auth.check_auth, function(req, res) {
-    var expense_id = req.params.expense_id;
-    var user_id = req.session.user_id;
-    expenses.lazy_delete_expense(expense_id, user_id).then(function() {
+    var expense = new Expense({id: req.params.expense_id});
+    var user_id = req.session.user.id;
+    expense.fetch().then(function() {
+      if (expense.get('owner_id') == user_id) {
+        return expense.destroy();
+      }
+    }).then(function() {
       res.redirect('/');
     }, function(err) {
-      send_error(res, 'An error occurred while trying to lazy delete the expense: ', err);
+      send_error(res, 'An error occurred while trying to delete the expense: ', err);
     });
   });
 
@@ -252,4 +256,5 @@ exports.install_routes = function(app) {
   app.listen(port, function() {
     console.log("Listening on", port);
   });
+
 };

@@ -1,16 +1,6 @@
 <h1> Expenses for {{ name }}</h1>
-{{# if owned_unfinished_expenses}}
-    <h2>Owned Unfinished Expenses</h2>
-    <ul class="expense-listing">
-      {{#each owned_unfinished_expenses}}
-          <li class="expense-listing-item">
-            {{> expense}}
-          </li>
-      {{/each}}
-    </ul>
-{{/if}}
 {{# if unfinished_expenses}}
-    <h2>Unfinished Expenses</h2>
+    <h2>Owned Unfinished Expenses</h2>
     <ul class="expense-listing">
       {{#each unfinished_expenses}}
           <li class="expense-listing-item">
@@ -19,10 +9,10 @@
       {{/each}}
     </ul>
 {{/if}}
-{{# if other_expenses}}
-    <h2>Other Expenses</h2>
+{{# if unpaid_expenses}}
+    <h2>Unfinished Expenses</h2>
     <ul class="expense-listing">
-      {{#each other_expenses}}
+      {{#each unpaid_expenses}}
           <li class="expense-listing-item">
             {{> expense}}
           </li>
