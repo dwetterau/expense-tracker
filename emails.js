@@ -14,7 +14,7 @@ emails.user_to_db = function(email) {
     value: email.data
   };
   return Q(email);
-}
+};
 
 emails.db_to_user = function(db_data) {
   var row = db_data.rows[0];

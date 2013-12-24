@@ -10,7 +10,7 @@ var images = require('./images');
 var Image = images.Image;
 
 var users = require('./users');
-var config = require('./config');
+var settings = require('./settings');
 var User = users.User;
 
 // Error sending
@@ -164,8 +164,26 @@ exports.install_routes = function(app) {
       owner_id: owner.id,
       title: title,
       description: description,
-      value: value,
+      value: value
     });
+
+    /*
+     var email = {
+     email_id : uuid.v4(),
+     type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
+     sender: req.session.email,
+     receiver: req.body.participants,
+     data: {
+     sender: req.session.email,
+     expense_link: settings.hostname + '/expense/' + expense_id
+     }
+     };
+     return emails.create_email(email);
+     }).then(function() {
+     res.redirect('/expense/' + expense_id);
+     }, function(err) {
+     send_error(res, 'An error occurred making the expense: ', err);
+     */
 
     var image_store_promise = Q.nfcall(fs.stat, image_path)
       .then(function(file_stats) {
