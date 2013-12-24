@@ -1,6 +1,5 @@
 var auth = require('./auth');
-var db = require('./db')();
-var dbobj = require('./dbobj');
+var deletable = require('./deletable');
 var uuid = require('node-uuid');
 var Q = require('q');
 
@@ -8,7 +7,10 @@ var email_types = {
   NEW_EXPENSE_NOTIFICATION: 1
 };
 
-var emails = new dbobj.db_type();
+var Email = deletable.Deletable.extend({
+
+}, {});
+
 emails.user_to_db = function(email) {
   email.data = {hint: 'map',
     value: email.data
