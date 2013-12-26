@@ -1,0 +1,21 @@
+<div ng-controller="expenseController">
+  <p> <a href="/expense/{{ data.id }}"> {{ data.title }} </a> - {{ data.owner.name }} </p>
+  <p> {{ data.value }} </p>
+  <div>
+    Participants:
+    <ul ng-repeat="participant in data.participants"
+        class="participant-list">
+      <li ng-show="participant.status == 'Waiting'"
+          class="participant-unpaid">
+        {{ participant.name }} - {{ participant.status }}
+        <a ng-show="isOwner" href="/expense/{{ data.id }}/pay/{{participant.id}}">
+          mark paid
+        </a>
+      </li>
+      <li ng-show="participant.status == 'Paid'"
+          class="participant-paid">
+        {{ participant.name }} - {{ participant.status }}
+      </li>
+    </ul>
+  </div>
+</div>

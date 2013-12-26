@@ -255,4 +255,32 @@ exports.install_routes = function(app) {
     console.log("Listening on", port);
   });
 
+  // API type calls
+  app.get('/expenses', auth.check_auth, function(req, res) {
+    var user = new User(req.session.user);
+    var owned_expenses = user.owned_expenses();
+    var participant_expenses = user.participant_expenses();
+
+    Q.all([owned_expenses.fetch({
+      withRelated: ['owner', 'participants']
+    }), participant_expenses.fetch({
+      withRelated: ['owner', 'participants']
+    })]).then(function() {
+      var owned_json = owned_expenses.map(function(expense) {
+        return Expense.pretty_json(expense.toJSON());
+      });
+      var participant_json = participant_expenses.map(function(expense) {
+        return Expense.pretty_json(expense.toJSON());
+      });
+      var data = {
+        owned_expenses: owned_json,
+        participant_expenses: participant_json,
+        user_id: user.id
+      };
+      res.send(JSON.stringify(data));
+    }).catch(function(err) {
+      send_error(res, 'An error occurred retreiving the expenses.', err);
+    });
+  });
+
 };

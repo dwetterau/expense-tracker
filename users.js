@@ -7,6 +7,15 @@ var User = db.bookshelf.Model.extend({
 
   hasTimestamps: ['created_at', 'updated_at'],
 
+  // Since toJSON is called when we are storing this data somewhere,
+  // we don't want to include the salt and password
+  toJSON: function() {
+    var result = db.bookshelf.Model.prototype.toJSON.apply(this, arguments);
+    delete result.salt;
+    delete result.password;
+    return result;
+  },
+
   login: function(password) {
     return auth.hash_password(password, this.get('salt')).then(
       function(hashed_password) {
@@ -100,7 +109,7 @@ var User = db.bookshelf.Model.extend({
       .query(function(qb) {
         qb.whereExists(this._with_waiting);
       }.bind(this));
-  }
+  },
 
 }, {
   login: function(email, password) {
@@ -111,6 +120,21 @@ var User = db.bookshelf.Model.extend({
       throw new Error("Invalid email or password");
     });
   },
+
+  pretty_json: function(data) {
+    var expenses = require('./expenses');
+    if (data.hasOwnProperty('_pivot_status')) {
+      data.status = expenses.format_status(data._pivot_status);
+    }
+    ['_pivot_status', '_pivot_id',
+     '_pivot_expense_id', '_pivot_user_id'].forEach(function(property) {
+       if(data.hasOwnProperty(property)) {
+         delete data[property];
+       }
+     });
+    return data;
+  }
+
 });
 
 

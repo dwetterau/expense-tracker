@@ -69,7 +69,30 @@ var Expense = deletable.Deletable.extend({
         throw new Error('Insufficient permissions');
       }
     });
+  },
+
+  pretty_json: function(data) {
+    // Clean up pivot properties
+    if (data.hasOwnProperty('_pivot_status')) {
+      data.my_status = exports.format_status(data._pivot_status);
+    }
+    ['_pivot_status', '_pivot_id',
+     '_pivot_expense_id', '_pivot_user_id'].forEach(function(property) {
+       if(data.hasOwnProperty(property)) {
+         delete data[property];
+       }
+     });
+
+    // Clean up users
+    if(data.hasOwnProperty('participants')) {
+      data.participants = data.participants.map(User.pretty_json);
+    }
+    if(data.hasOwnProperty('owner')) {
+      data.owner = User.pretty_json(data.owner);
+    }
+    return data;
   }
+
 }
 );
 
@@ -102,4 +125,15 @@ exports.templateify = function(expense, user_id) {
 
   return data;
 
+};
+
+exports.format_status = function(s) {
+  switch (s) {
+  case expense_states.PAID:
+    return 'Paid';
+  case expense_states.WAITING:
+    return 'Waiting';
+  case expense_states.OWNED:
+    return 'Owner';
+  }
 };
