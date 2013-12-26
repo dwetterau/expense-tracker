@@ -1,7 +1,6 @@
 var fs = require('fs');
 var Q = require('q');
 var auth = require('./auth');
-var emails= require('./emails');
 var expenses = require('./expenses');
 var Expense = expenses.Expense;
 var ExpenseStatus = expenses.ExpenseStatus;
@@ -12,6 +11,9 @@ var Image = images.Image;
 var users = require('./users');
 var settings = require('./settings');
 var User = users.User;
+
+var emails= require('./emails');
+var Email = emails.Email;
 
 // Error sending
 function send_error(res, info, exception) {
@@ -167,24 +169,6 @@ exports.install_routes = function(app) {
       value: value
     });
 
-    /*
-     var email = {
-     email_id : uuid.v4(),
-     type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-     sender: req.session.email,
-     receiver: req.body.participants,
-     data: {
-     sender: req.session.email,
-     expense_link: settings.hostname + '/expense/' + expense_id
-     }
-     };
-     return emails.create_email(email);
-     }).then(function() {
-     res.redirect('/expense/' + expense_id);
-     }, function(err) {
-     send_error(res, 'An error occurred making the expense: ', err);
-     */
-
     var image_store_promise = Q.nfcall(fs.stat, image_path)
       .then(function(file_stats) {
         if (file_stats.size === 0) {
@@ -217,11 +201,23 @@ exports.install_routes = function(app) {
 
       return Q.all(status_promises);
     }).then(function() {
+      // Create an email alert for the new expense
+      var new_expense_email_desc = {
+        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
+        sender: owner.email,
+        receiver: req.body.participants,
+        data: JSON.stringify({
+          sender: owner.email,
+          expense_link: settings.hostname + '/expense/' + expense.get('id')
+        })
+      };
+      var new_expense_email = new Email(new_expense_email_desc);
+      return new_expense_email.save();
+    }).then(function() {
       res.redirect('/expense/' + expense.get('id'));
     }, function(err) {
       send_error(res, 'An error occurred making the expense: ', err);
     });
-
   });
 
   app.get('/expense/:expense_id', auth.check_auth, function(req, res) {

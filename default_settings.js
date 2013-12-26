@@ -21,7 +21,7 @@ if (process.env.NODE_ENV == 'testing') {
     dialect: 'postgres',
     native: true
   };
-  exports.hostname = 'http://localhost:3000';
+  exports.hostname = 'https://expenses.adamf.co';
 }
 // Set to true in order to see all queries issued
 exports.debug = false;
