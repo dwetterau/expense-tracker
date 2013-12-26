@@ -1,5 +1,5 @@
 var auth = require('./auth');
-var deletable = require('./deletable');
+var db = require('./db');
 var uuid = require('node-uuid');
 var Q = require('q');
 
@@ -7,93 +7,39 @@ var email_types = {
   NEW_EXPENSE_NOTIFICATION: 1
 };
 
-var Email = deletable.Deletable.extend({
+var Email = db.bookshelf.Model.extend({
+  tableName: 'emails',
 
-}, {});
+  hasTimestamps: ['created_at', 'updated_at'],
 
-emails.user_to_db = function(email) {
-  email.data = {hint: 'map',
-    value: email.data
-  };
-  return Q(email);
-};
-
-emails.db_to_user = function(db_data) {
-  var row = db_data.rows[0];
-  if (row === undefined) {
-    // This is compatible with current code,
-    // not sure if good idea.
-    return undefined;
-  }
-  return Q({
-    email_id: row.get('email_id'),
-    sender: row.get('sender'),
-    receiver: row.get('receiver'),
-    type: row.get('type'),
-    data: row.get('data'),
-    sent_time: row.get('sent_time'),
-    sent: row.get('sent')
-  });
-};
-
-emails.columnfamily_name = 'emails';
-emails.primary_key_name = 'email_id';
-
-function create_email(email) {
-  // check that email has the right form
-  var is_valid_type = false;
-  for (var type in email_types) {
-    if (email_types.hasOwnProperty(type) && email_types[type] == email.type) {
-      is_valid_type = true;
-      break;
+  mark_sent: function() {
+    var deferred = Q.defer();
+    if (this.get('sent')) {
+      deferred.reject(new Error('Email already sent'));
+      return deferred.promise;
     }
+    this.set('sent', true);
+    return this.save();
   }
-  if (!is_valid_type) {
-    throw new Error("Email must have type");
-  }
-  if (!email.sender || !email.receiver) {
-    throw new Error("Email must have sender / receiver");
-  }
-  if (!email.data) {
-    throw new Error("Email must have data");
-  }
-  if (!email.email_id) {
-    throw new Error("Email must have an id");
-  }
-  email.sent = false;
-  return emails.create(email).then(function() {
-    return email.email_id;
-  });
-}
 
-function get_unsent_emails() {
-  return emails.get_db_data({'sent' : false})
-    .then(function(db_data) {
-      var email_objs = [];
-      while(db_data.rows.length > 0) {
-        var email_obj = emails.db_to_user({rows: db_data.rows.splice(0, 1)});
-        email_objs.push(email_obj);
-      }
-      return Q.all(email_objs);
-  });
-}
+}, {
 
-function sent_email(email_id) {
-  return emails.get(email_id)
-    .then(function(email) {
-      email.sent = true;
-      email.sent_time = new Date();
-      return emails.update(email);
-    }).then(function() {
-      return email_id;
-    });
-}
+//  get_unsent_emails: function() {
+//    var sent_emails = new Email({sent: false});
+//    return sent_emails.hasMany(Email, )
+//    .get_db_data({'sent' : false})
+//      .then(function(db_data) {
+//        var email_objs = [];
+//        while(db_data.rows.length > 0) {
+//          var email_obj = emails.db_to_user({rows: db_data.rows.splice(0, 1)});
+//          email_objs.push(email_obj);
+//        }
+//        return Q.all(email_objs);
+//    });
+//  }
+});
 
+
+
+exports.Email = Email;
 exports.email_types = email_types;
-exports.create_email = create_email;
-exports.get_unsent_emails = get_unsent_emails;
-exports.sent_email = sent_email;
-exports.emails = emails;
-
-// Export for testing
-exports.db = db;
