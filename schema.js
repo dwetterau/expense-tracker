@@ -48,7 +48,7 @@ exports.create_emails = function() {
     table.text('receiver').notNullable();
     table.integer('type').notNullable();
     table.text('data').notNullable();
-    table.boolean('sent');
+    table.boolean('sent').notNullable();
     table.timestamps();
   }).then(function() {
     return knex.raw('CREATE INDEX pending_emails on emails (sent)');
