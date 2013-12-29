@@ -39,13 +39,14 @@ function getSubjectAndBody(email) {
 console.log("Email server started.");
 // Check for emails to send loop
 setInterval(function() {
-  emails.get_unsent_emails().then(function(emails_to_send) {
-    if (!emails_to_send || emails_to_send.length == 0) {
+  var unsent_emails = new emails.Emails();
+  unsent_emails.get_unsent_emails().then(function() {
+    if (!unsent_emails || unsent_emails.length == 0) {
       return;
     }
-    console.log("Found", emails_to_send.length, "emails to send.");
+    console.log("Found", unsent_emails.length, "emails to send.");
     var markSentPromises = [];
-    emails_to_send.forEach(function(email) {
+    unsent_emails.forEach(function(email) {
       var subjectAndBody = getSubjectAndBody(email);
       var mailOptions = {
         from: email.sender,
@@ -55,7 +56,7 @@ setInterval(function() {
       };
       smtpTransport.sendMail(mailOptions, function(err) {
         if (!err) {
-          markSentPromises.push(emails.sent_email(email.email_id));
+          markSentPromises.push(email.mark_sent());
         } else {
           console.log("Failed to send email", email.email_id);
         }
