@@ -20,7 +20,7 @@ function getSubjectAndBody(email) {
   // find the right map based off the type
   var template;
   email_templates.forEach(function(template_file) {
-    if (template_file.subject_map[email.type] != undefined) {
+    if (template_file.subject_map[email.get('type')] != undefined) {
       template = template_file;
     }
   });
@@ -28,11 +28,12 @@ function getSubjectAndBody(email) {
     console.error(email);
     throw Error("No matching email template found");
   }
-  var subject_template = handlebars.compile(template.subject_map[email.type]);
-  var body_template = handlebars.compile(template.body_map[email.type]);
+  var subject_template = handlebars.compile(template.subject_map[email.get('type')]);
+  var body_template = handlebars.compile(template.body_map[email.get('type')]);
+  var data_obj = JSON.parse(email.get('data'));
   return {
-    subject : subject_template(email.data),
-    body: body_template(email.data)
+    subject : subject_template(data_obj),
+    body: body_template(data_obj)
   };
 }
 
@@ -49,8 +50,8 @@ setInterval(function() {
     unsent_emails.forEach(function(email) {
       var subjectAndBody = getSubjectAndBody(email);
       var mailOptions = {
-        from: email.sender,
-        to: email.receiver,
+        from: email.get('sender'),
+        to: email.get('receiver'),
         subject: subjectAndBody.subject,
         html: subjectAndBody.body
       };
@@ -68,7 +69,7 @@ setInterval(function() {
       console.log("Failed to mark some sent emails as sent:", err);
     });
   }, function(err) {
-    console.log("Lost connection with cassandra", err);
+    console.log("Lost connection with email database", err);
   });
 }, 5000);
 

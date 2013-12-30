@@ -257,7 +257,8 @@ exports.install_routes = function(app) {
         data: JSON.stringify({
           sender: owner.email,
           expense_link: settings.hostname + '/expense/' + expense.get('id')
-        })
+        }),
+        sent: false
       };
       var new_expense_email = new Email(new_expense_email_desc);
       return new_expense_email.save();
