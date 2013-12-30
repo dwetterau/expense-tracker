@@ -5,8 +5,9 @@ var Q = require('q');
 
 // Email template includes
 var expense_emails = require('./email_views/expense_emails');
+var user_emails = require('./email_views/user_emails');
 
-var email_templates = [expense_emails];
+var email_templates = [expense_emails, user_emails];
 
 var smtpTransport = nodemailer.createTransport("SMTP", {
   service: "Gmail",

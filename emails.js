@@ -4,7 +4,8 @@ var uuid = require('node-uuid');
 var Q = require('q');
 
 var email_types = {
-  NEW_EXPENSE_NOTIFICATION: 1
+  NEW_EXPENSE_NOTIFICATION: 1,
+  RESET_PASSWORD: 2
 };
 
 var Email = db.bookshelf.Model.extend({
