@@ -1,7 +1,7 @@
-angular.module('main', [])
+angular.module('main', ['ngRoute'])
   .controller('indexController', function($scope, $http) {
     $scope.refresh = function() {
-      $http.get('/expenses')
+      $http.get('/api/expenses')
         .success(function (data) {
           $scope.expenses = data;
           $scope.user_id = data.user_id;
@@ -21,9 +21,21 @@ angular.module('main', [])
 
     $scope.refresh();
   })
+  .controller('expenseViewController', function($scope, $routeParams, $http) {
+    var expense_id = $routeParams.expense_id;
+    $scope.load_expense = function() {
+      $http.get('/api/expense/' + expense_id)
+        .success(function(data) {
+          $scope.expense = data;
+          $scope.user_id = data.user_id;
+        });
+    };
+
+    $scope.load_expense();
+  })
   .controller('expenseController', function($scope) {
     var expense = $scope.data;
-    var isOwner = expense.owner_id == $scope.user_id;
+    var isOwner = expense && expense.owner_id == $scope.user_id;
     $scope.renderValue = function(value) {
       return '$' + value / 100;
     };
@@ -38,4 +50,18 @@ angular.module('main', [])
       },
       templateUrl: 'expense.html'
     };
+  })
+  .config(function($routeProvider) {
+    $routeProvider
+      .when('/', {
+        templateUrl: "expense_listing.html",
+        controller: "indexController"
+      })
+      .when('/expense/:expense_id', {
+        templateUrl: "expense_view.html",
+        controller: "expenseViewController"
+      })
+      .otherwise({
+        redirectTo: '/'
+      });
   });

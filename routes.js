@@ -257,7 +257,7 @@ exports.install_routes = function(app) {
   });
 
   // API type calls
-  app.get('/expenses', auth.check_auth, function(req, res) {
+  app.get('/api/expenses', auth.check_auth, function(req, res) {
     var user = new User(req.session.user);
     var owned_expenses = user.owned_expenses();
     var participant_expenses = user.participant_expenses();
@@ -278,10 +278,22 @@ exports.install_routes = function(app) {
         participant_expenses: participant_json,
         user_id: user.id
       };
-      res.send(JSON.stringify(data));
+      res.send(data);
     }).catch(function(err) {
       send_error(res, 'An error occurred retreiving the expenses.', err);
     });
+  });
+
+  app.get('/api/expense/:expense_id', auth.check_auth, function(req, res) {
+    var user = new User(req.session.user);
+    var expense_id = req.params.expense_id;
+    Expense.getWithPermissionCheck(expense_id, user.id)
+      .then(function(expense) {
+        var data = Expense.pretty_json(expense.toJSON());
+        res.send(data);
+      }).catch(function(err) {
+        send_error(res, 'An error occurred retreiving the expense:', err);
+      });
   });
 
   // Install ui at /ui (for the time being) with authentication

@@ -1,0 +1,18 @@
+<label>
+  Show Finished
+  <input type="checkbox" ng-model="showFinished"></input>
+</label>
+<h2> My Expenses </h2>
+<ul class="expense-listing">
+  <li class="expense-listing-item"
+      ng-repeat="expense in expenses.owned_expenses | filter:expenseFilter">
+    <expense user-id="user_id" data="expense" />
+  </li>
+</ul>
+<h2> Other expenses </h2>
+<ul class="expense-listing">
+  <li class="expense-listing-item"
+      ng-repeat="expense in expenses.participant_expenses | filter:expenseFilter">
+    <expense user_id="user_id" data="expense" />
+  </li>
+</ul>
