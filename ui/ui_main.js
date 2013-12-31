@@ -24,6 +24,9 @@ angular.module('main', [])
   .controller('expenseController', function($scope) {
     var expense = $scope.data;
     var isOwner = expense.owner_id == $scope.user_id;
+    $scope.renderValue = function(value) {
+      return '$' + value / 100;
+    };
     $scope.isOwner = isOwner;
   })
   .directive('expense', function() {
@@ -33,6 +36,6 @@ angular.module('main', [])
         data: '=data',
         user_id: '=userId'
       },
-      templateUrl: '/static/expense.html'
+      templateUrl: 'expense.html'
     };
   });

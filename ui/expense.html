@@ -1,6 +1,6 @@
 <div ng-controller="expenseController">
   <p> <a href="/expense/{{ data.id }}"> {{ data.title }} </a> - {{ data.owner.name }} </p>
-  <p> {{ data.value }} </p>
+  <p> {{ renderValue(data.value) }} </p>
   <div>
     Participants:
     <ul ng-repeat="participant in data.participants"
@@ -18,4 +18,6 @@
       </li>
     </ul>
   </div>
+
+  <img ng-show="data.image_id" src="/thumb/{{data.image_id }}/320x240" />
 </div>

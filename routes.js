@@ -1,5 +1,6 @@
 var fs = require('fs');
 var Q = require('q');
+var express = require('express');
 var auth = require('./auth');
 var expenses = require('./expenses');
 var Expense = expenses.Expense;
@@ -282,5 +283,9 @@ exports.install_routes = function(app) {
       send_error(res, 'An error occurred retreiving the expenses.', err);
     });
   });
+
+  // Install ui at /ui (for the time being) with authentication
+  app.use('/ui', auth.check_auth);
+  app.use('/ui', express.static(__dirname + '/ui'));
 
 };

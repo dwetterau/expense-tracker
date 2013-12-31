@@ -2,18 +2,21 @@
 <html>
   <head>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.js"></script>
-    <script src="script.js"></script>
+    <script src="ui_main.js"></script>
     <link type="text/css" rel="stylesheet" href="/static/main.css" />
     <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
     <link type="text/css" rel="stylesheet" href="/fonts/foundation_icons_all/foundation_icons_general/stylesheets/general_foundicons.css">
+    <title> Expenses </title>
   </head>
   <body ng-app="main">
     <a href="/"> Home </a>
     <a href="/create_expense"> Create Expense</a>
-    <label>
-      Show Finished
-      <input type="checkbox" ng-model="showFinished"></input>
-    </label>
+    <div>
+      <label>
+        Show Finished
+        <input type="checkbox" ng-model="showFinished"></input>
+      </label>
+    </div>
     <div ng-controller="indexController">
       <h2> My Expenses </h2>
       <ul class="expense-listing">
