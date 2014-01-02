@@ -51,15 +51,47 @@ angular.module('main', ['ngRoute'])
       templateUrl: 'expense.html'
     };
   })
+  .controller('createController', function($scope, $http) {
+    function getContacts() {
+      $http.get('/api/contacts')
+        .success(function(data) {
+          $scope.contacts = data;
+        })
+        .error(function(err) {
+          $scope.error = 'There was an error retrieving your contacts: ' + err;
+        });
+    }
+    $scope.submit = function() {
+      var new_expense = {
+        title: $scope.title,
+        value: $scope.value,
+        description: $scope.description,
+        participants: $scope.participants,
+      };
+      $http.post('/create_expense', new_expense)
+        .success(function(response) {
+          alert('expense created');
+        })
+        .error(function(err) {
+          alert('Expense could not be created: ' + err);
+        });
+    };
+
+    getContacts();
+  })
   .config(function($routeProvider) {
     $routeProvider
       .when('/', {
-        templateUrl: "expense_listing.html",
-        controller: "indexController"
+        templateUrl: 'expense_listing.html',
+        controller: 'indexController'
       })
       .when('/expense/:expense_id', {
-        templateUrl: "expense_view.html",
-        controller: "expenseViewController"
+        templateUrl: 'expense_view.html',
+        controller: 'expenseViewController'
+      })
+      .when('/create_expense', {
+        templateUrl: 'create_expense.html',
+        controller: 'createController'
       })
       .otherwise({
         redirectTo: '/'

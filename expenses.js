@@ -55,6 +55,29 @@ var Expense = deletable.Deletable.extend({
     var status = user.pivot;
     status.set('status', expense_states.PAID);
     return status.save();
+  },
+
+  pretty_json: function() {
+    var data = this.toJSON();
+    // Clean up pivot properties
+    if (data.hasOwnProperty('_pivot_status')) {
+      data.my_status = exports.format_status(data._pivot_status);
+    }
+    ['_pivot_status', '_pivot_id',
+     '_pivot_expense_id', '_pivot_user_id'].forEach(function(property) {
+       if(data.hasOwnProperty(property)) {
+         delete data[property];
+       }
+     });
+
+    // Clean up users
+    if(data.hasOwnProperty('participants')) {
+      data.participants = this.related('participants').invoke('pretty_json');
+    }
+    if(data.hasOwnProperty('owner')) {
+      data.owner = this.related('owner').pretty_json();
+    }
+    return data;
   }
 
 }, {
@@ -71,27 +94,6 @@ var Expense = deletable.Deletable.extend({
     });
   },
 
-  pretty_json: function(data) {
-    // Clean up pivot properties
-    if (data.hasOwnProperty('_pivot_status')) {
-      data.my_status = exports.format_status(data._pivot_status);
-    }
-    ['_pivot_status', '_pivot_id',
-     '_pivot_expense_id', '_pivot_user_id'].forEach(function(property) {
-       if(data.hasOwnProperty(property)) {
-         delete data[property];
-       }
-     });
-
-    // Clean up users
-    if(data.hasOwnProperty('participants')) {
-      data.participants = data.participants.map(User.pretty_json);
-    }
-    if(data.hasOwnProperty('owner')) {
-      data.owner = User.pretty_json(data.owner);
-    }
-    return data;
-  }
 
 }
 );

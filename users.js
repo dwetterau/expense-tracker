@@ -111,18 +111,14 @@ var User = db.bookshelf.Model.extend({
       }.bind(this));
   },
 
-}, {
-  login: function(email, password) {
-    var u = new User({email: email});
-    return u.fetch().then(function() {
-      return u.login(password);
-    }).catch(function(err) {
-      throw new Error("Invalid email or password");
-    });
+  contacts: function() {
+    return this.belongsToMany(User, 'contacts', 'user_id', 'contact_id');
   },
 
-  pretty_json: function(data) {
+  pretty_json: function() {
     var expenses = require('./expenses');
+    var data = this.toJSON();
+
     if (data.hasOwnProperty('_pivot_status')) {
       data.status = expenses.format_status(data._pivot_status);
     }
@@ -133,6 +129,16 @@ var User = db.bookshelf.Model.extend({
        }
      });
     return data;
+  }
+
+}, {
+  login: function(email, password) {
+    var u = new User({email: email});
+    return u.fetch().then(function() {
+      return u.login(password);
+    }).catch(function(err) {
+      throw new Error("Invalid email or password");
+    });
   }
 
 });

@@ -1,0 +1,21 @@
+<div>
+  <label> Title: <input type="text" ng-model="title" required="required" /></label>
+</div>
+<div>
+  <label> Value: <input type="number" ng-model="value" required="required" /></label>
+</div>
+<div>
+  <label> Description: <input type="text" ng-model="description"/> </label>
+</div>
+<div>
+  <label> Participants: </label>
+</div>
+<div>
+  <select multiple ng-model="participants">
+    <option ng-repeat="contact in contacts" value="{{ contact.email }}">
+      {{ contact.name }}
+    </option>
+  </select>
+</div>
+
+<button ng-click="submit()"> Done </button>

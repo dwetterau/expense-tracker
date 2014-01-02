@@ -146,10 +146,10 @@ exports.install_routes = function(app) {
     var value = parseInt(req.body.value, 10);
     var owner = req.session.user;
     var participants = [];
-    var image_path = req.files.image && req.files.image.path;
+    var image_path = req.files && req.files.image && req.files.image.path;
 
     if (req.body.participants) {
-      var participant_emails = req.body.participants.split(',');
+      var participant_emails = req.body.participants;
       participants = participant_emails.map(function(email) {
         return new User({email: email});
       });
@@ -166,19 +166,25 @@ exports.install_routes = function(app) {
       value: value,
     });
 
-    var image_store_promise = Q.nfcall(fs.stat, image_path)
-      .then(function(file_stats) {
-        if (file_stats.size === 0) {
+    var image_store_promise;
+
+    if (image_path) {
+      image_store_promise = Q.nfcall(fs.stat, image_path)
+        .then(function(file_stats) {
+          if (file_stats.size === 0) {
+            return undefined;
+          } else {
+            return images.store_image(image_path);
+          }
+        })
+        .fail(function(err) {
+          console.log('ERROR ' + err);
+          // If this failed, do not use an image
           return undefined;
-        } else {
-          return images.store_image(image_path);
-        }
-      })
-    .fail(function(err) {
-      console.log('ERROR ' + err);
-      // If this failed, do not use an image
-      return undefined;
-    });
+        });
+    } else {
+      image_store_promise = Q(undefined);
+    }
 
     image_store_promise.then(function(image) {
       image && expense.set('image_id', image.get('id'));
@@ -267,12 +273,13 @@ exports.install_routes = function(app) {
     }), participant_expenses.fetch({
       withRelated: ['owner', 'participants']
     })]).then(function() {
-      var owned_json = owned_expenses.map(function(expense) {
-        return Expense.pretty_json(expense.toJSON());
-      });
-      var participant_json = participant_expenses.map(function(expense) {
-        return Expense.pretty_json(expense.toJSON());
-      });
+      console.log(owned_expenses);
+      console.log(participant_expenses);
+      var owned_json = owned_expenses.invoke('pretty_json');
+      var participant_json = participant_expenses.invoke('pretty_json');
+      console.log(owned_json);
+      console.log(participant_json);
+
       var data = {
         owned_expenses: owned_json,
         participant_expenses: participant_json,
@@ -289,11 +296,20 @@ exports.install_routes = function(app) {
     var expense_id = req.params.expense_id;
     Expense.getWithPermissionCheck(expense_id, user.id)
       .then(function(expense) {
-        var data = Expense.pretty_json(expense.toJSON());
+        var data = expense.pretty_json();
         res.send(data);
       }).catch(function(err) {
         send_error(res, 'An error occurred retreiving the expense:', err);
       });
+  });
+
+  app.get('/api/contacts', auth.check_auth, function(req, res) {
+    var user = new User(req.session.user);
+    var contacts = user.contacts();
+    console.log(contacts);
+    contacts.fetch().then(function() {
+      res.send(contacts.invoke('pretty_json'));
+    });
   });
 
   // Install ui at /ui (for the time being) with authentication
