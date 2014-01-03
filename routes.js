@@ -312,6 +312,50 @@ exports.install_routes = function(app) {
     });
   });
 
+  app.post('/api/create_expense', auth.check_auth, function(req, res) {
+    var user = new User(req.session.user);
+    var participants = req.body.participants.map(function(participant_id) {
+      return new User({ id: participant_id });
+    });
+    var expense = new Expense({
+      title: req.body.title,
+      value: req.body.value,
+      description: req.body.description,
+      owner_id: user.id
+    });
+    var expense_done = expense.save();
+
+    expense_done.then(function() {
+      var participants_done = participants.map(function(participant) {
+        var status = new ExpenseStatus({
+          user_id: participant.id,
+          expense_id: expense.id,
+          status: expenses.expense_states.WAITING
+        });
+        return status.save();
+      });
+    }).then(function() {
+      res.send({id: expense.id});
+    }).catch(function(err) {
+      res.send(500, "Could not create expense");
+    });
+  });
+
+  app.post('/api/expense/:expense_id/pay/:user_id', function(req, res) {
+    var owner_id = parseInt(req.session.user.id, 10);
+    var user_id = parseInt(req.params.user_id, 10);
+    var expense_id = parseInt(req.params.expense_id, 10);
+    var expense = new Expense({ id: req.params.expense_id});
+    expense.fetch({withRelated: ['participants']}).then(function() {
+      return expense.mark_paid(owner_id, user_id);
+    }).then(function() {
+      res.send('OK');
+    }).catch(function(err) {
+      console.log(err);
+      res.send(500, 'There was an error paying the expense');
+    });
+  });
+
   // Install ui at /ui (for the time being) with authentication
   app.use('/ui', auth.check_auth);
   app.use('/ui', express.static(__dirname + '/ui'));

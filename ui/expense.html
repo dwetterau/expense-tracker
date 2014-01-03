@@ -8,9 +8,9 @@
       <li ng-show="participant.status == 'Waiting'"
           class="participant-unpaid">
         {{ participant.name }} - {{ participant.status }}
-        <a ng-show="isOwner" href="/expense/{{ data.id }}/pay/{{participant.id}}">
+        <button ng-show="isOwner" ng-click="markPaid(participant.id, data.id)">
           mark paid
-        </a>
+        </button>
       </li>
       <li ng-show="participant.status == 'Paid'"
           class="participant-paid">
@@ -19,5 +19,5 @@
     </ul>
   </div>
 
-  <img ng-show="data.image_id" src="/thumb/{{data.image_id }}/320x240" />
+  <img ng-if="data.image_id" ng-src="/thumb/{{data.image_id }}/320x240" />
 </div>

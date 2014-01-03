@@ -33,13 +33,26 @@ angular.module('main', ['ngRoute'])
 
     $scope.load_expense();
   })
-  .controller('expenseController', function($scope) {
+  .controller('expenseController', function($http, $scope) {
     var expense = $scope.data;
     var isOwner = expense && expense.owner_id == $scope.user_id;
     $scope.renderValue = function(value) {
       return '$' + value / 100;
     };
     $scope.isOwner = isOwner;
+    $scope.markPaid = function(user_id, expense_id) {
+      $http.post('/api/expense/' + expense_id + '/pay/' + user_id)
+        .success(function() {
+          expense.participants.forEach(function(participant) {
+            if(participant.id == user_id) {
+              participant.status = 'Paid';
+            }
+          });
+        })
+        .error(function(err) {
+          alert(err);
+        });
+    };
   })
   .directive('expense', function() {
     return {
@@ -68,9 +81,10 @@ angular.module('main', ['ngRoute'])
         description: $scope.description,
         participants: $scope.participants,
       };
-      $http.post('/create_expense', new_expense)
+      $http.post('/api/create_expense', new_expense)
         .success(function(response) {
-          alert('expense created');
+          var id = response.id;
+          window.location = '#/expense/' + id;
         })
         .error(function(err) {
           alert('Expense could not be created: ' + err);

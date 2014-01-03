@@ -12,7 +12,7 @@
 </div>
 <div>
   <select multiple ng-model="participants">
-    <option ng-repeat="contact in contacts" value="{{ contact.email }}">
+    <option ng-repeat="contact in contacts" value="{{ contact.id }}">
       {{ contact.name }}
     </option>
   </select>
