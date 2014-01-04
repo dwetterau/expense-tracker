@@ -61,6 +61,7 @@ exports.create_images = function() {
     table.binary('data').notNullable();
     table.integer('thumbnail_of');
     table.string('size');
+    table.integer('expense_id');
     table.timestamps();
   }).then(function() {
     // Can't create this index using knex directly
