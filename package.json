@@ -15,5 +15,7 @@
     "sqlite3": "*",
     "connect": "*"
   },
-  "scripts": {"test": "mocha test/*_test.js --reporter spec"}
+  "scripts": {
+    "test": "mocha test/*_test.js --reporter spec"
+  }
 }

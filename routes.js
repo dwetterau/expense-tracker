@@ -257,11 +257,6 @@ exports.install_routes = function(app) {
     });
   });
 
-  var port = process.env.PORT || 3000;
-  app.listen(port, function() {
-    console.log("Listening on", port);
-  });
-
   // API type calls
   app.get('/api/expenses', auth.check_auth, function(req, res) {
     var user = new User(req.session.user);
