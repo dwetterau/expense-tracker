@@ -32,7 +32,7 @@
       "id": 3,
       "title": "Test title3",
       "description": "test description3",
-      "owner_id": 3,
+      "owner_id": 1,
       "value": 3
     }
   ],
@@ -48,6 +48,12 @@
       "user_id": 2,
       "expense_id": 3,
       "status": 2
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "expense_id": 2,
+      "status": 0
     }
   ],
   "sessions": [

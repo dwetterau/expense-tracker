@@ -105,22 +105,96 @@ describe('api', function() {
         done(err);
       });
     });
-  });
 
-  it('should create an expense on /api/create_expense', function(done) {
-    make_request('POST', '/api/create_expense', {
-      title: 'New Expense Title',
-      value: 12,
-      description: 'Arst',
-      owner_id: 1,
-      participants: []
-    }).then(function(result) {
-      assert(result);
-      assert(result.id !== undefined);
-      done()
-    }).catch(function(err) {
-      done(err);
+    it('should create an expense on /api/create_expense', function(done) {
+      make_request('POST', '/api/create_expense', {
+        title: 'New Expense Title',
+        value: 12,
+        description: 'Arst',
+        owner_id: 1,
+        participants: []
+      }).then(function(result) {
+        assert(result);
+        assert(result.id !== undefined);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should get all expenses on /api/expenses', function(done) {
+      make_request('GET', '/api/expenses').then(function(result) {
+        // test_data.json defines two expenses that user 1 is the owner of
+        assert(result.owned_expenses.length >= 2);
+        var expenses = {};
+        result.owned_expenses.forEach(function(expense) {
+          expenses[expense.id] = expense;
+          assert.equal(expense.owner_id, 1);
+        });
+
+        assert(expenses[1]);
+        assert.equal(expenses[1].description, 'test description1');
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should mark an appropriately owned expense as paid', function(done) {
+      make_request('POST', '/api/expense/1/pay/2').then(function(result) {
+        assert.equal(result.status, 'ok');
+        return make_request('GET', '/api/expense/1');
+      }).then(function(expense) {
+        assert.equal(expense.participants[0].status, 'Paid');
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+
+      // Reset expense status
+      after(function(done) {
+        var status = new ExpenseStatus({ id: 1, status: 0});
+        status.save().then(function() {
+          done();
+        }, function(err) {
+          done(err);
+        });
+      });
+
+    });
+
+    it('should not mark an inappropriately owned expense as paid', function(done) {
+      make_request('POST', '/api/expense/2/pay/1').then(function(result) {
+        assert.equal(result.status, 'error');
+        done();
+      }, function(err) {
+        done(err);
+      });
     });
   });
+
+
+
+  it('should attach contacts correctly', function(done) {
+    make_request('POST', '/api/add_contact', {email: 'user2@user2.com'})
+      .then(function(result) {
+        assert.equal(result.status, 'ok');
+        return make_request('GET', '/api/contacts');
+      }).then(function(contacts) {
+        assert(contacts.length >= 1);
+        var by_id = {};
+        contacts.forEach(function(contact) {
+          by_id[contact.id] = contact;
+        });
+
+        assert(by_id[2] !== undefined);
+        assert.equal(by_id[2].email, 'user2@user2.com');
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+  });
+
+
 
 });

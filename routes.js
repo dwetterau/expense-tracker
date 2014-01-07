@@ -268,12 +268,8 @@ exports.install_routes = function(app) {
     }), participant_expenses.fetch({
       withRelated: ['owner', 'participants']
     })]).then(function() {
-      console.log(owned_expenses);
-      console.log(participant_expenses);
       var owned_json = owned_expenses.invoke('pretty_json');
       var participant_json = participant_expenses.invoke('pretty_json');
-      console.log(owned_json);
-      console.log(participant_json);
 
       var data = {
         owned_expenses: owned_json,
@@ -301,7 +297,6 @@ exports.install_routes = function(app) {
   app.get('/api/contacts', auth.check_auth, function(req, res) {
     var user = new User(req.session.user);
     var contacts = user.contacts();
-    console.log(contacts);
     contacts.fetch().then(function() {
       res.send(contacts.invoke('pretty_json'));
     });
@@ -337,19 +332,38 @@ exports.install_routes = function(app) {
   });
 
   app.post('/api/expense/:expense_id/pay/:user_id', function(req, res) {
-    var owner_id = parseInt(req.session.user.id, 10);
-    var user_id = parseInt(req.params.user_id, 10);
-    var expense_id = parseInt(req.params.expense_id, 10);
+    var owner_id = req.session.user.id;
+    var user_id = req.params.user_id;
+    var expense_id = req.params.expense_id;
     var expense = new Expense({ id: req.params.expense_id});
     expense.fetch({withRelated: ['participants']}).then(function() {
       return expense.mark_paid(owner_id, user_id);
     }).then(function() {
-      res.send('OK');
+      res.send({status: 'ok'});
     }).catch(function(err) {
-      console.log(err);
-      res.send(500, 'There was an error paying the expense');
+      res.send(500, {
+        status: 'error',
+        err: 'There was an error paying the expense'
+      });
     });
   });
+
+  app.post('/api/add_contact', function(req, res) {
+    var owner = new User(req.session.user);
+    var email = req.body.email;
+
+    var other = new User({email: email});
+    other.fetch().then(function() {
+      return owner.contacts().attach(other.id);
+    }).then(function() {
+      res.send({status: 'ok'});
+    }).catch(function(err) {
+      console.log(err);
+      res.send({status: 'error',
+                err: 'There was an error adding this contact.'});
+    });
+  });
+
 
   // Install ui at /ui (for the time being) with authentication
   app.use('/ui', auth.check_auth);
