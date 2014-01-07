@@ -65,6 +65,8 @@ angular.module('main', ['ngRoute'])
     };
   })
   .controller('createController', function($scope, $http) {
+    $scope.selected_contacts = [];
+
     function getContacts() {
       $http.get('/api/contacts')
         .success(function(data) {
@@ -75,11 +77,14 @@ angular.module('main', ['ngRoute'])
         });
     }
     $scope.submit = function() {
+      var participants = $scope.selected_contacts.map(function(participant) {
+        return participant.id;
+      });
       var new_expense = {
         title: $scope.title,
         value: $scope.value,
         description: $scope.description,
-        participants: $scope.participants,
+        participants: participants
       };
       $http.post('/api/create_expense', new_expense)
         .success(function(response) {
@@ -89,6 +94,21 @@ angular.module('main', ['ngRoute'])
         .error(function(err) {
           alert('Expense could not be created: ' + err);
         });
+    };
+
+
+    $scope.toggleContact = function(contact) {
+      var index = $scope.selected_contacts.indexOf(contact);
+      if (index != -1) {
+        $scope.selected_contacts.splice(index, 1);
+      } else {
+        $scope.selected_contacts.push(contact);
+      }
+    };
+
+    $scope.contactClass = function(contact) {
+      var selected = $scope.selected_contacts.indexOf(contact) != -1;
+      return selected ? 'contact-selected' : 'contact-deselected';
     };
 
     getContacts();

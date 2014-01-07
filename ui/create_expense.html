@@ -1,21 +1,26 @@
-<div>
-  <label> Title: <input type="text" ng-model="title" required="required" /></label>
+<div class="form-element">
+  <label for="title"> Title </label>
+  <input type="text" ng-model="title" required="required" id="title"
+         placeholder="Example: November Rent"/>
 </div>
-<div>
-  <label> Value: <input type="number" ng-model="value" required="required" /></label>
+<div class="form-element">
+  <label for="value"> Value </label>
+  <input type="number" ng-model="value" required="required" id="value"
+         placeholdes="Example: 5.00"/>
 </div>
-<div>
-  <label> Description: <input type="text" ng-model="description"/> </label>
+<div class="form-element">
+  <label for="description"> Description</label>
+  <input type="text" ng-model="description" id="description"/>
 </div>
-<div>
-  <label> Participants: </label>
-</div>
-<div>
-  <select multiple ng-model="participants">
-    <option ng-repeat="contact in contacts" value="{{ contact.id }}">
+<div class="form-element">
+  <label> Participants </label>
+  <div class="contact-selector">
+    <div ng-repeat="contact in contacts"
+         ng-class="contactClass(contact)"
+         ng-click="toggleContact(contact)">
       {{ contact.name }}
-    </option>
-  </select>
+    </div>
+  </div>
 </div>
 
 <button ng-click="submit()"> Done </button>
