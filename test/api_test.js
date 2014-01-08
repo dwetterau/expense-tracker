@@ -68,7 +68,13 @@ function make_request(method, path, data) {
   var def = Q.defer();
   var client_request = http.request(options, function(response_stream) {
     response_stream.on('data', function(data) {
-      def.resolve(JSON.parse(data));
+      if (response_stream.statusCode >= 400) {
+        var message = 'HTTP ' + response_stream.statusCode + ': ' + data;
+        def.reject(new Error(message));
+      } else {
+        var json_data = JSON.parse(data);
+        def.resolve(json_data);
+      }
     });
   });
 
@@ -165,10 +171,9 @@ describe('api', function() {
 
     it('should not mark an inappropriately owned expense as paid', function(done) {
       make_request('POST', '/api/expense/2/pay/1').then(function(result) {
-        assert.equal(result.status, 'error');
-        done();
+        done(new Error('Request did not fail: ' + result));
       }, function(err) {
-        done(err);
+        done();
       });
     });
   });
@@ -192,6 +197,15 @@ describe('api', function() {
         done();
       }).catch(function(err) {
         done(err);
+      });
+  });
+
+  it('should not attach non-existant contacts', function(done) {
+    make_request('POST', '/api/add_contact', {email: 'arstarst'})
+      .then(function(result) {
+        done(new Error('request completed successfully: ' + JSON.stringify(result)));
+      }, function(err) {
+        done();
       });
   });
 

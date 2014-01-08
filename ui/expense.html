@@ -8,7 +8,7 @@
       <li ng-show="participant.status == 'Waiting'"
           class="participant-unpaid">
         {{ participant.name }} - {{ participant.status }}
-        <button ng-show="isOwner" ng-click="markPaid(participant.id, data.id)">
+        <button ng-show="isOwner()" ng-click="markPaid(participant.id, data.id)">
           mark paid
         </button>
       </li>

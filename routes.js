@@ -59,16 +59,22 @@ exports.install_routes = function(app) {
   app.post('/login', function(req, res) {
     var email = req.body.email;
     var password = req.body.password;
+    var next = req.body.next;
     users.User.login(email, password).then(function(user) {
       req.session.user = user;
-      res.redirect('/');
+      if (next && next[0] == '/') {
+        res.redirect(next);
+      } else {
+        res.redirect('/');
+      }
     }, function(err) {
       send_error(res, 'Login error: ', err);
     });
   });
 
   app.get('/login', function(req, res) {
-    res.render('login');
+    var next = req.query.next;
+    res.render('login', {next: next});
   });
 
   app.post('/logout', function(req, res) {
@@ -288,7 +294,10 @@ exports.install_routes = function(app) {
     Expense.getWithPermissionCheck(expense_id, user.id)
       .then(function(expense) {
         var data = expense.pretty_json();
-        res.send(data);
+        // TODO - more elegant solution for this.
+        data.user_id = user.id;
+        //res.send(data);
+        setTimeout( function() { res.send(data); }, 100);
       }).catch(function(err) {
         send_error(res, 'An error occurred retreiving the expense:', err);
       });
@@ -354,13 +363,15 @@ exports.install_routes = function(app) {
 
     var other = new User({email: email});
     other.fetch().then(function() {
+      if (other.isNew()) {
+        throw new Error('User does not exist');
+      }
       return owner.contacts().attach(other.id);
     }).then(function() {
       res.send({status: 'ok'});
     }).catch(function(err) {
-      console.log(err);
-      res.send({status: 'error',
-                err: 'There was an error adding this contact.'});
+      res.send(500, { status: 'error',
+                      err: 'There was an error adding this contact.'});
     });
   });
 

@@ -26,24 +26,26 @@ angular.module('main', ['ngRoute'])
     $scope.load_expense = function() {
       $http.get('/api/expense/' + expense_id)
         .success(function(data) {
-          $scope.expense = data;
           $scope.user_id = data.user_id;
+          $scope.expense = data;
+          console.log('view done');
         });
     };
 
     $scope.load_expense();
   })
   .controller('expenseController', function($http, $scope) {
-    var expense = $scope.data;
-    var isOwner = expense && expense.owner_id == $scope.user_id;
+    console.log('controller');
+    $scope.isOwner = function() {
+      return $scope.data && $scope.user_id == $scope.data.owner_id;
+    };
     $scope.renderValue = function(value) {
       return '$' + value / 100;
     };
-    $scope.isOwner = isOwner;
     $scope.markPaid = function(user_id, expense_id) {
       $http.post('/api/expense/' + expense_id + '/pay/' + user_id)
         .success(function() {
-          expense.participants.forEach(function(participant) {
+          $scope.data.participants.forEach(function(participant) {
             if(participant.id == user_id) {
               participant.status = 'Paid';
             }
@@ -113,6 +115,17 @@ angular.module('main', ['ngRoute'])
 
     getContacts();
   })
+  .controller('addContact', function($http, $scope) {
+    $scope.submit = function() {
+      $http.post('/api/add_contact', {email: $scope.email})
+        .success(function() {
+          window.location = '#/';
+        })
+        .fail(function() {
+          alert('Could not add contact');
+        });
+    };
+  })
   .config(function($routeProvider) {
     $routeProvider
       .when('/', {
@@ -126,6 +139,10 @@ angular.module('main', ['ngRoute'])
       .when('/create_expense', {
         templateUrl: 'create_expense.html',
         controller: 'createController'
+      })
+      .when('/add_contact', {
+        templateUrl: 'add_contact.html',
+        controller: 'addContact'
       })
       .otherwise({
         redirectTo: '/'

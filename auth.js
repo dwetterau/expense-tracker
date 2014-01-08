@@ -9,7 +9,7 @@ function is_logged_in(req) {
 function check_auth(req, res, next) {
   if (!is_logged_in(req)) {
     // User is not logged in, take them to the login page
-    res.redirect('/login');
+    res.redirect('/login?next=' + req.originalUrl);
   } else {
     var u = new users.User({email: req.session.email});
     u.fetch().then(function() {
