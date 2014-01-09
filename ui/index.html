@@ -1,18 +1,23 @@
 <!DOCTYPE html>
 <html ng-app="main">
   <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-route.js"></script>
     <script src="ui_main.js"></script>
+    <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
     <link type="text/css" rel="stylesheet" href="/static/main.css" />
     <link type="text/css" rel="stylesheet" href="/ui/interface.css" />
-    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet" type="text/css">
     <link type="text/css" rel="stylesheet" href="/fonts/foundation_icons_all/foundation_icons_general/stylesheets/general_foundicons.css">
     <title>Expenses</title>
   </head>
   <body>
-    <a href="#/"> Home </a>
-    <a href="#/create_expense"> Create Expense</a>
-    <div ng-view></div>
+    <nav class="navbar">
+      <ul class="nav nav-tabs">
+        <li> <a href="#/"> Home </a> </li>
+        <li> <a href="#/create_expense"> Create Expense</a> </li>
+      </ul>
+    </nav>
+    <div class="container" ng-view></div>
   </body>
 </html>

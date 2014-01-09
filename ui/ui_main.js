@@ -28,14 +28,12 @@ angular.module('main', ['ngRoute'])
         .success(function(data) {
           $scope.user_id = data.user_id;
           $scope.expense = data;
-          console.log('view done');
         });
     };
 
     $scope.load_expense();
   })
   .controller('expenseController', function($http, $scope) {
-    console.log('controller');
     $scope.isOwner = function() {
       return $scope.data && $scope.user_id == $scope.data.owner_id;
     };
@@ -96,6 +94,10 @@ angular.module('main', ['ngRoute'])
         .error(function(err) {
           alert('Expense could not be created: ' + err);
         });
+    };
+
+    $scope.cancel = function() {
+      window.location = '#/';
     };
 
 
