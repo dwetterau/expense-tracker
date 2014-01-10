@@ -1,73 +1,24 @@
 process.env.NODE_ENV = 'testing';
 var assert = require('assert');
-var http = require('http');
-var express = require('express');
-var Q = require('q');
 
 var db = require('../db');
 var load_test_data = require('./load_test_data');
+var test_server = require('./test_server');
 var routes = require('../routes');
 var test_data = require('./test_data');
 var ExpenseStatus = require('../expenses').ExpenseStatus;
-var BookshelfStore = require('../bookshelf_session').BookshelfStore;
-var expense_states = require('../expenses').expense_states;
-
-var Contact = db.bookshelf.Model.extend({
-  tableName: 'contacts'
-});
-
-var app = express();
-app.use(express.bodyParser());
-app.use(express.cookieParser());
-app.use(
-  express.session({
-       secret: 'secrets',
-       store: new BookshelfStore()
-  })
-);
-
-var port = 12345;
-
-function make_request(method, path, data) {
-  var length = data ? JSON.stringify(data).length : 0;
-  var options = {
-    port: port,
-    method: method,
-    path: path,
-    headers: {
-      'Cookie': 'connect.sid=abcde',
-      'Content-Length': length,
-      'Content-Type': 'application/json'
-    }
-  };
-  var def = Q.defer();
-  var client_request = http.request(options, function(response_stream) {
-    response_stream.on('data', function(data) {
-      if (response_stream.statusCode >= 400) {
-        var message = 'HTTP ' + response_stream.statusCode + ': ' + data;
-        def.reject(new Error(message));
-      } else {
-        var json_data = JSON.parse(data);
-        def.resolve(json_data);
-      }
-    });
-  });
-
-  if(data) {
-    client_request.write(JSON.stringify(data));
-  }
-  client_request.end();
-
-  return def.promise;
-}
 
 describe('api', function() {
+
+  var appses = test_server.start_server();
+  var app = appses[0];
+  var server = appses[1];
+  var make_request = test_server.make_request;
 
   before(function(done) {
     // Install test data, install routes, start server
     load_test_data.install_test_data().then(function() {
       routes.install_routes(app);
-      app.listen(port);
     }).then(function() {
       done();
     }).catch(function(err) {
@@ -76,6 +27,7 @@ describe('api', function() {
   });
 
   after(function(done) {
+    server.close();
     load_test_data.reset().then(function() {
       done();
     }, function(err) {
