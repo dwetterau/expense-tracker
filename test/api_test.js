@@ -2,17 +2,21 @@ process.env.NODE_ENV = 'testing';
 var assert = require('assert');
 var http = require('http');
 var express = require('express');
-var app = express();
-var routes = require('../routes');
-var test_data = require('./test_data');
-var Expense = require('../expenses').Expense;
-var ExpenseStatus = require('../expenses').ExpenseStatus;
-var Session = require('../bookshelf_session').Session;
-var BookshelfStore = require('../bookshelf_session').BookshelfStore;
-var expense_states = require('../expenses').expense_states;
-var User = require('../users').User;
 var Q = require('q');
 
+var db = require('../db');
+var load_test_data = require('./load_test_data');
+var routes = require('../routes');
+var test_data = require('./test_data');
+var ExpenseStatus = require('../expenses').ExpenseStatus;
+var BookshelfStore = require('../bookshelf_session').BookshelfStore;
+var expense_states = require('../expenses').expense_states;
+
+var Contact = db.bookshelf.Model.extend({
+  tableName: 'contacts'
+});
+
+var app = express();
 app.use(express.bodyParser());
 app.use(express.cookieParser());
 app.use(
@@ -23,35 +27,6 @@ app.use(
 );
 
 var port = 12345;
-
-function install_test_data() {
-  var constructors = {
-    'expenses': Expense,
-    'expense_status': ExpenseStatus,
-    'users': User,
-    'sessions': Session
-  };
-  var table_promises = [];
-  for (var table_name in test_data) {
-    if (!test_data.hasOwnProperty(table_name)) {
-      continue;
-    }
-
-    var table_data = test_data[table_name];
-    var constructor = constructors[table_name];
-
-    var create_promises = table_data.map(function(data) {
-      return new constructor(data).save(
-        null,
-        {method: 'insert'}
-      );
-    });
-
-    table_promises.push(Q.all(create_promises));
-  }
-
-  return Q.all(table_promises);
-}
 
 function make_request(method, path, data) {
   var length = data ? JSON.stringify(data).length : 0;
@@ -90,12 +65,20 @@ describe('api', function() {
 
   before(function(done) {
     // Install test data, install routes, start server
-    install_test_data().then(function() {
+    load_test_data.install_test_data().then(function() {
       routes.install_routes(app);
       app.listen(port);
     }).then(function() {
       done();
     }).catch(function(err) {
+      done(err);
+    });
+  });
+
+  after(function(done) {
+    load_test_data.reset().then(function() {
+      done();
+    }, function(err) {
       done(err);
     });
   });
@@ -180,8 +163,20 @@ describe('api', function() {
 
 
 
+  it('should retreive contacts correctly', function(done) {
+    make_request('GET', '/api/contacts')
+      .then(function(result) {
+        assert.equal(result.length, 1);
+        assert.equal(result[0].name, 'testMan2');
+        done();
+      })
+      .catch(function(err) {
+        done(err);
+      });
+  });
+
   it('should attach contacts correctly', function(done) {
-    make_request('POST', '/api/add_contact', {email: 'user2@user2.com'})
+    make_request('POST', '/api/add_contact', {email: 'user3@user3.com'})
       .then(function(result) {
         assert.equal(result.status, 'ok');
         return make_request('GET', '/api/contacts');
@@ -208,7 +203,5 @@ describe('api', function() {
         done();
       });
   });
-
-
 
 });

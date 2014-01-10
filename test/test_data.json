@@ -11,6 +11,12 @@
       "email": "user2@user2.com",
       "password": "hashed_password",
       "name": "testMan2"
+    },
+    {
+      "id": 3,
+      "email": "user3@user3.com",
+      "password": "hashed_password",
+      "name": "testMan3"
     }
   ],
   "expenses": [
@@ -60,6 +66,13 @@
     {
       "sid": "abcde",
       "sess": "{\"cookie\":{\"originalMaxAge\":null,\"expires\":null,\"httpOnly\":true,\"path\":\"/\"},\"_existingSession\":true,\"user\":{\"email\":\"user1@user1.com\",\"name\":\"testMan1\",\"id\":1,\"created_at\":\"2013-12-23T08:14:19.328Z \",\"updated_at\":\"2013-12-23T08:14:19.328Z\"}}"
+    }
+  ],
+  "contacts": [
+    {
+      "id": 1,
+      "user_id": 1,
+      "contact_id": 2
     }
   ]
 }
