@@ -80,9 +80,18 @@ angular.module('main', ['ngRoute'])
       var participants = $scope.selected_contacts.map(function(participant) {
         return participant.id;
       });
+
+      var value;
+      if($scope.value.indexOf('$') !== -1) {
+        var no_dollar = $scope.value.slice(1);
+        value = parseInt(no_dollar) * 100;
+      } else {
+        value = parseInt($scope.value) * 100;
+      }
+
       var new_expense = {
         title: $scope.title,
-        value: $scope.value,
+        value: value,
         description: $scope.description,
         participants: participants
       };

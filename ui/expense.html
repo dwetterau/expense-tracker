@@ -1,23 +1,41 @@
 <div ng-controller="expenseController">
-  <p> <a href="#/expense/{{ data.id }}"> {{ data.title }} </a> - {{ data.owner.name }} </p>
-  <p> {{ renderValue(data.value) }} </p>
-  <div>
-    Participants:
+  <div class="col-sm-6">
+
+    <p>
+      <a href="#/expense/{{ data.id }}"> {{ data.title }} </a>
+      - {{ data.owner.name }}
+    </p>
+
+    <p ng-if="data.description"> {{ data.description }} </p>
+
+    <p> {{ renderValue(data.value) }} </p>
+
+    <img ng-if="data.image_id" ng-src="/thumb/{{data.image_id }}/320x240" />
+  </div>
+  <div class="col-sm-6">
     <ul ng-repeat="participant in data.participants"
         class="participant-list">
       <li ng-show="participant.status == 'Waiting'"
-          class="participant-unpaid">
-        {{ participant.name }} - {{ participant.status }}
-        <button ng-show="isOwner()" ng-click="markPaid(participant.id, data.id)">
-          mark paid
-        </button>
+          class="row">
+        <span class="participant-unpaid col-sm-6">
+          {{ participant.name }} - {{ participant.status }}
+        </span>
+
+        <span class="col-sm-6">
+          <button class="btn btn-primary btn-xs"
+                  ng-show="isOwner()"
+                  ng-click="markPaid(participant.id, data.id)">
+            mark paid
+          </button>
+        </span>
       </li>
       <li ng-show="participant.status == 'Paid'"
-          class="participant-paid">
-        {{ participant.name }} - {{ participant.status }}
+          class="row">
+        <span class="participant-paid col-sm-6">
+          {{ participant.name }} - {{ participant.status }}
+        </span>
       </li>
     </ul>
   </div>
 
-  <img ng-if="data.image_id" ng-src="/thumb/{{data.image_id }}/320x240" />
 </div>
