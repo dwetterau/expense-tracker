@@ -23,11 +23,6 @@ var Image = db.bookshelf.Model.extend({
     });
   },
 
-  check_permission: function(user_id) {
-    var Expense = require('./expenses').Expense;
-    return Expense.getWithPermissionCheck(this.get('expense_id'), user_id);
-  },
-
   hasTimestamps: ['created_at', 'updated_at']
 });
 
@@ -44,11 +39,9 @@ function resize_image(image_path, size_strings) {
   return Q.all(promises);
 }
 
-function store_image(image_path, expense_id) {
+function store_image(image_path) {
 
-  var image = new Image({
-    expense_id : expense_id
-  });
+  var image = new Image({});
 
   var image_p = Q.nfcall(fs.readFile, image_path).then(function(image_data) {
     image.set('data', image_data);
@@ -66,8 +59,7 @@ function store_image(image_path, expense_id) {
     thumbnails_store_p = thumbnails_data.map(function(thumbnail_data, i) {
       var thumb = new Image({data: thumbnail_data,
                              thumbnail_of: image.get('id'),
-                             size: thumbnail_sizes[i],
-                             expense_id: expense_id
+                             size: thumbnail_sizes[i]
                             });
       return thumb.save();
     });

@@ -112,37 +112,25 @@ exports.install_routes = function(app) {
 
   // Image routes
 
-  app.get('/images/:id', auth.check_auth, function(req, res) {
+  app.get('/images/:id', function(req, res) {
     var image_id = req.params.id;
     var image = new Image({id: image_id});
-    var user = new User(req.session.user);
-    image.fetch().then(function() {
-      return image.check_permission(user.get('id'));
-    }, function(err) {
-      send_error(res, 'An error occurred getting the image: ', err);
-    }).then(function() {
+    image.fetch().then(function(image) {
       res.set('Content-Type', 'image/jpeg');
       res.send(image.get('data'));
     }, function(err) {
-      send_error(res, 'Insufficient Permissions', err);
+      send_error(res, 'An error occurred getting the image: ', err);
     });
   });
 
-  app.get('/thumb/:id/:size', auth.check_auth, function(req, res) {
+  app.get('/thumb/:id/:size', function(req, res) {
     var image_id = req.params.id;
     var size_string = req.params.size;
-    var user = new User(req.session.user);
-    var retrieved_thumbnail;
     images.get_thumbnail(image_id, size_string).then(function(thumbnail) {
-      retrieved_thumbnail = thumbnail;
-      return thumbnail.check_permission(user.get('id'));
+      res.set('Content-Type', 'image/jpeg');
+      res.send(thumbnail.get('data'));
     }, function(err) {
       send_error(res, 'An error occurred getting the image: ', err);
-    }).then(function() {
-      res.set('Content-Type', 'image/jpeg');
-      res.send(retrieved_thumbnail.get('data'));
-    }, function(err) {
-      send_error(res, 'Insufficient Permissions', err);
     });
   });
 
@@ -174,32 +162,26 @@ exports.install_routes = function(app) {
       owner_id: owner.id,
       title: title,
       description: description,
-      value: value
+      value: value,
     });
 
-    var image_store_promise = function(expense_id) {
-      return Q.nfcall(fs.stat, image_path).then(function(file_stats) {
+    var image_store_promise = Q.nfcall(fs.stat, image_path)
+      .then(function(file_stats) {
         if (file_stats.size === 0) {
           return undefined;
         } else {
-          return images.store_image(image_path, expense_id);
+          return images.store_image(image_path);
         }
-      }).fail(function(err) {
-          console.log('ERROR ' + err);
-          // If this failed, do not use an image
-          return undefined;
-      });
-    };
-
-    expense.save().then(function() {
-      return image_store_promise(expense.get('id'));
-    }).then(function(image) {
-      if (image) {
-        // set the image_id on the expense and save it again
-        expense.set('image_id', image.get('id'));
-        return expense.save();
-      }
+      })
+    .fail(function(err) {
+      console.log('ERROR ' + err);
+      // If this failed, do not use an image
       return undefined;
+    });
+
+    image_store_promise.then(function(image) {
+      image && expense.set('image_id', image.get('id'));
+      return expense.save();
     }).then(function() {
       var status_promises = fetch_user_promises.map(function(fetch_user_promise, i) {
         fetch_user_promise.then(function() {
