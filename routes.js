@@ -296,8 +296,7 @@ exports.install_routes = function(app) {
         var data = expense.pretty_json();
         // TODO - more elegant solution for this.
         data.user_id = user.id;
-        //res.send(data);
-        setTimeout( function() { res.send(data); }, 100);
+        res.send(data);
       }).catch(function(err) {
         send_error(res, 'An error occurred retreiving the expense:', err);
       });
@@ -340,9 +339,9 @@ exports.install_routes = function(app) {
     });
   });
 
-  app.post('/api/expense/:expense_id/pay/:user_id', function(req, res) {
+  app.post('/api/expense/:expense_id/pay', function(req, res) {
     var owner_id = req.session.user.id;
-    var user_id = req.params.user_id;
+    var user_id = req.body.user_id;
     var expense_id = req.params.expense_id;
     var expense = new Expense({ id: req.params.expense_id});
     expense.fetch({withRelated: ['participants']}).then(function() {

@@ -30,7 +30,7 @@ describe('api', function() {
     server.close();
     load_test_data.reset().then(function() {
       done();
-    }, function(err) {
+    }).catch(function(err) {
       done(err);
     });
   });
@@ -82,24 +82,18 @@ describe('api', function() {
     });
 
     it('should mark an appropriately owned expense as paid', function(done) {
-      make_request('POST', '/api/expense/1/pay/2').then(function(result) {
+      make_request('POST', '/api/expense/1/pay', {user_id: 2}).then(function(result) {
         assert.equal(result.status, 'ok');
         return make_request('GET', '/api/expense/1');
       }).then(function(expense) {
         assert.equal(expense.participants[0].status, 'Paid');
-        done();
-      }).catch(function(err) {
-        done(err);
-      });
-
-      // Reset expense status
-      after(function(done) {
+        // Clean up for future tests
         var status = new ExpenseStatus({ id: 1, status: 0});
-        status.save().then(function() {
-          done();
-        }, function(err) {
-          done(err);
-        });
+        return status.save();
+      }).then(function() {
+        done();
+      }, function(err) {
+        done(err);
       });
 
     });
@@ -112,8 +106,6 @@ describe('api', function() {
       });
     });
   });
-
-
 
   it('should retreive contacts correctly', function(done) {
     make_request('GET', '/api/contacts')

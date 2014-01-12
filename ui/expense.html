@@ -13,9 +13,16 @@
     <img ng-if="data.image_id" ng-src="/thumb/{{data.image_id }}/320x240" />
   </div>
   <div class="col-sm-6">
-    <ul ng-repeat="participant in data.participants"
-        class="participant-list">
-      <li ng-show="participant.status == 'Waiting'"
+    <ul class="participant-list">
+
+      <li class="row">
+        <span class="participant-paid col-sm-6">
+          {{ data.owner.name }} - Owner
+        </span>
+      </li>
+
+
+      <li ng-repeat="participant in unpaid_participants()"
           class="row">
         <span class="participant-unpaid col-sm-6">
           {{ participant.name }} - {{ participant.status }}
@@ -29,12 +36,14 @@
           </button>
         </span>
       </li>
-      <li ng-show="participant.status == 'Paid'"
+
+      <li ng-repeat="participant in paid_participants()"
           class="row">
         <span class="participant-paid col-sm-6">
           {{ participant.name }} - {{ participant.status }}
         </span>
       </li>
+
     </ul>
   </div>
 

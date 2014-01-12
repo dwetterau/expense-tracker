@@ -41,7 +41,8 @@ angular.module('main', ['ngRoute'])
       return '$' + value / 100;
     };
     $scope.markPaid = function(user_id, expense_id) {
-      $http.post('/api/expense/' + expense_id + '/pay/' + user_id)
+      $http.post('/api/expense/' + expense_id + '/pay',
+                {user_id: user_id})
         .success(function() {
           $scope.data.participants.forEach(function(participant) {
             if(participant.id == user_id) {
@@ -53,6 +54,21 @@ angular.module('main', ['ngRoute'])
           alert(err);
         });
     };
+
+    function filter_participants(status) {
+      return $scope.data.participants.filter(function(participant) {
+        return participant.status == status;
+      });
+    }
+
+    $scope.unpaid_participants = function() {
+      return filter_participants('Waiting');
+    };
+
+    $scope.paid_participants = function() {
+      return filter_participants('Paid');
+    };
+
   })
   .directive('expense', function() {
     return {
