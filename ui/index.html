@@ -4,7 +4,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.6/angular-route.js"></script>
-    <script src="ui_main.js"></script>
+    <script src="ui/ui_main.js"></script>
     <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.0.3/css/bootstrap.min.css">
     <link type="text/css" rel="stylesheet" href="/static/main.css" />
     <link type="text/css" rel="stylesheet" href="/fonts/foundation_icons_all/foundation_icons_general/stylesheets/general_foundicons.css">
@@ -12,10 +12,13 @@
   </head>
   <body>
     <nav class="navbar">
-      <ul class="nav nav-tabs">
+      <ul class="nav navbar-nav navbar-left nav-tabs">
         <li> <a href="#/"> Home </a> </li>
         <li> <a href="#/create_expense"> Create Expense</a> </li>
         <li> <a href="#/add_contact"> Add Contact </a> </li>
+      </ul>
+      <ul class="nav navbar-nav nav-tabs navbar-right">
+        <li> <a href="/logout"> Logout </a> </li>
       </ul>
     </nav>
     <div class="container" ng-view></div>

@@ -77,7 +77,7 @@ angular.module('main', ['ngRoute'])
         data: '=data',
         user_id: '=userId'
       },
-      templateUrl: 'expense.html'
+      templateUrl: 'ui/expense.html'
     };
   })
   .controller('createController', function($scope, $http) {
@@ -156,19 +156,19 @@ angular.module('main', ['ngRoute'])
   .config(function($routeProvider) {
     $routeProvider
       .when('/', {
-        templateUrl: 'expense_listing.html',
+        templateUrl: 'ui/expense_listing.html',
         controller: 'indexController'
       })
       .when('/expense/:expense_id', {
-        templateUrl: 'expense_view.html',
+        templateUrl: 'ui/expense_view.html',
         controller: 'expenseViewController'
       })
       .when('/create_expense', {
-        templateUrl: 'create_expense.html',
+        templateUrl: 'ui/create_expense.html',
         controller: 'createController'
       })
       .when('/add_contact', {
-        templateUrl: 'add_contact.html',
+        templateUrl: 'ui/add_contact.html',
         controller: 'addContact'
       })
       .otherwise({
