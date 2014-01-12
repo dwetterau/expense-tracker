@@ -148,7 +148,7 @@ angular.module('main', ['ngRoute'])
         .success(function() {
           window.location = '#/';
         })
-        .fail(function() {
+        .error(function() {
           alert('Could not add contact');
         });
     };
