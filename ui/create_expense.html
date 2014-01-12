@@ -1,0 +1,44 @@
+<div class="form-horizontal">
+  <div class="form-group">
+    <label class="col-sm-2 control-label" for="title"> Title </label>
+    <div class="col-sm-10">
+      <input class="form-control"
+             type="text" ng-model="title" required="required" id="title"
+             placeholder="Example: November Rent"/>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-sm-2 control-label" for="value"> Value </label>
+    <div class="col-sm-10">
+      <input class="form-control"
+             type="text" ng-model="value" required="required" id="value"
+             placeholder="Example: $5.00"/>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-sm-2 control-label"
+           for="description"> Description</label>
+    <div class="col-sm-10">
+      <input class="form-control" type="text"
+             ng-model="description" id="description"
+             placeholder="Not Required"/>
+    </div>
+  </div>
+  <div class="form-group">
+    <label class="col-sm-2 control-label"> Participants </label>
+    <div class="contact-selector col-sm-10">
+      <div ng-repeat="contact in contacts"
+           ng-class="contactClass(contact)"
+           ng-click="toggleContact(contact)">
+        {{ contact.name }}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="form-group">
+  <div class="col-sm-10 col-sm-offset-2">
+    <button class="btn btn-success" ng-click="submit()"> Done </button>
+    <button class="btn btn-default" ng-click="cancel()"> Cancel </button>
+  </div>
+</div>

@@ -49,3 +49,4 @@ BookshelfStore.prototype.destroy = function(sid, callback) {
 };
 
 exports.BookshelfStore = BookshelfStore;
+exports.Session = Session;

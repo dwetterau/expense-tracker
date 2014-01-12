@@ -62,12 +62,26 @@ exports.create_sessions = function() {
   });
 };
 
+exports.create_contacts = function() {
+  return knex.schema.createTable('contacts', function(table) {
+    table.increments('id');
+    table.integer('user_id').notNullable();
+    table.integer('contact_id').notNullable();
+    table.timestamps();
+  }).then(function() {
+    // Can't create this index using knex directly
+    return knex.raw('CREATE UNIQUE INDEX UIX_contacts ' +
+                    'on contacts (user_id, contact_id)');
+  });
+};
+
 exports.add_all = function() {
   return Q.all([
     exports.create_users(),
     exports.create_expenses(),
     exports.create_expense_status(),
     exports.create_images(),
-    exports.create_sessions()
+    exports.create_sessions(),
+    exports.create_contacts()
   ]);
 };

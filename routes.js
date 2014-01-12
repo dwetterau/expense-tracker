@@ -1,5 +1,6 @@
 var fs = require('fs');
 var Q = require('q');
+var express = require('express');
 var auth = require('./auth');
 var expenses = require('./expenses');
 var Expense = expenses.Expense;
@@ -26,48 +27,27 @@ function send_error(res, info, exception) {
 
 exports.install_routes = function(app) {
   // Main route
-  app.get('/', auth.check_auth, function(req, res) {
-    var user = new User(req.session.user);
-    var unfinished = user.unfinished_expenses();
-    var unpaid = user.unpaid_expenses();
-
-    Q.all([unfinished.fetch({withRelated: ['owner', 'participants']}),
-           unpaid.fetch({withRelated: ['owner', 'participants']})])
-      .then(function() {
-        var template_unfinished = unfinished.map(function(x) {
-          return expenses.templateify(x, user.get('id'));
-        });
-        var template_unpaid = unpaid.map(function(x) {
-          return expenses.templateify(x, user.get('id'));
-        });
-
-        res.render("index", {
-          title: "Expense Tracker",
-          email: user.get('email'),
-          name: user.get('name'),
-          unfinished_expenses: template_unfinished,
-          unpaid_expenses: template_unpaid,
-          logged_in: true
-        });
-
-      }).catch(function(err) {
-        send_error(res, 'An error occurred while retrieving the expenses: ', err);
-      });
-  });
+  app.get('/', auth.check_auth, express.static(__dirname + '/ui'));
 
   app.post('/login', function(req, res) {
     var email = req.body.email;
     var password = req.body.password;
+    var next = req.body.next;
     users.User.login(email, password).then(function(user) {
       req.session.user = user;
-      res.redirect('/');
+      if (next && next[0] == '/') {
+        res.redirect(next);
+      } else {
+        res.redirect('/');
+      }
     }, function(err) {
       send_error(res, 'Login error: ', err);
     });
   });
 
   app.get('/login', function(req, res) {
-    res.render('login');
+    var next = req.query.next;
+    res.render('login', {next: next});
   });
 
   app.post('/logout', function(req, res) {
@@ -134,125 +114,120 @@ exports.install_routes = function(app) {
     });
   });
 
-  // Expenses routes
-  app.get('/create_expense', auth.check_auth, function(req, res) {
-    res.render('create_expense', {title: 'Create new expense', logged_in: true});
-  });
-
-  app.post('/create_expense', auth.check_auth, function(req, res) {
-    var title = req.body.title;
-    var description = req.body.description || undefined;
-    var value = parseInt(req.body.value, 10);
-    var owner = req.session.user;
-    var participants = [];
-    var image_path = req.files.image && req.files.image.path;
-
-    if (req.body.participants) {
-      var participant_emails = req.body.participants.split(',');
-      participants = participant_emails.map(function(email) {
-        return new User({email: email});
-      });
-    }
-
-    var fetch_user_promises = participants.map(function(participant) {
-      return participant.fetch();
-    });
-
-    var expense = new Expense({
-      owner_id: owner.id,
-      title: title,
-      description: description,
-      value: value,
-    });
-
-    var image_store_promise = Q.nfcall(fs.stat, image_path)
-      .then(function(file_stats) {
-        if (file_stats.size === 0) {
-          return undefined;
-        } else {
-          return images.store_image(image_path);
-        }
-      })
-    .fail(function(err) {
-      console.log('ERROR ' + err);
-      // If this failed, do not use an image
-      return undefined;
-    });
-
-    image_store_promise.then(function(image) {
-      image && expense.set('image_id', image.get('id'));
-      return expense.save();
-    }).then(function() {
-      var status_promises = fetch_user_promises.map(function(fetch_user_promise, i) {
-        fetch_user_promise.then(function() {
-          var participant = participants[i];
-          var new_status = new ExpenseStatus({
-            user_id: participant.get('id'),
-            expense_id: expense.get('id'),
-            status: expenses.expense_states.WAITING
-          });
-          return new_status.save();
-        });
-      });
-
-      return Q.all(status_promises);
-    }).then(function() {
-      res.redirect('/expense/' + expense.get('id'));
-    }, function(err) {
-      send_error(res, 'An error occurred making the expense: ', err);
-    });
-
-  });
-
-  app.get('/expense/:expense_id', auth.check_auth, function(req, res) {
-    var expense_id = req.params.expense_id;
+  // API type calls
+  app.get('/api/expenses', auth.check_auth, function(req, res) {
     var user = new User(req.session.user);
-    Expense.getWithPermissionCheck(expense_id, user.get('id')).then(function(expense) {
-      if (!expense) {
-        send_error(res, 'Expense not found ', new Error('Expense not found'));
-        return;
-      }
-      res.render('expense', {title: 'Expense detail',
-                             expense: expenses.templateify(expense, user.get('id')),
-                             logged_in: true});
-    }, function(err) {
-      send_error(res, 'An error occurred retrieving the expense: ', err);
+    var owned_expenses = user.owned_expenses();
+    var participant_expenses = user.participant_expenses();
+
+    Q.all([owned_expenses.fetch({
+      withRelated: ['owner', 'participants']
+    }), participant_expenses.fetch({
+      withRelated: ['owner', 'participants']
+    })]).then(function() {
+      var owned_json = owned_expenses.invoke('pretty_json');
+      var participant_json = participant_expenses.invoke('pretty_json');
+
+      var data = {
+        owned_expenses: owned_json,
+        participant_expenses: participant_json,
+        user_id: user.id
+      };
+      res.send(data);
+    }).catch(function(err) {
+      send_error(res, 'An error occurred retreiving the expenses.', err);
     });
   });
 
-  // TODO: this should be a post
-  app.get('/expense/:expense_id/pay/:user_id', function(req, res) {
-    // Mark the expense as paid for user user_id
-    var expense = new Expense({'id': req.params.expense_id});
-    var user_id = req.params.user_id;
-    var owner_id = req.session.user.id;
-    expense.getWithAllParticipants().then(function() {
-      expense.mark_paid(owner_id,
-                        user_id)
-        .then(function() {
-          res.redirect('/expense/' + expense.get('id'));
+  app.get('/api/expense/:expense_id', auth.check_auth, function(req, res) {
+    var user = new User(req.session.user);
+    var expense_id = req.params.expense_id;
+    Expense.getWithPermissionCheck(expense_id, user.id)
+      .then(function(expense) {
+        var data = expense.pretty_json();
+        // TODO - more elegant solution for this.
+        data.user_id = user.id;
+        res.send(data);
+      }).catch(function(err) {
+        send_error(res, 'An error occurred retreiving the expense:', err);
+      });
+  });
+
+  app.get('/api/contacts', auth.check_auth, function(req, res) {
+    var user = new User(req.session.user);
+    var contacts = user.contacts();
+    contacts.fetch().then(function() {
+      res.send(contacts.invoke('pretty_json'));
+    });
+  });
+
+  app.post('/api/create_expense', auth.check_auth, function(req, res) {
+    var user = new User(req.session.user);
+    var participants = req.body.participants.map(function(participant_id) {
+      return new User({ id: participant_id });
+    });
+    var expense = new Expense({
+      title: req.body.title,
+      value: req.body.value,
+      description: req.body.description,
+      owner_id: user.id
+    });
+    var expense_done = expense.save();
+
+    expense_done.then(function() {
+      var participants_done = participants.map(function(participant) {
+        var status = new ExpenseStatus({
+          user_id: participant.id,
+          expense_id: expense.id,
+          status: expenses.expense_states.WAITING
         });
-    });
-  });
-
-  // TODO: Make this a post also
-  app.get('/expense/:expense_id/delete', auth.check_auth, function(req, res) {
-    var expense = new Expense({id: req.params.expense_id});
-    var user_id = req.session.user.id;
-    expense.fetch().then(function() {
-      if (expense.get('owner_id') == user_id) {
-        return expense.destroy();
-      }
+        return status.save();
+      });
     }).then(function() {
-      res.redirect('/');
-    }, function(err) {
-      send_error(res, 'An error occurred while trying to delete the expense: ', err);
+      res.send({id: expense.id});
+    }).catch(function(err) {
+      res.send(500, "Could not create expense");
     });
   });
 
-  var port = process.env.PORT || 3000;
-  app.listen(port, function() {
-    console.log("Listening on", port);
+  app.post('/api/expense/:expense_id/pay', function(req, res) {
+    var owner_id = req.session.user.id;
+    var user_id = req.body.user_id;
+    var expense_id = req.params.expense_id;
+    var expense = new Expense({ id: req.params.expense_id});
+    expense.fetch({withRelated: ['participants']}).then(function() {
+      return expense.mark_paid(owner_id, user_id);
+    }).then(function() {
+      res.send({status: 'ok'});
+    }).catch(function(err) {
+      res.send(500, {
+        status: 'error',
+        err: 'There was an error paying the expense'
+      });
+    });
   });
+
+  app.post('/api/add_contact', function(req, res) {
+    var owner = new User(req.session.user);
+    var email = req.body.email;
+
+    var other = new User({email: email});
+    other.fetch().then(function() {
+      if (other.isNew()) {
+        throw new Error('User does not exist');
+      }
+      return owner.contacts().attach(other.id);
+    }).then(function() {
+      res.send({status: 'ok'});
+    }).catch(function(err) {
+      res.send(500, { status: 'error',
+                      err: 'There was an error adding this contact.'});
+    });
+  });
+
+
+  // Install ui at /ui (for the time being) with authentication
+  app.use('/ui', auth.check_auth);
+  app.use('/ui', express.static(__dirname + '/ui'));
 
 };

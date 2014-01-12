@@ -1,9 +1,11 @@
 process.env.NODE_ENV = 'testing';
 var assert = require('assert');
+var Q = require('q');
+
 var db = require('../db');
 var schema = require('../schema');
-var uuid = require('node-uuid');
-var Q = require('q');
+var load_test_data = require('./load_test_data');
+var test_data = require('./test_data');
 
 var User = require('../users').User;
 var expenses = require('../expenses');
@@ -12,72 +14,30 @@ var ExpenseStatus = expenses.ExpenseStatus;
 // TODO: refactor all of this stuff into a common test file
 Q.longStackSupport = true;
 
-var user1 = new User({
-  email: 'user1@user1.com',
-  password: 'password',
-  name: 'testMan1',
-});
-
-var user2 = new User({
-  email: 'user2@user2.com',
-  password: 'password',
-  name: 'testMan2',
-});
-
-// Owned by 1, participation with 2 where 2 is WAITING
-var expense1 = new Expense({
-  value: 1,
-  title: 'Test title1',
-  description: 'test description1'
-});
-
-// This will connect user2 to expense1
-var expensestatus1 = new ExpenseStatus({
-  status: expenses.expense_states.WAITING
-});
-
-// Owned by 1
-var expense2 = new Expense({
-  value: 1,
-  title: 'Test title2',
-  description: 'test description2'
-});
-
-// Owned by 1, participation with 2 where 2 is PAID
-var expense3 = new Expense({
-  value: 1,
-  title: 'Test title3',
-  description: 'test description3'
-});
-
-var expensestatus3 = new ExpenseStatus({
-  status: expenses.expense_states.PAID
-});
-
 describe('expenses', function() {
   before(function(done) {
     this.timeout(1000000);
-    Q.all([user1.save(), user2.save()])
+    load_test_data.install_test_data()
       .then(function() {
-        expense1.set('owner_id', user1.get('id'));
-        expense2.set('owner_id', user1.get('id'));
-        expense3.set('owner_id', user1.get('id'));
-        expensestatus1.set('user_id', user2.get('id'));
-        expensestatus3.set('user_id', user2.get('id'));
-        return Q.all([expense1.save(), expense2.save(), expense3.save()]);
-      }).then(function() {
-        expensestatus1.set('expense_id', expense1.get('id'));
-        expensestatus3.set('expense_id', expense3.get('id'));
-        return Q.all([expensestatus1.save(), expensestatus3.save()]);
-      }).then(function() { done(); },
-              function(err) { done(err); });
+        done();
+      }, function(err) {
+        done(err);
+      });
+  });
+
+  after(function(done) {
+    load_test_data.reset().then(function() {
+      done();
+    }, function(err) {
+      done(err);
+    });
   });
 
   describe('participants', function() {
     it('should allow an owner to be retreived correctly', function(done) {
       var e = new Expense({title: 't',
                            value: 10,
-                           owner_id: user1.get('id')
+                           owner_id: 1
                           });
 
       e.save().then(function() {
@@ -94,12 +54,12 @@ describe('expenses', function() {
     it('should allow a participant to be added correctly', function(done) {
       var e = new Expense({title: 't',
                            value: 10,
-                           owner_id: user1.get('id')
+                           owner_id: 1
                           });
       var es;
       e.save().then(function() {
-        es = new ExpenseStatus({ user_id: user2.get('id'),
-                                 expense_id: e.get('id'),
+        es = new ExpenseStatus({ user_id: 2,
+                                 expense_id: e.id,
                                  status: expenses.expense_states.WAITING
                                });
         return es.save();
@@ -120,7 +80,7 @@ describe('expenses', function() {
 
   describe('retrieving expenses', function() {
     it('should get the expense with users correctly', function(done) {
-      var e = new Expense({ 'id': expense1.get('id')});
+      var e = new Expense({ 'id': 1});
       e.getWithAllParticipants().then(function() {
         var owner = e.related('owner');
         assert.equal(owner.get('name'), 'testMan1');
@@ -134,11 +94,13 @@ describe('expenses', function() {
     });
 
     it('should get the owned expenses for a user correctly', function(done) {
+      var user1 = new User(test_data.users[0]);
+
       user1.related('owned_expenses').fetch().then(function() {
         var owned_expenses = user1.related('owned_expenses');
-        var e1 = owned_expenses.get(expense1.get('id'));
-        var e2 = owned_expenses.get(expense2.get('id'));
-        assert(e1 && e2);
+        var e1 = owned_expenses.get(1);
+        var e3 = owned_expenses.get(3);
+        assert(e1 && e3);
         done();
       }).catch(function(err) {
         done(err);
@@ -146,9 +108,11 @@ describe('expenses', function() {
     });
 
     it('should get the participated expenses for a user correctly', function(done) {
+      var user2 = new User(test_data.users[1]);
+
       var pe = user2.related('participant_expenses');
       pe.fetch().then(function() {
-        var e1 = pe.get(expense1.get('id'));
+        var e1 = pe.get(1);
         assert(e1);
         assert.equal(e1.pivot.get('status'), expenses.expense_states.WAITING);
         done();
@@ -158,12 +122,14 @@ describe('expenses', function() {
     });
 
     it('should get the paid expenses for a user correctly', function(done) {
+      var user2 = new User(test_data.users[1]);
+
       var pe = user2.paid_expenses();
       pe.fetch().then(function() {
-        var e3 = pe.get(expense3.get('id'));
+        var e3 = pe.get(3);
         assert(e3);
         // This should be undefined, as this should only get paid expenses
-        var e1 = pe.get(expense1.get('id'));
+        var e1 = pe.get(1);
         assert(e1 === undefined);
         done();
       }).catch(function(err) {
@@ -172,12 +138,14 @@ describe('expenses', function() {
     });
 
     it('should get the unpaid expenses for a user correctly', function(done) {
+      var user2 = new User(test_data.users[1]);
+
       var ue = user2.unpaid_expenses();
       ue.fetch().then(function() {
-        var e1 = ue.get(expense1.get('id'));
+        var e1 = ue.get(1);
         assert(e1);
         // This should be undefined, as this should only get paid expenses
-        var e3 = ue.get(expense3.get('id'));
+        var e3 = ue.get(3);
         assert(e3 === undefined);
         done();
       }).catch(function(err) {
@@ -186,11 +154,13 @@ describe('expenses', function() {
     });
 
     it('should get the finished expenses for a user correctly', function(done) {
+      var user1 = new User(test_data.users[0]);
+
       var fe = user1.finished_expenses();
       fe.fetch().then(function() {
         // This should include expense3 but not expense1
-        var e1 = fe.get(expense1.get('id'));
-        var e3 = fe.get(expense3.get('id'));
+        var e1 = fe.get(1);
+        var e3 = fe.get(3);
         assert(e3);
         assert(e1 === undefined);
         done();
@@ -200,11 +170,13 @@ describe('expenses', function() {
     });
 
     it('should get the unfinished expenses for a user correctly', function(done) {
+      var user1 = new User(test_data.users[0]);
+
       var ue = user1.unfinished_expenses();
       ue.fetch().then(function() {
         // This should include expense1, but not expense3
-        var e1 = ue.get(expense1.get('id'));
-        var e3 = ue.get(expense3.get('id'));
+        var e1 = ue.get(1);
+        var e3 = ue.get(3);
         assert(e1);
         assert(e3 === undefined);
         done();
@@ -217,7 +189,7 @@ describe('expenses', function() {
 
   describe('Get with permission check', function() {
     it('should allow owners to view expense', function(done) {
-      Expense.getWithPermissionCheck(expense1.get('id'), user1.get('id'))
+      Expense.getWithPermissionCheck(1, 1)
       .then(function(result) {
         assert(result);
         done();
@@ -227,7 +199,7 @@ describe('expenses', function() {
     });
 
     it('should allow participants to view expense', function(done) {
-      Expense.getWithPermissionCheck(expense1.get('id'), user2.get('id'))
+      Expense.getWithPermissionCheck(1, 2)
       .then(function(result) {
         assert(result);
         done();
@@ -237,7 +209,7 @@ describe('expenses', function() {
     });
 
     it('should not allow unrelated participants to view expense', function(done) {
-      Expense.getWithPermissionCheck(expense1.get('id'), 12345)
+      Expense.getWithPermissionCheck(1, 12345)
       .then(function(result) {
         done(new Error('Returned ' + result));
       }, function(err) {
@@ -254,12 +226,12 @@ describe('expenses', function() {
       expense = new Expense({ title: 'pay test',
                               value: 1,
                               description: 'pay test desc',
-                              owner_id: user1.get('id')
+                              owner_id: 1
                             });
       expense.save().then(function() {
         var status = new ExpenseStatus({
-          user_id: user2.get('id'),
-          expense_id: expense.get('id'),
+          user_id: 2,
+          expense_id: expense.id,
           status: expenses.expense_states.WAITING
         });
         return status.save();
@@ -273,7 +245,7 @@ describe('expenses', function() {
     });
 
     it('should allow owner to mark user paid', function(done) {
-      expense.mark_paid(user1.get('id'), user2.get('id')).then(function() {
+      expense.mark_paid(1, 2).then(function() {
         var participant = expense.related('participants').at(0);
         assert.equal(participant.pivot.get('status'), expenses.expense_states.PAID);
         done();
@@ -283,7 +255,7 @@ describe('expenses', function() {
     });
 
     it('should not allow owner to mark random paid', function(done) {
-      expense.mark_paid(user1.get('id'), 12345).then(function() {
+      expense.mark_paid(1, 12345).then(function() {
         done('Marked random as paid??!?');
       }).catch(function(err) {
         assert.equal(err.message, 'User is not included on given expense');
@@ -293,8 +265,8 @@ describe('expenses', function() {
       });
     });
 
-    it('should not allow user to mark self paid', function(done) {
-      expense.mark_paid(user2.get('id'), user2.get('id')).then(function() {
+    it('should not allow non-owner to mark self paid', function(done) {
+      expense.mark_paid(2, 2).then(function() {
         done('Marked self as paid');
       }).catch(function(err) {
         assert.equal(err.message, 'User is not owner of this expense');
@@ -308,12 +280,12 @@ describe('expenses', function() {
   describe('Expense deletion', function() {
     var e;
     beforeEach(function(done) {
-      e = new Expense({owner_id: user1.id,
+      e = new Expense({owner_id: 1,
                        title: 'expense title',
                        value: 1234});
 
       e.save().then(function() {
-        var es = new ExpenseStatus({ user_id: user2.id,
+        var es = new ExpenseStatus({ user_id: 2,
                                      expense_id: e.id,
                                      status: expenses.expense_states.WAITING
                                    });
@@ -339,6 +311,8 @@ describe('expenses', function() {
     });
 
     it('should not return an owned deleted expense', function(done) {
+      var user1 = new User(test_data.users[0]);
+
       var owned;
       e.destroy().then(function() {
         owned = user1.owned_expenses();
@@ -352,6 +326,7 @@ describe('expenses', function() {
     });
 
     it('should not return a participant deleted expense', function(done) {
+      var user2 = new User(test_data.users[1]);
       var part;
       e.destroy().then(function() {
         part = user2.participant_expenses();
