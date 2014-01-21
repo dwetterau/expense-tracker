@@ -25,7 +25,23 @@ function send_error(res, info, exception) {
              });
 }
 
+function rewrite_url(url) {
+  var angular_prefixes = ['/expense', '/create_expense', '/add_contact'];
+  for (var i = 0; i < angular_prefixes.length; i++) {
+    if (url.substr(0, angular_prefixes[i].length) == angular_prefixes[i]) {
+      console.log('rewriting', url);
+      return '/ui/index.html';
+    }
+  }
+  return url;
+}
+
 exports.install_routes = function(app) {
+  app.use(function(req, res, next) {
+    req.url = rewrite_url(req.url);
+    next();
+  });
+
   // Main route
   app.get('/', auth.check_auth, express.static(__dirname + '/ui'));
 
@@ -225,9 +241,7 @@ exports.install_routes = function(app) {
     });
   });
 
-
   // Install ui at /ui (for the time being) with authentication
   app.use('/ui', auth.check_auth);
   app.use('/ui', express.static(__dirname + '/ui'));
-
 };

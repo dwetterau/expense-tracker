@@ -153,22 +153,23 @@ angular.module('main', ['ngRoute'])
         });
     };
   })
-  .config(function($routeProvider) {
+  .config(function($routeProvider, $locationProvider) {
+    $locationProvider.html5Mode(true);
     $routeProvider
       .when('/', {
-        templateUrl: 'ui/expense_listing.html',
+        templateUrl: '/ui/expense_listing.html',
         controller: 'indexController'
       })
       .when('/expense/:expense_id', {
-        templateUrl: 'ui/expense_view.html',
+        templateUrl: '/ui/expense_view.html',
         controller: 'expenseViewController'
       })
       .when('/create_expense', {
-        templateUrl: 'ui/create_expense.html',
+        templateUrl: '/ui/create_expense.html',
         controller: 'createController'
       })
       .when('/add_contact', {
-        templateUrl: 'ui/add_contact.html',
+        templateUrl: '/ui/add_contact.html',
         controller: 'addContact'
       })
       .otherwise({
