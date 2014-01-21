@@ -1,7 +1,7 @@
-angular.module('main', ['ngRoute'])
-  .controller('indexController', function($scope, $http) {
+angular.module('main', ['ngRoute', 'expense_service'])
+  .controller('indexController', function($scope, expenses) {
     $scope.refresh = function() {
-      $http.get('/api/expenses')
+      expenses.get_expenses()
         .success(function (data) {
           $scope.expenses = data;
           $scope.user_id = data.user_id;
@@ -41,10 +41,10 @@ angular.module('main', ['ngRoute'])
       });
     };
   })
-  .controller('expenseViewController', function($scope, $routeParams, $http, $parent) {
+  .controller('expenseViewController', function($scope, $routeParams, expenses) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
-      $http.get('/api/expense/' + expense_id)
+      expenses.get_expense(expense_id)
         .success(function(data) {
           $scope.user_id = data.user_id;
           $scope.expense = data;
@@ -52,7 +52,7 @@ angular.module('main', ['ngRoute'])
     };
     $scope.load_expense();
   })
-  .controller('expenseController', function($http, $scope) {
+  .controller('expenseController', function(expenses, $scope) {
     $scope.isOwner = function() {
       return $scope.data && $scope.user_id == $scope.data.owner_id;
     };
@@ -60,8 +60,7 @@ angular.module('main', ['ngRoute'])
       return '$' + value / 100;
     };
     $scope.markPaid = function(user_id, expense_id) {
-      $http.post('/api/expense/' + expense_id + '/pay',
-                {user_id: user_id})
+      expenses.pay_expense(expense_id, user_id)
         .success(function() {
           $scope.data.participants.forEach(function(participant) {
             if(participant.id == user_id) {
@@ -75,9 +74,10 @@ angular.module('main', ['ngRoute'])
     };
 
     function filter_participants(status) {
-      return $scope.data.participants.filter(function(participant) {
-        return participant.status == status;
-      });
+      return $scope.data &&
+        $scope.data.participants.filter(function(participant) {
+          return participant.status == status;
+        });
     }
 
     $scope.unpaid_participants = function() {
@@ -99,11 +99,11 @@ angular.module('main', ['ngRoute'])
       templateUrl: 'ui/expense.html'
     };
   })
-  .controller('createExpenseController', function($scope, $http) {
+  .controller('createExpenseController', function($scope, expenses) {
     $scope.selected_contacts = [];
 
     function getContacts() {
-      $http.get('/api/contacts')
+      expenses.get_contacts()
         .success(function(data) {
           $scope.contacts = data;
         })
@@ -130,7 +130,7 @@ angular.module('main', ['ngRoute'])
         description: $scope.description,
         participants: participants
       };
-      $http.post('/api/create_expense', new_expense)
+      expenses.create_expense(new_expense)
         .success(function(response) {
           var id = response.id;
           window.location = '#/expense/' + id;
@@ -161,9 +161,9 @@ angular.module('main', ['ngRoute'])
 
     getContacts();
   })
-  .controller('addContactController', function($http, $scope) {
+  .controller('addContactController', function(expenses, $scope) {
     $scope.submit = function() {
-      $http.post('/api/add_contact', {email: $scope.email})
+      expenses.add_contact($scope.email)
         .success(function() {
           window.location = '#/';
         })
