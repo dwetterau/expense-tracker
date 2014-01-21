@@ -26,7 +26,7 @@ function send_error(res, info, exception) {
 }
 
 function rewrite_url(url) {
-  var angular_prefixes = ['/expense', '/create_expense', '/add_contact'];
+  var angular_prefixes = ['/login', '/expense', '/create_expense', '/add_contact'];
   for (var i = 0; i < angular_prefixes.length; i++) {
     if (url.substr(0, angular_prefixes[i].length) == angular_prefixes[i]) {
       console.log('rewriting', url);
@@ -43,23 +43,7 @@ exports.install_routes = function(app) {
   });
 
   // Main route
-  app.get('/', auth.check_auth, express.static(__dirname + '/ui'));
-
-  app.post('/login', function(req, res) {
-    var email = req.body.email;
-    var password = req.body.password;
-    var next = req.body.next;
-    users.User.login(email, password).then(function(user) {
-      req.session.user = user;
-      if (next && next[0] == '/') {
-        res.redirect(next);
-      } else {
-        res.redirect('/');
-      }
-    }, function(err) {
-      send_error(res, 'Login error: ', err);
-    });
-  });
+  app.get('/', express.static(__dirname + '/ui'));
 
   app.get('/login', function(req, res) {
     var next = req.query.next;
@@ -107,7 +91,6 @@ exports.install_routes = function(app) {
   });
 
   // Image routes
-
   app.get('/images/:id', function(req, res) {
     var image_id = req.params.id;
     var image = new Image({id: image_id});
@@ -131,6 +114,21 @@ exports.install_routes = function(app) {
   });
 
   // API type calls
+  app.post('/api/login', function(req, res) {
+    var email = req.body.email;
+    var password = req.body.password;
+    var next = req.body.next;
+    users.User.login(email, password).then(function(user) {
+      req.session.user = user;
+      res.send({
+        user_id: user.id,
+        next: next
+      })
+    }, function(err) {
+      send_error(res, 'Login error: ', err);
+    });
+  });
+
   app.get('/api/expenses', auth.check_auth, function(req, res) {
     var user = new User(req.session.user);
     var owned_expenses = user.owned_expenses();
@@ -206,7 +204,7 @@ exports.install_routes = function(app) {
     });
   });
 
-  app.post('/api/expense/:expense_id/pay', function(req, res) {
+  app.post('/api/expense/:expense_id/pay', auth.check_auth, function(req, res) {
     var owner_id = req.session.user.id;
     var user_id = req.body.user_id;
     var expense_id = req.params.expense_id;
@@ -223,7 +221,7 @@ exports.install_routes = function(app) {
     });
   });
 
-  app.post('/api/add_contact', function(req, res) {
+  app.post('/api/add_contact', auth.check_auth, function(req, res) {
     var owner = new User(req.session.user);
     var email = req.body.email;
 
@@ -241,7 +239,5 @@ exports.install_routes = function(app) {
     });
   });
 
-  // Install ui at /ui (for the time being) with authentication
-  app.use('/ui', auth.check_auth);
   app.use('/ui', express.static(__dirname + '/ui'));
 };

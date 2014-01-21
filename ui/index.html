@@ -12,7 +12,7 @@
     <title>Expenses</title>
   </head>
   <body>
-    <nav class="navbar">
+    <nav class="navbar" ng-controller="navigationController" ng-class="{ active: updateNav() }">
       <ul class="nav navbar-nav navbar-left nav-tabs">
         <li> <a href="/"> Home </a> </li>
         <li> <a href="/create_expense"> Create Expense</a> </li>

@@ -21,7 +21,27 @@ angular.module('main', ['ngRoute'])
 
     $scope.refresh();
   })
-  .controller('expenseViewController', function($scope, $routeParams, $http) {
+  .controller('navigationController', function($scope, $location) {
+    $scope.updateNav = function() {
+      console.log($scope.user_id, $location.url());
+    }
+  })
+  .controller('loginController', function($http, $scope, $location) {
+    $scope.submit = function() {
+      $http.post('/api/login', {
+        email: $scope.email,
+        password: $scope.password,
+        //TODO figure out how to read qs parameters
+        next: $location.search('next')
+      }).success(function(data) {
+        // TODO: set this user_id on some service that the navbar will read
+        window.location = data.next ? data.next : '/';
+      }).error(function() {
+        //TODO: display a message that the login failed
+      });
+    };
+  })
+  .controller('expenseViewController', function($scope, $routeParams, $http, $parent) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
       $http.get('/api/expense/' + expense_id)
@@ -30,7 +50,6 @@ angular.module('main', ['ngRoute'])
           $scope.expense = data;
         });
     };
-
     $scope.load_expense();
   })
   .controller('expenseController', function($http, $scope) {
@@ -80,7 +99,7 @@ angular.module('main', ['ngRoute'])
       templateUrl: 'ui/expense.html'
     };
   })
-  .controller('createController', function($scope, $http) {
+  .controller('createExpenseController', function($scope, $http) {
     $scope.selected_contacts = [];
 
     function getContacts() {
@@ -142,7 +161,7 @@ angular.module('main', ['ngRoute'])
 
     getContacts();
   })
-  .controller('addContact', function($http, $scope) {
+  .controller('addContactController', function($http, $scope) {
     $scope.submit = function() {
       $http.post('/api/add_contact', {email: $scope.email})
         .success(function() {
@@ -160,17 +179,21 @@ angular.module('main', ['ngRoute'])
         templateUrl: '/ui/expense_listing.html',
         controller: 'indexController'
       })
+      .when('/login', {
+        templateUrl: '/ui/login.html',
+        controller: 'loginController'
+      })
       .when('/expense/:expense_id', {
         templateUrl: '/ui/expense_view.html',
         controller: 'expenseViewController'
       })
       .when('/create_expense', {
         templateUrl: '/ui/create_expense.html',
-        controller: 'createController'
+        controller: 'createExpenseController'
       })
       .when('/add_contact', {
         templateUrl: '/ui/add_contact.html',
-        controller: 'addContact'
+        controller: 'addContactController'
       })
       .otherwise({
         redirectTo: '/'
