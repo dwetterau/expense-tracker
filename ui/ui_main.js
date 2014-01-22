@@ -1,4 +1,4 @@
-angular.module('main', ['ngRoute', 'expense_service'])
+angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
   .controller('indexController', function($scope, expenses) {
     $scope.refresh = function() {
       expenses.get_expenses()
@@ -21,25 +21,54 @@ angular.module('main', ['ngRoute', 'expense_service'])
 
     $scope.refresh();
   })
-  .controller('navigationController', function($scope, $location) {
-    $scope.updateNav = function() {
-      console.log($scope.user_id, $location.url());
+  .controller('navigationController', function($scope, $location, users) {
+    $scope.noRedirect = function(path) {
+      var public_paths = ['/login', '/create_account'];
+      for (var i = 0; i < public_paths.length; i++) {
+        if (public_paths[i] == path) {
+          return true;
+        }
+      }
+      return false;
+    };
+
+    $scope.isLoggedIn = false;
+
+    $scope.showLoggedIn = function() {
+      $scope.isLoggedIn = true;
+    };
+    $scope.showLoggedOut = function() {
+      $scope.isLoggedIn = false;
+    };
+
+    if (users.logged_in()) {
+      $scope.showLoggedIn();
+    } else if (!users.logged_in() && !$scope.noRedirect($location.path())) {
+      users.populate_data().then(function() {
+        $scope.showLoggedIn();
+      }, function() {
+        window.location = '/login';
+      });
+    } else {
+      $scope.showLoggedOut();
     }
   })
-  .controller('loginController', function($http, $scope, $location) {
+  .controller('loginController', function($http, $scope, users) {
     $scope.submit = function() {
-      $http.post('/api/login', {
-        email: $scope.email,
-        password: $scope.password,
-        //TODO figure out how to read qs parameters
-        next: $location.search('next')
-      }).success(function(data) {
-        // TODO: set this user_id on some service that the navbar will read
-        window.location = data.next ? data.next : '/';
-      }).error(function() {
-        //TODO: display a message that the login failed
+      users.login($scope.email, $scope.password)
+        .success(function(data) {
+          window.location = '/';
+        })
+        .error(function() {
+          //TODO: display a message that the login failed
+          window.location = '/login?result=error'
       });
     };
+  })
+  .controller('logoutController', function(users) {
+    users.logout().success(function() {
+      window.location = '/';
+    });
   })
   .controller('expenseViewController', function($scope, $routeParams, expenses) {
     var expense_id = $routeParams.expense_id;
@@ -182,6 +211,10 @@ angular.module('main', ['ngRoute', 'expense_service'])
       .when('/login', {
         templateUrl: '/ui/login.html',
         controller: 'loginController'
+      })
+      .when('/logout', {
+        template: ' ',
+        controller: 'logoutController'
       })
       .when('/expense/:expense_id', {
         templateUrl: '/ui/expense_view.html',

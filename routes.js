@@ -29,7 +29,6 @@ function rewrite_url(url) {
   var angular_prefixes = ['/login', '/expense', '/create_expense', '/add_contact'];
   for (var i = 0; i < angular_prefixes.length; i++) {
     if (url.substr(0, angular_prefixes[i].length) == angular_prefixes[i]) {
-      console.log('rewriting', url);
       return '/ui/index.html';
     }
   }
@@ -50,7 +49,7 @@ exports.install_routes = function(app) {
     res.render('login', {next: next});
   });
 
-  app.post('/logout', function(req, res) {
+  app.post('api/logout', function(req, res) {
     Q.ninvoke(req.session, 'destroy').then(function() {
       res.redirect('/login');
     });
@@ -117,15 +116,19 @@ exports.install_routes = function(app) {
   app.post('/api/login', function(req, res) {
     var email = req.body.email;
     var password = req.body.password;
-    var next = req.body.next;
     users.User.login(email, password).then(function(user) {
       req.session.user = user;
-      res.send({
-        user_id: user.id,
-        next: next
-      })
-    }, function(err) {
-      send_error(res, 'Login error: ', err);
+      res.send({status: 'ok'});
+    }, function() {
+      res.send(500, {
+        status: 'error',
+        err: 'Incorrect username or password.'});
+    });
+  });
+
+  app.post('/api/logout', function(req, res) {
+    Q.ninvoke(req.session, 'destroy').then(function() {
+      res.send({status: 'ok'});
     });
   });
 
@@ -237,6 +240,11 @@ exports.install_routes = function(app) {
       res.send(500, { status: 'error',
                       err: 'There was an error adding this contact.'});
     });
+  });
+
+  app.get('/api/session_data', auth.check_auth, function(req, res) {
+    var user = new User(req.session.user);
+    res.send(user.toJSON());
   });
 
   app.use('/ui', express.static(__dirname + '/ui'));
