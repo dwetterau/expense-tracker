@@ -26,13 +26,14 @@ function send_error(res, info, exception) {
 }
 
 function rewrite_url(url) {
-  var angular_prefixes = ['/login', '/expense', '/create_expense', '/add_contact'];
-  for (var i = 0; i < angular_prefixes.length; i++) {
-    if (url.substr(0, angular_prefixes[i].length) == angular_prefixes[i]) {
-      return '/ui/index.html';
+  //var angular_prefixes = ['/login', '/create_account', '/expense', '/create_expense', '/add_contact'];
+  var valid_prefixes = ['/ui', '/api', '/images', '/thumb'];
+  for (var i = 0; i < valid_prefixes.length; i++) {
+    if (url.substr(0, valid_prefixes[i].length) == valid_prefixes[i]) {
+      return url;
     }
   }
-  return url;
+  return '/ui/index.html';
 }
 
 exports.install_routes = function(app) {
@@ -126,9 +127,37 @@ exports.install_routes = function(app) {
     });
   });
 
-  app.post('/api/logout', function(req, res) {
+  app.post('/api/logout', auth.check_auth, function(req, res) {
     Q.ninvoke(req.session, 'destroy').then(function() {
       res.send({status: 'ok'});
+    });
+  });
+
+  app.post('/api/create_account', function(req, res) {
+    var secret = req.body.secret;
+    if (secret != '0xDEADBEEFCAFE') {
+      console.log('oh dear!');
+      res.send(401);
+    }
+    var email = req.body.email;
+    var password = req.body.password;
+    var name = req.body.name;
+    var new_user = new users.User({
+      email: email,
+      password: password,
+      name: name
+    });
+    Q.ninvoke(req.session, 'regenerate').then(function() {
+      return new_user.salt_and_hash();
+    }).then(function() {
+      return new_user.save();
+    }).then(function() {
+      req.session.user = new_user;
+      res.send({status: 'ok'});
+    }, function(err) {
+      res.send(500, {
+        status: 'error',
+        err: 'Incorrect username or password.'});
     });
   });
 

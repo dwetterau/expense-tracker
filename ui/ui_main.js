@@ -70,6 +70,22 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
       window.location = '/';
     });
   })
+  .controller('createAccountController', function($scope, users) {
+    $scope.submit = function() {
+      users.create_account({
+        name: $scope.name,
+        email: $scope.email,
+        password: $scope.password,
+        secret: $scope.secret
+      }).success(function() {
+        // TODO: Auto-login?
+        window.location = '/login';
+      }).error(function() {
+        // TODO: display a failed to create account message, e.g. email already in use
+        window.locatoin = '/create_account?result=error'
+      });
+    };
+  })
   .controller('expenseViewController', function($scope, $routeParams, expenses) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
@@ -215,6 +231,10 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
       .when('/logout', {
         template: ' ',
         controller: 'logoutController'
+      })
+      .when('/create_account', {
+        templateUrl: '/ui/create_account.html',
+        controller: 'createAccountController'
       })
       .when('/expense/:expense_id', {
         templateUrl: '/ui/expense_view.html',

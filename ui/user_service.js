@@ -25,6 +25,9 @@ angular.module('user_service', [])
       },
       logout: function() {
         return $http.post('/api/logout');
+      },
+      create_account: function(new_user) {
+        return $http.post('/api/create_account', new_user);
       }
     };
     return user;
