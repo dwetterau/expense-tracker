@@ -26,13 +26,13 @@ function send_error(res, info, exception) {
 }
 
 function rewrite_url(url) {
-  //var angular_prefixes = ['/login', '/create_account', '/expense', '/create_expense', '/add_contact'];
   var valid_prefixes = ['/ui', '/api', '/images', '/thumb'];
   for (var i = 0; i < valid_prefixes.length; i++) {
     if (url.substr(0, valid_prefixes[i].length) == valid_prefixes[i]) {
       return url;
     }
   }
+  // This rewrite allows angular to do its magic and redirect to the correct part of the app
   return '/ui/index.html';
 }
 
