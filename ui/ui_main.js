@@ -25,14 +25,14 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
     $scope.noRedirect = function(path) {
       var public_paths = ['/login', '/create_account'];
       return public_paths.some(function(element) {
-        return element.indexOf(path) != -1;
+        return path.indexOf(element) != -1;
       });
     };
     $scope.isLoggedIn = false;
 
     if (users.logged_in()) {
       $scope.isLoggedIn = true;
-    } else if (!users.logged_in() && $scope.noRedirect($location.path())) {
+    } else if (!users.logged_in() && !$scope.noRedirect($location.path())) {
       users.populate_data().then(function() {
         $scope.isLoggedIn = true;
       }, function() {
