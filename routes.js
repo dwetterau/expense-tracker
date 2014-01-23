@@ -27,10 +27,10 @@ function send_error(res, info, exception) {
 
 function rewrite_url(url) {
   var valid_prefixes = ['/ui', '/api', '/images', '/thumb'];
-  for (var i = 0; i < valid_prefixes.length; i++) {
-    if (url.substr(0, valid_prefixes[i].length) == valid_prefixes[i]) {
-      return url;
-    }
+  if (valid_prefixes.some(function(element) {
+      return url.substr(0, element.length) == element;
+  })) {
+    return url;
   }
   // This rewrite allows angular to do its magic and redirect to the correct part of the app
   return '/ui/index.html';
@@ -272,8 +272,7 @@ exports.install_routes = function(app) {
   });
 
   app.get('/api/session_data', auth.check_auth, function(req, res) {
-    var user = new User(req.session.user);
-    res.send(user.toJSON());
+    res.send(req.session.user);
   });
 
   app.use('/ui', express.static(__dirname + '/ui'));
