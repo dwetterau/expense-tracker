@@ -201,8 +201,8 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
         .success(function() {
           window.location = '#/';
         })
-        .error(function() {
-          alert('Could not add contact');
+        .error(function(data) {
+          alert(data.err);
         });
     };
   })

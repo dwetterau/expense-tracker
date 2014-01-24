@@ -261,13 +261,15 @@ exports.install_routes = function(app) {
     other.fetch().then(function() {
       if (other.isNew()) {
         throw new Error('User does not exist');
+      } else if (other.get('email') === owner.get('email')) {
+        throw new Error('You can\'t add yourself as a contact');
       }
       return owner.contacts().attach(other.id);
     }).then(function() {
       res.send({status: 'ok'});
     }).catch(function(err) {
       res.send(500, { status: 'error',
-                      err: 'There was an error adding this contact.'});
+                      err: err.message});
     });
   });
 
