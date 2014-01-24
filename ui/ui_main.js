@@ -60,7 +60,8 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       window.location = '/';
     });
   })
-  .controller('createAccountController', function($scope, users) {
+  .controller('createAccountController', function($scope, users, alerts) {
+    alerts.setupAlerts($scope);
     $scope.submit = function() {
       users.create_account({
         name: $scope.name,
@@ -68,11 +69,10 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         password: $scope.password,
         secret: $scope.secret
       }).success(function() {
-        // TODO: Auto-login?
+        alerts.addAlert('New account created', false);
         window.location = '/login';
-      }).error(function() {
-        // TODO: display a failed to create account message, e.g. email already in use
-        window.locatoin = '/create_account?result=error'
+      }).error(function(data) {
+        alerts.addAlert(data.err, true);
       });
     };
   })

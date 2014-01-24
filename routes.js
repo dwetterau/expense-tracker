@@ -157,7 +157,14 @@ exports.install_routes = function(app) {
       password: password,
       name: name
     });
+    var check_email_user = new users.User({email: email});
     Q.ninvoke(req.session, 'regenerate').then(function() {
+      return check_email_user.fetch();
+    }).then(function() {
+      if (!check_email_user.isNew()) {
+        throw pretty_error("Email already in use");
+      }
+    }).then(function() {
       return new_user.salt_and_hash();
     }).then(function() {
       return new_user.save();
@@ -165,9 +172,7 @@ exports.install_routes = function(app) {
       req.session.user = new_user;
       res.send({status: 'ok'});
     }, function(err) {
-      res.send(500, {
-        status: 'error',
-        err: 'Incorrect username or password.'});
+      send_error(res, err);
     });
   });
 
