@@ -1,4 +1,4 @@
-angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
+angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service'])
   .controller('indexController', function($scope, expenses) {
     $scope.refresh = function() {
       expenses.get_expenses()
@@ -199,12 +199,25 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
     $scope.submit = function() {
       expenses.add_contact($scope.email)
         .success(function() {
-          window.location = '#/';
+          $scope.addAlert("Added new contact", false);
         })
         .error(function(data) {
-          alert(data.err);
+          console.log("This should be happening?", data);
+          $scope.addAlert(data.err, true);
         });
     };
+    $scope.alerts = [];
+    $scope.addAlert = function(message, isError) {
+      var alert = {
+        type: isError ? 'danger' : 'success',
+        message: message,
+        close: function(index) {
+          $scope.alerts.splice(index, 1);
+        }
+      };
+      $scope.alerts.unshift(alert);
+      console.log('added an alert!', $scope.alerts);
+    }
   })
   .config(function($routeProvider, $locationProvider) {
     $locationProvider.html5Mode(true);

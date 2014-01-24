@@ -13,16 +13,28 @@ var users = require('./users');
 var User = users.User;
 
 // Error sending
-function send_error(res, info, exception) {
-  console.error('error:', info + exception);
-  console.error('stack:', exception.stack);
-  console.log(info + exception);
-  res.render('error',
-             { title: 'An error occured',
-               info: info + exception},
-             function(err, response) {
-               res.send(500, response);
-             });
+function send_error(res, error) {
+  // TODO: I hate this
+  try {
+    var message = JSON.parse(error.message).pretty;
+  } catch (e) {
+    message = "An error occurred";
+  }
+  res.send(500, {status: 'error',
+                 err: message});
+}
+
+/**
+ * This is to distinguish between error messages we make and error messages generated
+ * from things like postgres.
+ * @param message
+ * @returns {Error}
+ */
+function pretty_error(message) {
+  console.log(message);
+  return new Error(JSON.stringify({
+      pretty: message
+  }));
 }
 
 function rewrite_url(url) {
@@ -260,16 +272,15 @@ exports.install_routes = function(app) {
     var other = new User({email: email});
     other.fetch().then(function() {
       if (other.isNew()) {
-        throw new Error('User does not exist');
+        throw pretty_error('User does not exist');
       } else if (other.get('email') === owner.get('email')) {
-        throw new Error('You can\'t add yourself as a contact');
+        throw pretty_error('You can\'t add yourself as a contact');
       }
       return owner.contacts().attach(other.id);
     }).then(function() {
       res.send({status: 'ok'});
     }).catch(function(err) {
-      res.send(500, { status: 'error',
-                      err: err.message});
+      send_error(res, err);
     });
   });
 
