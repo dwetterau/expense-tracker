@@ -133,9 +133,7 @@ exports.install_routes = function(app) {
       req.session.user = user;
       res.send({status: 'ok'});
     }, function() {
-      res.send(500, {
-        status: 'error',
-        err: 'Incorrect username or password.'});
+      send_error(res, pretty_error('Invalid username or password'));
     });
   });
 

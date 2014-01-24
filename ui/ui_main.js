@@ -1,4 +1,4 @@
-angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service'])
+angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service', 'alert_service'])
   .controller('indexController', function($scope, expenses) {
     $scope.refresh = function() {
       expenses.get_expenses()
@@ -42,15 +42,16 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       $scope.isLoggedIn = false;
     }
   })
-  .controller('loginController', function($http, $scope, users) {
+  .controller('loginController', function($http, $scope, users, alerts) {
+    alerts.setupAlerts($scope);
     $scope.submit = function() {
       users.login($scope.email, $scope.password)
         .success(function(data) {
+          alerts.addAlert("Logged in successfully", false);
           window.location = '/';
         })
-        .error(function() {
-          //TODO: display a message that the login failed
-          window.location = '/login?result=error'
+        .error(function(data) {
+          alerts.addAlert(data.err, true);
       });
     };
   })
@@ -195,29 +196,17 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
 
     getContacts();
   })
-  .controller('addContactController', function(expenses, $scope) {
+  .controller('addContactController', function(expenses, alerts, $scope) {
+    alerts.setupAlerts($scope);
     $scope.submit = function() {
       expenses.add_contact($scope.email)
         .success(function() {
-          $scope.addAlert("Added new contact", false);
+          alerts.addAlert("Added new contact", false);
         })
         .error(function(data) {
-          console.log("This should be happening?", data);
-          $scope.addAlert(data.err, true);
+          alerts.addAlert(data.err, true);
         });
     };
-    $scope.alerts = [];
-    $scope.addAlert = function(message, isError) {
-      var alert = {
-        type: isError ? 'danger' : 'success',
-        message: message,
-        close: function(index) {
-          $scope.alerts.splice(index, 1);
-        }
-      };
-      $scope.alerts.unshift(alert);
-      console.log('added an alert!', $scope.alerts);
-    }
   })
   .config(function($routeProvider, $locationProvider) {
     $locationProvider.html5Mode(true);
