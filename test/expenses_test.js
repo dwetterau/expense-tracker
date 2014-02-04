@@ -36,7 +36,6 @@ describe('expenses', function() {
   describe('participants', function() {
     it('should allow an owner to be retreived correctly', function(done) {
       var e = new Expense({title: 't',
-                           value: 10,
                            owner_id: 1
                           });
 
@@ -53,14 +52,14 @@ describe('expenses', function() {
 
     it('should allow a participant to be added correctly', function(done) {
       var e = new Expense({title: 't',
-                           value: 10,
                            owner_id: 1
                           });
       var es;
       e.save().then(function() {
         es = new ExpenseStatus({ user_id: 2,
                                  expense_id: e.id,
-                                 status: expenses.expense_states.WAITING
+                                 status: expenses.expense_states.WAITING,
+                                 value: 2
                                });
         return es.save();
       }).then(function() {
@@ -224,7 +223,6 @@ describe('expenses', function() {
     // Set up expense with user1 as owner and user2 as participant
     beforeEach(function(done) {
       expense = new Expense({ title: 'pay test',
-                              value: 1,
                               description: 'pay test desc',
                               owner_id: 1
                             });
@@ -232,7 +230,8 @@ describe('expenses', function() {
         var status = new ExpenseStatus({
           user_id: 2,
           expense_id: expense.id,
-          status: expenses.expense_states.WAITING
+          status: expenses.expense_states.WAITING,
+          value: 2
         });
         return status.save();
       }).then(function() {
@@ -281,13 +280,14 @@ describe('expenses', function() {
     var e;
     beforeEach(function(done) {
       e = new Expense({owner_id: 1,
-                       title: 'expense title',
-                       value: 1234});
+                       title: 'expense title'
+                      });
 
       e.save().then(function() {
         var es = new ExpenseStatus({ user_id: 2,
                                      expense_id: e.id,
-                                     status: expenses.expense_states.WAITING
+                                     status: expenses.expense_states.WAITING,
+                                     value: 2
                                    });
         return es.save();
       }).then(function() {
