@@ -14,27 +14,13 @@ var User = users.User;
 
 // Error sending
 function send_error(res, error) {
-  // TODO: I hate this
-  try {
-    var message = JSON.parse(error.message).pretty;
-  } catch (e) {
-    message = "An error occurred";
+  var message = error.message;
+  // checks for errors from the db
+  if (error.clientError) {
+    message = "An error occurred"
   }
   res.send(500, {status: 'error',
                  err: message});
-}
-
-/**
- * This is to distinguish between error messages we make and error messages generated
- * from things like postgres.
- * @param message
- * @returns {Error}
- */
-function pretty_error(message) {
-  console.log(message);
-  return new Error(JSON.stringify({
-      pretty: message
-  }));
 }
 
 function rewrite_url(url) {
@@ -57,51 +43,6 @@ exports.install_routes = function(app) {
   // Main route
   app.get('/', express.static(__dirname + '/ui'));
 
-  app.get('/login', function(req, res) {
-    var next = req.query.next;
-    res.render('login', {next: next});
-  });
-
-  app.post('api/logout', function(req, res) {
-    Q.ninvoke(req.session, 'destroy').then(function() {
-      res.redirect('/login');
-    });
-  });
-
-  app.get('/logout', auth.check_auth, function(req, res) {
-    res.render('logout', { logged_in: true });
-  });
-
-  app.post('/create_account', function(req, res) {
-    var secret = req.body.secret;
-    if (secret != '0xDEADBEEFCAFE') {
-      console.log('oh dear!');
-      return;
-    }
-    var email = req.body.email;
-    var password = req.body.password;
-    var name = req.body.name;
-    var new_user = new users.User({
-      email: email,
-      password: password,
-      name: name
-    });
-    Q.ninvoke(req.session, 'regenerate').then(function() {
-      return new_user.salt_and_hash();
-    }).then(function() {
-      return new_user.save();
-    }).then(function() {
-      req.session.user = new_user;
-      res.redirect('/');
-    }, function(err) {
-      send_error(res, 'An error occurred while creating the account: ', err);
-    });
-  });
-
-  app.get('/create_account', function(req, res) {
-    res.render('create_account');
-  });
-
   // Image routes
   app.get('/images/:id', function(req, res) {
     var image_id = req.params.id;
@@ -110,7 +51,7 @@ exports.install_routes = function(app) {
       res.set('Content-Type', 'image/jpeg');
       res.send(image.get('data'));
     }, function(err) {
-      send_error(res, 'An error occurred getting the image: ', err);
+      send_error(res, err);
     });
   });
 
@@ -121,7 +62,7 @@ exports.install_routes = function(app) {
       res.set('Content-Type', 'image/jpeg');
       res.send(thumbnail.get('data'));
     }, function(err) {
-      send_error(res, 'An error occurred getting the image: ', err);
+      send_error(res, err);
     });
   });
 
@@ -133,7 +74,7 @@ exports.install_routes = function(app) {
       req.session.user = user;
       res.send({status: 'ok'});
     }, function() {
-      send_error(res, pretty_error('Invalid username or password'));
+      send_error(res, new Error('Invalid email or password'));
     });
   });
 
@@ -157,14 +98,7 @@ exports.install_routes = function(app) {
       password: password,
       name: name
     });
-    var check_email_user = new users.User({email: email});
     Q.ninvoke(req.session, 'regenerate').then(function() {
-      return check_email_user.fetch();
-    }).then(function() {
-      if (!check_email_user.isNew()) {
-        throw pretty_error("Email already in use");
-      }
-    }).then(function() {
       return new_user.salt_and_hash();
     }).then(function() {
       return new_user.save();
@@ -172,7 +106,11 @@ exports.install_routes = function(app) {
       req.session.user = new_user;
       res.send({status: 'ok'});
     }, function(err) {
-      send_error(res, err);
+      if(err.clientError && err.clientError.name == 'RejectionError') {
+        send_error(res, new Error("Email already in use"));
+      } else {
+        send_error(res, err);
+      }
     });
   });
 
@@ -196,7 +134,7 @@ exports.install_routes = function(app) {
       };
       res.send(data);
     }).catch(function(err) {
-      send_error(res, 'An error occurred retreiving the expenses.', err);
+      send_error(res, err);
     });
   });
 
@@ -210,7 +148,7 @@ exports.install_routes = function(app) {
         data.user_id = user.id;
         res.send(data);
       }).catch(function(err) {
-        send_error(res, 'An error occurred retreiving the expense:', err);
+        send_error(res, err);
       });
   });
 
@@ -261,10 +199,7 @@ exports.install_routes = function(app) {
     }).then(function() {
       res.send({status: 'ok'});
     }).catch(function(err) {
-      res.send(500, {
-        status: 'error',
-        err: 'There was an error paying the expense'
-      });
+      send_error(res, new Error('There was an error paying the expense'));
     });
   });
 
@@ -275,9 +210,9 @@ exports.install_routes = function(app) {
     var other = new User({email: email});
     other.fetch().then(function() {
       if (other.isNew()) {
-        throw pretty_error('User does not exist');
+        throw new Error('User does not exist');
       } else if (other.get('email') === owner.get('email')) {
-        throw pretty_error('You can\'t add yourself as a contact');
+        throw new Error('You can\'t add yourself as a contact');
       }
       return owner.contacts().attach(other.id);
     }).then(function() {
