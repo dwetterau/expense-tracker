@@ -27,10 +27,19 @@
   <div class="form-group">
     <label class="col-sm-2 control-label"> Participants </label>
     <div class="contact-selector col-sm-10">
-      <div ng-repeat="contact in contacts"
-           ng-class="contactClass(contact)"
-           ng-click="toggleContact(contact)">
-        {{ contact.name }}
+      <div ng-repeat="(id, contact) in selectedContacts">
+        {{ contact.name }} - {{ contact.value }}
+        <button ng-click="delete(id)" class="delete">
+          Delete
+        </button>
+      </div>
+      <div>
+        <input ng-model="addedContactName" typeahead="contact.name for contact in contacts"
+               class="form-control" />
+        <input ng-model="addedValue" />
+        <button ng-click="add()">
+          Add
+        </button>
       </div>
     </div>
   </div>

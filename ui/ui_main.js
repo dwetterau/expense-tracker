@@ -1,4 +1,4 @@
-angular.module('main', ['ngRoute', 'expense_service'])
+angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
   .controller('indexController', function($scope, expenses) {
     $scope.refresh = function() {
       expenses.get_expenses()
@@ -81,7 +81,7 @@ angular.module('main', ['ngRoute', 'expense_service'])
     };
   })
   .controller('createController', function($scope, expenses) {
-    $scope.selected_contacts = [];
+    $scope.selectedContacts = {};
 
     function getContacts() {
       expenses.get_contacts()
@@ -92,22 +92,36 @@ angular.module('main', ['ngRoute', 'expense_service'])
           $scope.error = 'There was an error retrieving your contacts: ' + err;
         });
     }
-    $scope.submit = function() {
-      var participants = $scope.selected_contacts.map(function(participant) {
-        return participant.id;
-      });
 
-      var value;
-      if($scope.value.indexOf('$') !== -1) {
-        var no_dollar = $scope.value.slice(1);
-        value = parseFloat(no_dollar) * 100;
-      } else {
-        value = parseFloat($scope.value) * 100;
-      }
+    $scope.add = function() {
+      var name = $scope.addedContactName;
+      var value = $scope.addedValue;
+      // TODO - multiple contacts with same name
+      var addedContact = $scope.contacts.filter(function(contact) {
+        return contact.name == name;
+      })[0];
+      var newParticipant = {
+        name: name,
+        value: value
+      };
+      $scope.selectedContacts[addedContact.id] = newParticipant;
+      // Reset the add form
+      $scope.addedContactName = "";
+      $scope.addedValue = "";
+    };
+
+    $scope.delete = function(id) {
+      delete selectedContacts[id];
+    };
+
+    $scope.submit = function() {
+      var participants = {};
+      angular.forEach($scope.selectedContacts, function(contact, id) {
+        participants[id] = contact.value;
+      });
 
       var new_expense = {
         title: $scope.title,
-        value: value,
         description: $scope.description,
         participants: participants
       };
@@ -123,21 +137,6 @@ angular.module('main', ['ngRoute', 'expense_service'])
 
     $scope.cancel = function() {
       window.location = '#/';
-    };
-
-
-    $scope.toggleContact = function(contact) {
-      var index = $scope.selected_contacts.indexOf(contact);
-      if (index != -1) {
-        $scope.selected_contacts.splice(index, 1);
-      } else {
-        $scope.selected_contacts.push(contact);
-      }
-    };
-
-    $scope.contactClass = function(contact) {
-      var selected = $scope.selected_contacts.indexOf(contact) != -1;
-      return selected ? 'contact-selected' : 'contact-deselected';
     };
 
     getContacts();
