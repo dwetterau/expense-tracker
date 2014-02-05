@@ -6,7 +6,6 @@ var helpers = require('./handlebars_helpers');
 var BookshelfStore = require('./bookshelf_session').BookshelfStore;
 
 if (app.get('env') == 'development') {
-  console.log(__dirname + '/static');
   app.use( '/static', express.static(__dirname + '/static'));
   app.use( '/fonts', express.static(__dirname + '/fonts'));
 }
@@ -25,3 +24,7 @@ app.use(
 );
 
 routes.install_routes(app);
+var port = process.env.PORT || 3000;
+app.listen(port, function() {
+  console.log("Listening on", port);
+});
