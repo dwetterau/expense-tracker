@@ -264,10 +264,10 @@ exports.install_routes = function(app) {
       // Create an email alert for the new expense
       var new_expense_email_desc = {
         type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-        sender: owner.email,
-        receiver: req.body.participants,
+        sender: user.get('email'),
+        receiver: participants.join(","),
         data: JSON.stringify({
-          sender: owner.email,
+          sender: user.get('email'),
           expense_link: settings.hostname + '/expense/' + expense.get('id')
         }),
         sent: false
@@ -277,6 +277,7 @@ exports.install_routes = function(app) {
     }).then(function() {
       res.send({id: expense.id});
     }).catch(function(err) {
+      console.log(err);
       res.send(500, "Could not create expense");
     });
   });
