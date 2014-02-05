@@ -1,4 +1,4 @@
-angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
+angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service', 'alert_service'])
   .controller('indexController', function($scope, expenses) {
     $scope.refresh = function() {
       expenses.get_expenses()
@@ -42,15 +42,16 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
       $scope.isLoggedIn = false;
     }
   })
-  .controller('loginController', function($http, $scope, users) {
+  .controller('loginController', function($http, $scope, users, alerts) {
+    alerts.setupAlerts($scope);
     $scope.submit = function() {
       users.login($scope.email, $scope.password)
         .success(function(data) {
+          alerts.addAlert("Logged in successfully", false);
           window.location = '/';
         })
-        .error(function() {
-          //TODO: display a message that the login failed
-          window.location = '/login?result=error'
+        .error(function(data) {
+          alerts.addAlert(data.err, true);
       });
     };
   })
@@ -59,7 +60,8 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
       window.location = '/';
     });
   })
-  .controller('createAccountController', function($scope, users) {
+  .controller('createAccountController', function($scope, users, alerts) {
+    alerts.setupAlerts($scope);
     $scope.submit = function() {
       users.create_account({
         name: $scope.name,
@@ -67,11 +69,10 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
         password: $scope.password,
         secret: $scope.secret
       }).success(function() {
-        // TODO: Auto-login?
+        alerts.addAlert('New account created', false);
         window.location = '/login';
-      }).error(function() {
-        // TODO: display a failed to create account message, e.g. email already in use
-        window.locatoin = '/create_account?result=error'
+      }).error(function(data) {
+        alerts.addAlert(data.err, true);
       });
     };
   })
@@ -195,14 +196,15 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
 
     getContacts();
   })
-  .controller('addContactController', function(expenses, $scope) {
+  .controller('addContactController', function(expenses, alerts, $scope) {
+    alerts.setupAlerts($scope);
     $scope.submit = function() {
       expenses.add_contact($scope.email)
         .success(function() {
-          window.location = '#/';
+          alerts.addAlert("Added new contact", false);
         })
-        .error(function() {
-          alert('Could not add contact');
+        .error(function(data) {
+          alerts.addAlert(data.err, true);
         });
     };
   })
