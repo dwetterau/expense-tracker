@@ -14,6 +14,9 @@ angular.module('user_service', [])
           throw err;
         });
       },
+      change_password: function(change_req) {
+        return $http.post('/api/change_password', change_req);
+      },
       logged_in: function() {
         return user.user_data.id >= 0;
       },

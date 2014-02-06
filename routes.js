@@ -86,41 +86,6 @@ exports.install_routes = function(app) {
     res.render('reset_password');
   });
 
-  app.post('/change_password', auth.check_auth, function(req, res) {
-    var secret = req.body.secret;
-    if (secret != '0xDEADBEEFCAFE') {
-      console.log('oh dear!');
-      return;
-    }
-    var email = req.session.user.email;
-    var password = req.body.password;
-    var new_password = req.body.new_password;
-    var new_password_2 = req.body.new_password_2;
-    if (new_password != new_password_2) {
-      //TODO move this check to the client
-      send_error(res, "New passwords must match", new Error("passwords must match"));
-    }
-    var user = new User({email: email});
-    user.fetch().then(function() {
-      return user.change_password(password, new_password);
-    }, function(err) {
-      send_error(res, "Error occurred while changing password", err);
-    }).then(function() {
-      return user.save();
-    }, function(err) {
-      send_error(res, "Error occurred while changing password", err);
-    }).then(function() {
-      // Make the user log in again
-      Q.ninvoke(req.session, 'destroy').then(function() {
-        res.redirect('/login');
-      });
-    });
-  });
-
-  app.get('/change_password', function(req, res) {
-    res.render('change_password', { logged_in: true });
-  });
-
   // Image routes
   app.get('/images/:id', function(req, res) {
     var image_id = req.params.id;
@@ -189,6 +154,27 @@ exports.install_routes = function(app) {
       } else {
         send_error(res, err);
       }
+    });
+  });
+
+  app.post('/api/change_password', auth.check_auth, function(req, res) {
+    var email = req.session.user.email;
+    var password = req.body.password;
+    var new_password = req.body.new_password;
+    var new_password_2 = req.body.new_password_2;
+    if (new_password != new_password_2) {
+      send_error(res, new Error("New passwords must match"));
+      return;
+    }
+    var user = new User({email: email});
+    user.fetch().then(function() {
+      return user.change_password(password, new_password);
+    }).then(function() {
+      return user.save();
+    }).then(function() {
+      res.send({status: 'ok'});
+    }, function(err) {
+        send_error(res, err);
     });
   });
 

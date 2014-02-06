@@ -76,6 +76,20 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       });
     };
   })
+  .controller('changePasswordController', function($scope, users, alerts) {
+    alerts.setupAlerts($scope);
+    $scope.submit = function() {
+      users.change_password({
+        password: $scope.password,
+        new_password: $scope.new_password,
+        new_password_2: $scope.new_password_2
+      }).success(function() {
+        alerts.addAlert('Password changed successfully', false);
+      }).error(function(data) {
+        alerts.addAlert(data.err, true);
+      });
+    };
+  })
   .controller('expenseViewController', function($scope, $routeParams, expenses) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
@@ -226,6 +240,10 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       .when('/create_account', {
         templateUrl: '/ui/create_account.html',
         controller: 'createAccountController'
+      })
+      .when('/change_password', {
+        templateUrl: '/ui/change_password.html',
+        controller: 'changePasswordController'
       })
       .when('/expense/:expense_id', {
         templateUrl: '/ui/expense_view.html',
