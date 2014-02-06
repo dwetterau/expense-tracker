@@ -37,9 +37,7 @@ angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
     $scope.isOwner = function() {
       return $scope.data && $scope.user_id == $scope.data.owner_id;
     };
-    $scope.renderValue = function(value) {
-      return '$' + value / 100;
-    };
+    $scope.renderValue = expenses.renderValue;
     $scope.markPaid = function(user_id, expense_id) {
       expenses.pay_expense(expense_id, user_id)
         .success(function() {
@@ -93,9 +91,35 @@ angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
         });
     }
 
+    function cleanupValue(value) {
+      if (value.startsWith('$')) {
+        value = value.slice(1);
+      }
+      return parseFloat(value) * 100;
+    }
+
+    $scope.updateSubValues = function() {
+      var numberParticipants = Object.keys($scope.selectedContacts).length;
+      var individualValue = Math.ceil(cleanupValue($scope.value) / numberParticipants);
+      angular.forEach($scope.selectedContacts, function(contact) {
+        console.log(individualValue);
+        contact.value = expenses.renderValue(individualValue);
+      });
+    };
+
+    $scope.updateTotalValue = function() {
+      var sum = 0;
+      angular.forEach($scope.selectedContacts, function(contact) {
+        sum += cleanupValue(contact.value);
+      });
+      $scope.value = expenses.renderValue(sum);
+    };
+
     $scope.add = function() {
       var name = $scope.addedContactName;
       var value = $scope.addedValue;
+      // TODO - if name is undefined, error
+
       // TODO - multiple contacts with same name
       var addedContact = $scope.contacts.filter(function(contact) {
         return contact.name == name;
@@ -108,16 +132,17 @@ angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
       // Reset the add form
       $scope.addedContactName = "";
       $scope.addedValue = "";
+      $scope.updateTotalValue();
     };
 
     $scope.delete = function(id) {
-      delete selectedContacts[id];
+      delete $scope.selectedContacts[id];
     };
 
     $scope.submit = function() {
       var participants = {};
       angular.forEach($scope.selectedContacts, function(contact, id) {
-        participants[id] = contact.value;
+        participants[id] = cleanupValue(contact.value);
       });
 
       var new_expense = {

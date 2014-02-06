@@ -12,6 +12,7 @@
     <div class="col-sm-10">
       <input class="form-control"
              type="text" ng-model="value" required="required" id="value"
+             ng-change="updateSubValues()"
              placeholder="Example: $5.00"/>
     </div>
   </div>
@@ -26,21 +27,38 @@
   </div>
   <div class="form-group">
     <label class="col-sm-2 control-label"> Participants </label>
-    <div class="contact-selector col-sm-10">
+    <div class="col-sm-10">
       <div ng-repeat="(id, contact) in selectedContacts">
-        {{ contact.name }} - {{ contact.value }}
-        <button ng-click="delete(id)" class="delete">
+        <span class="col-sm-5">
+          {{ contact.name }}
+        </span>
+        <span class="col-sm-5">
+          <input ng-model="contact.value"
+                 type="text"
+                 class="form-control"
+                 ng-change="updateTotalValue()"/>
+        </span>
+        <button class="btn btn-danger"
+                ng-click="delete(id)"
+                class="delete">
           Delete
         </button>
       </div>
-      <div>
-        <input ng-model="addedContactName" typeahead="contact.name for contact in contacts"
+      <div class="col-sm-5">
+        <input ng-model="addedContactName"
+               typeahead="contact.name for contact in contacts | filter:$viewValue"
+               typeahead-editable="false"
                class="form-control" />
-        <input ng-model="addedValue" />
-        <button ng-click="add()">
-          Add
-        </button>
       </div>
+      <div class="col-sm-5">
+        <input ng-model="addedValue"
+               type="text"
+               class="form-control" />
+      </div>
+      <button class="btn btn-success"
+              ng-click="add()">
+        Add
+      </button>
     </div>
   </div>
 </div>
