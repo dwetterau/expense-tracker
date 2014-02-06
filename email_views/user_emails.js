@@ -2,8 +2,8 @@ var emails = require('../emails');
 
 var reset_password_subject = "Your ExpenseTracker password has been reset";
 var reset_password_body = "<body>" +
-  '<h3>{{name}}, your password has been reset.</h3>' +
-  '<div>Your password has been set to <b>{{password}}</b>.</div>' +
+  '<div>{{name}}, your password has been reset.</div>' +
+  '<div>Your password has been set to: <b>{{password}}</b></div>' +
   '<div>Please log in and change your password at your earliest convenience.</div>' +
   '<footer>© ExpenseTracker 2013</footer>' +
   '</body>';

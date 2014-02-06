@@ -46,7 +46,8 @@ setInterval(function() {
     if (!unsent_emails || unsent_emails.length == 0) {
       return;
     }
-    console.log("Found", unsent_emails.length, "emails to send.");
+    console.log("Found", unsent_emails.length,
+        "email" + (unsent_emails.length != 1 ? "s" : "") + " to send.");
     var markSentPromises = [];
     unsent_emails.forEach(function(email) {
       var subjectAndBody = getSubjectAndBody(email);

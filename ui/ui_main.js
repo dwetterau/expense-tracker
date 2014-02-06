@@ -90,6 +90,20 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       });
     };
   })
+  .controller('resetPasswordController', function($scope, users, alerts) {
+    alerts.setupAlerts($scope);
+    $scope.submit = function() {
+      users.reset_password({
+        name: $scope.name,
+        email: $scope.email,
+        secret: $scope.secret
+      }).success(function() {
+        alerts.addAlert('Password reset, your new password is being sent to your email address', false);
+      }).error(function(data) {
+        alerts.addAlert(data.err, true);
+      });
+    };
+  })
   .controller('expenseViewController', function($scope, $routeParams, expenses) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
@@ -244,6 +258,10 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       .when('/change_password', {
         templateUrl: '/ui/change_password.html',
         controller: 'changePasswordController'
+      })
+      .when('/reset_password', {
+        templateUrl: '/ui/reset_password.html',
+        controller: 'resetPasswordController'
       })
       .when('/expense/:expense_id', {
         templateUrl: '/ui/expense_view.html',

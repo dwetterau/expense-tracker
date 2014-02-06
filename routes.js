@@ -47,45 +47,6 @@ exports.install_routes = function(app) {
   // Main route
   app.get('/', express.static(__dirname + '/ui'));
 
-  app.post('/reset_password', function(req, res) {
-    var secret = req.body.secret;
-    if (secret != '0xDEADBEEFCAFE') {
-      console.log('oh dear!');
-      return;
-    }
-    var email = req.body.email;
-    var name = req.body.name;
-    var user = new User({email: email});
-    user.fetch().then(function() {
-      return user.reset_password(name);
-    }).then(function(new_password) {
-      // save the email before the user, if the email fails we don't want to actually change
-      var email_data = {
-        name: user.get('name'),
-        password: new_password
-      };
-      var reset_password_email_desc = {
-        type: emails.email_types.RESET_PASSWORD,
-        sender: email,
-        receiver: email,
-        data: JSON.stringify(email_data),
-        sent: false
-      };
-      var reset_password_email = new Email(reset_password_email_desc);
-      return reset_password_email.save();
-    }).then(function() {
-      return user.save();
-    }).then(function() {
-      res.redirect('/login');
-    }).catch(function(err) {
-      send_error(res, "Error occurred while resetting password", err);
-    });
-  });
-
-  app.get('/reset_password', function(req, res) {
-    res.render('reset_password');
-  });
-
   // Image routes
   app.get('/images/:id', function(req, res) {
     var image_id = req.params.id;
@@ -175,6 +136,41 @@ exports.install_routes = function(app) {
       res.send({status: 'ok'});
     }, function(err) {
         send_error(res, err);
+    });
+  });
+
+  app.post('/api/reset_password', function(req, res) {
+    var secret = req.body.secret;
+    if (secret != '0xDEADBEEFCAFE') {
+      send_error(res, new Error("Incorrect secret value, try again"));
+      return;
+    }
+    var email = req.body.email;
+    var name = req.body.name;
+    var user = new User({email: email});
+    user.fetch().then(function() {
+      return user.reset_password(name);
+    }).then(function(new_password) {
+      // save the email before the user, if the email fails we don't want to actually change
+      var email_data = {
+        name: user.get('name'),
+        password: new_password
+      };
+      var reset_password_email_desc = {
+        type: emails.email_types.RESET_PASSWORD,
+        sender: email,
+        receiver: email,
+        data: JSON.stringify(email_data),
+        sent: false
+      };
+      var reset_password_email = new Email(reset_password_email_desc);
+      return reset_password_email.save();
+    }).then(function() {
+      return user.save();
+    }).then(function() {
+      res.send({status: 'ok'});
+    }).catch(function(err) {
+      send_error(res, err);
     });
   });
 
