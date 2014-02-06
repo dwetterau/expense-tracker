@@ -1,10 +1,11 @@
 process.env.NODE_ENV = 'testing';
 var assert = require('assert');
 var emails = require('../emails');
-var schema = require('../schema');
+var load_test_data = require('./load_test_data');
+var test_data = require('./test_data');
 var Q = require('q');
-
-var email1 = {
+/*
+var test_data.emails[0] = {
   sender: 'a@a.com',
   receiver: 'b@b.com',
   type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
@@ -12,7 +13,7 @@ var email1 = {
   sent: false
 };
 
-var email2 = {
+var test_data.emails[1] = {
   sender: 'b@b.com',
   receiver: 'a@a.com',
   type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
@@ -21,24 +22,33 @@ var email2 = {
 };
 
 // Email 3 has already been sent
-var email3 = JSON.parse(JSON.stringify(email1));
-email3.sent = true;
+var test_data.emails[2] = JSON.parse(JSON.stringify(test_data.emails[0]));
+test_data.emails[2].sent = true;*/
 
 describe('emails', function() {
   before(function(done) {
-    var email_1 = new emails.Email(email1);
-    var email_2 = new emails.Email(email2);
-    var email_3 = new emails.Email(email3);
-    Q.all([email_1.save(), email_2.save(), email_3.save()]).then(function() {
+    this.timeout(1000000);
+    load_test_data.install_test_data()
+      .then(function() {
+        done();
+      }, function(err) {
+        done(err);
+      });
+  });
+  
+  after(function(done) {
+    load_test_data.reset().then(function() {
       done();
-    }, function (err) {
-      console.error('error creating emails', err);
-    })
+    }, function(err) {
+      done(err);
+    });  
   });
 
   describe('create_email', function() {
     it('should create an email successfully', function(done) {
-      var test_email = JSON.parse(JSON.stringify(email2));
+      var test_email = JSON.parse(JSON.stringify(test_data.emails[1]));
+      // Clear the id field, don't want to reinsert as 1
+      test_email.id = undefined;
       var email = new emails.Email(test_email);
       email.save().then(function() {
         // Make sure this is a number (greater than 3)
@@ -50,7 +60,7 @@ describe('emails', function() {
     });
 
     it('should not create an email without a type', function(done) {
-      var test_email = JSON.parse(JSON.stringify(email2));
+      var test_email = JSON.parse(JSON.stringify(test_data.emails[1]));
       test_email.type = undefined;
       var email = new emails.Email(test_email);
       email.save().then(function() {
@@ -61,7 +71,7 @@ describe('emails', function() {
       });
     });
     it('should not create an email without a sender', function(done) {
-      var test_email = JSON.parse(JSON.stringify(email2));
+      var test_email = JSON.parse(JSON.stringify(test_data.emails[1]));
       test_email.sender = undefined;
       var email = new emails.Email(test_email);
       email.save().then(function() {
@@ -72,7 +82,7 @@ describe('emails', function() {
       });
     });
     it('should not create an email without a receiver', function(done) {
-      var test_email = JSON.parse(JSON.stringify(email2));
+      var test_email = JSON.parse(JSON.stringify(test_data.emails[1]));
       test_email.receiver = undefined;
       var email = new emails.Email(test_email);
       email.save().then(function() {
@@ -83,7 +93,7 @@ describe('emails', function() {
       });
     });
     it('should not create an email without data', function(done) {
-      var test_email = JSON.parse(JSON.stringify(email2));
+      var test_email = JSON.parse(JSON.stringify(test_data.emails[1]));
       test_email.data = undefined;
       var email = new emails.Email(test_email);
       email.save().then(function() {
@@ -94,7 +104,7 @@ describe('emails', function() {
       });
     });
     it('should not create an email without a sent value', function(done) {
-      var test_email = JSON.parse(JSON.stringify(email2));
+      var test_email = JSON.parse(JSON.stringify(test_data.emails[1]));
       test_email.sent = undefined;
       var email = new emails.Email(test_email);
       email.save().then(function() {
@@ -124,7 +134,7 @@ describe('emails', function() {
 
   describe('sent_email', function() {
     it('should mark an unsent email as sent', function(done) {
-      var email = new emails.Email(email1);
+      var email = new emails.Email(test_data.emails[0]);
       var second_lookup = new emails.Email();
       email.fetch().then(function() {
         second_lookup.set('id', email.get('id'));
