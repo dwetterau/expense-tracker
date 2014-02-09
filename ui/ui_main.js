@@ -86,11 +86,43 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service', 'ui.bootst
     };
     $scope.load_expense();
   })
-  .controller('expenseController', function(expenses, $scope) {
+  .controller('expenseController', function(expenses, $scope, users) {
     $scope.isOwner = function() {
       return $scope.data && $scope.user_id == $scope.data.owner_id;
     };
+
+    // Find the sum of values for participants that are waiting
+    $scope.valueWaiting = function() {
+      return $scope.data.participants.reduce(function(a, b) {
+        if (b.status == 'Waiting') {
+          return a + b.value;
+        } else {
+          return a;
+        }
+      }, 0);
+    };
+
+    // Find the participant associated with this user
+    var viewer;
+    $scope.viewerParticipant = function() {
+      if (viewer) {
+        return viewer;
+      }
+      if (!$scope.data) {
+        return undefined;
+      }
+      $scope.data.participants.some(function(participant) {
+        if (participant.id != users.user_data.id) {
+          return false;
+        }
+        viewer = participant;
+        return true;
+      });
+      return viewer;
+    };
+
     $scope.renderValue = expenses.renderValue;
+
     $scope.markPaid = function(user_id, expense_id) {
       expenses.pay_expense(expense_id, user_id)
         .success(function() {
