@@ -25,32 +25,32 @@ function send_error(res, info, exception) {
              });
 }
 
-exports.install_routes = function(app) {
-  // Main route
-  app.get('/', auth.check_auth, express.static(__dirname + '/ui'));
+function rewrite_url(url) {
+  var valid_prefixes = ['/ui', '/api', '/images', '/thumb'];
+  if (valid_prefixes.some(function(element) {
+      return url.substr(0, element.length) == element;
+  })) {
+    return url;
+  }
+  // This rewrite allows angular to do its magic and redirect to the correct part of the app
+  return '/ui/index.html';
+}
 
-  app.post('/login', function(req, res) {
-    var email = req.body.email;
-    var password = req.body.password;
-    var next = req.body.next;
-    users.User.login(email, password).then(function(user) {
-      req.session.user = user;
-      if (next && next[0] == '/') {
-        res.redirect(next);
-      } else {
-        res.redirect('/');
-      }
-    }, function(err) {
-      send_error(res, 'Login error: ', err);
-    });
+exports.install_routes = function(app) {
+  app.use(function(req, res, next) {
+    req.url = rewrite_url(req.url);
+    next();
   });
+
+  // Main route
+  app.get('/', express.static(__dirname + '/ui'));
 
   app.get('/login', function(req, res) {
     var next = req.query.next;
     res.render('login', {next: next});
   });
 
-  app.post('/logout', function(req, res) {
+  app.post('api/logout', function(req, res) {
     Q.ninvoke(req.session, 'destroy').then(function() {
       res.redirect('/login');
     });
@@ -91,7 +91,6 @@ exports.install_routes = function(app) {
   });
 
   // Image routes
-
   app.get('/images/:id', function(req, res) {
     var image_id = req.params.id;
     var image = new Image({id: image_id});
@@ -115,6 +114,53 @@ exports.install_routes = function(app) {
   });
 
   // API type calls
+  app.post('/api/login', function(req, res) {
+    var email = req.body.email;
+    var password = req.body.password;
+    users.User.login(email, password).then(function(user) {
+      req.session.user = user;
+      res.send({status: 'ok'});
+    }, function() {
+      res.send(500, {
+        status: 'error',
+        err: 'Incorrect username or password.'});
+    });
+  });
+
+  app.post('/api/logout', auth.check_auth, function(req, res) {
+    Q.ninvoke(req.session, 'destroy').then(function() {
+      res.send({status: 'ok'});
+    });
+  });
+
+  app.post('/api/create_account', function(req, res) {
+    var secret = req.body.secret;
+    if (secret != '0xDEADBEEFCAFE') {
+      console.log('oh dear!');
+      res.send(401);
+    }
+    var email = req.body.email;
+    var password = req.body.password;
+    var name = req.body.name;
+    var new_user = new users.User({
+      email: email,
+      password: password,
+      name: name
+    });
+    Q.ninvoke(req.session, 'regenerate').then(function() {
+      return new_user.salt_and_hash();
+    }).then(function() {
+      return new_user.save();
+    }).then(function() {
+      req.session.user = new_user;
+      res.send({status: 'ok'});
+    }, function(err) {
+      res.send(500, {
+        status: 'error',
+        err: 'Incorrect username or password.'});
+    });
+  });
+
   app.get('/api/expenses', auth.check_auth, function(req, res) {
     var user = new User(req.session.user);
     var owned_expenses = user.owned_expenses();
@@ -189,7 +235,7 @@ exports.install_routes = function(app) {
     });
   });
 
-  app.post('/api/expense/:expense_id/pay', function(req, res) {
+  app.post('/api/expense/:expense_id/pay', auth.check_auth, function(req, res) {
     var owner_id = req.session.user.id;
     var user_id = req.body.user_id;
     var expense_id = req.params.expense_id;
@@ -206,7 +252,7 @@ exports.install_routes = function(app) {
     });
   });
 
-  app.post('/api/add_contact', function(req, res) {
+  app.post('/api/add_contact', auth.check_auth, function(req, res) {
     var owner = new User(req.session.user);
     var email = req.body.email;
 
@@ -224,9 +270,9 @@ exports.install_routes = function(app) {
     });
   });
 
+  app.get('/api/session_data', auth.check_auth, function(req, res) {
+    res.send(req.session.user);
+  });
 
-  // Install ui at /ui (for the time being) with authentication
-  app.use('/ui', auth.check_auth);
   app.use('/ui', express.static(__dirname + '/ui'));
-
 };

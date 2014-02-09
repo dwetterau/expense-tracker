@@ -1,4 +1,4 @@
-angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
+angular.module('main', ['ngRoute', 'expense_service', 'user_service', 'ui.bootstrap'])
   .controller('indexController', function($scope, expenses) {
     $scope.refresh = function() {
       expenses.get_expenses()
@@ -21,6 +21,60 @@ angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
 
     $scope.refresh();
   })
+  .controller('navigationController', function($scope, $location, users) {
+    $scope.noRedirect = function(path) {
+      var public_paths = ['/login', '/create_account'];
+      return public_paths.some(function(element) {
+        return path.indexOf(element) != -1;
+      });
+    };
+    $scope.isLoggedIn = false;
+
+    if (users.logged_in()) {
+      $scope.isLoggedIn = true;
+    } else if (!users.logged_in() && !$scope.noRedirect($location.path())) {
+      users.populate_data().then(function() {
+        $scope.isLoggedIn = true;
+      }, function() {
+        window.location = '/login';
+      });
+    } else {
+      $scope.isLoggedIn = false;
+    }
+  })
+  .controller('loginController', function($http, $scope, users) {
+    $scope.submit = function() {
+      users.login($scope.email, $scope.password)
+        .success(function(data) {
+          window.location = '/';
+        })
+        .error(function() {
+          //TODO: display a message that the login failed
+          window.location = '/login?result=error'
+      });
+    };
+  })
+  .controller('logoutController', function(users) {
+    users.logout().success(function() {
+      window.location = '/';
+    });
+  })
+  .controller('createAccountController', function($scope, users) {
+    $scope.submit = function() {
+      users.create_account({
+        name: $scope.name,
+        email: $scope.email,
+        password: $scope.password,
+        secret: $scope.secret
+      }).success(function() {
+        // TODO: Auto-login?
+        window.location = '/login';
+      }).error(function() {
+        // TODO: display a failed to create account message, e.g. email already in use
+        window.locatoin = '/create_account?result=error'
+      });
+    };
+  })
   .controller('expenseViewController', function($scope, $routeParams, expenses) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
@@ -30,7 +84,6 @@ angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
           $scope.expense = data;
         });
     };
-
     $scope.load_expense();
   })
   .controller('expenseController', function(expenses, $scope) {
@@ -78,7 +131,7 @@ angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
       templateUrl: 'ui/expense.html'
     };
   })
-  .controller('createController', function($scope, expenses) {
+  .controller('createExpenseController', function($scope, expenses) {
     $scope.selectedContacts = {};
 
     function getContacts() {
@@ -166,7 +219,7 @@ angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
 
     getContacts();
   })
-  .controller('addContact', function(expenses, $scope) {
+  .controller('addContactController', function(expenses, $scope) {
     $scope.submit = function() {
       expenses.add_contact($scope.email)
         .success(function() {
@@ -177,23 +230,36 @@ angular.module('main', ['ngRoute', 'expense_service', 'ui.bootstrap'])
         });
     };
   })
-  .config(function($routeProvider) {
+  .config(function($routeProvider, $locationProvider) {
+    $locationProvider.html5Mode(true);
     $routeProvider
       .when('/', {
-        templateUrl: 'ui/expense_listing.html',
+        templateUrl: '/ui/expense_listing.html',
         controller: 'indexController'
       })
+      .when('/login', {
+        templateUrl: '/ui/login.html',
+        controller: 'loginController'
+      })
+      .when('/logout', {
+        template: ' ',
+        controller: 'logoutController'
+      })
+      .when('/create_account', {
+        templateUrl: '/ui/create_account.html',
+        controller: 'createAccountController'
+      })
       .when('/expense/:expense_id', {
-        templateUrl: 'ui/expense_view.html',
+        templateUrl: '/ui/expense_view.html',
         controller: 'expenseViewController'
       })
       .when('/create_expense', {
-        templateUrl: 'ui/create_expense.html',
-        controller: 'createController'
+        templateUrl: '/ui/create_expense.html',
+        controller: 'createExpenseController'
       })
       .when('/add_contact', {
-        templateUrl: 'ui/add_contact.html',
-        controller: 'addContact'
+        templateUrl: '/ui/add_contact.html',
+        controller: 'addContactController'
       })
       .otherwise({
         redirectTo: '/'
