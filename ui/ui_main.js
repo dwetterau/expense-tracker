@@ -164,7 +164,8 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service', 'ui.bootst
     };
   })
   .controller('createExpenseController', function($scope, expenses) {
-    $scope.selectedContacts = {};
+    $scope.selectedContacts = [{proportion: 50}];
+    $scope.totalProportions = 50;
 
     function getContacts() {
       expenses.get_contacts()
@@ -183,51 +184,60 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service', 'ui.bootst
       return parseFloat(value) * 100;
     }
 
-    $scope.updateSubValues = function() {
-      var numberParticipants = Object.keys($scope.selectedContacts).length;
-      var individualValue = Math.ceil(cleanupValue($scope.value) / numberParticipants);
+    $scope.updateFromTotalValue = function() {
+      $scope.totalProportions = 0;
       angular.forEach($scope.selectedContacts, function(contact) {
-        console.log(individualValue);
+        if (contact.hasOwnProperty('proportion')) {
+          $scope.totalProportions += parseFloat(contact.proportion);
+        }
+      });
+
+      if ($scope.totalProportions === 0) {
+        $scope.totalProportions = 1;
+      }
+      var proportionValue = cleanupValue($scope.value) / $scope.totalProportions;
+      angular.forEach($scope.selectedContacts, function(contact) {
+        var individualValue = Math.ceil(proportionValue * contact.proportion);
         contact.value = expenses.renderValue(individualValue);
       });
     };
 
-    $scope.updateTotalValue = function() {
+    $scope.changeSubValue = function() {
       var sum = 0;
       angular.forEach($scope.selectedContacts, function(contact) {
-        sum += cleanupValue(contact.value);
+        if (contact.hasOwnProperty('value')) {
+          sum += cleanupValue(contact.value);
+        }
       });
+      angular.forEach($scope.selectedContacts, function(contact) {
+        contact.proportion = Math.round(cleanupValue(contact.value) / sum * 100);
+      });
+
       $scope.value = expenses.renderValue(sum);
     };
 
     $scope.add = function() {
-      var name = $scope.addedContactName;
-      var value = $scope.addedValue;
-      // TODO - if name is undefined, error
-
-      // TODO - multiple contacts with same name
-      var addedContact = $scope.contacts.filter(function(contact) {
-        return contact.name == name;
-      })[0];
-      var newParticipant = {
-        name: name,
-        value: value
-      };
-      $scope.selectedContacts[addedContact.id] = newParticipant;
-      // Reset the add form
-      $scope.addedContactName = "";
-      $scope.addedValue = "";
-      $scope.updateTotalValue();
+      $scope.selectedContacts.push({proportion: 50});
+      $scope.updateFromTotalValue();
     };
 
-    $scope.delete = function(id) {
-      delete $scope.selectedContacts[id];
+    $scope.delete = function(index) {
+      $scope.selectedContacts.splice(index, 1);
+      $scope.updateFromTotalValue();
     };
 
     $scope.submit = function() {
       var participants = {};
-      angular.forEach($scope.selectedContacts, function(contact, id) {
-        participants[id] = cleanupValue(contact.value);
+      angular.forEach($scope.selectedContacts, function(selected) {
+        // TODO - multiple contacts with same name
+        var contact = $scope.contacts.filter(function(contact) {
+          return selected.name == contact.name;
+        })[0];
+        console.log(contact);
+        console.log(selected);
+        console.log($scope.contacts);
+        // TODO - throw error if no such contact exists
+        participants[contact.id] = cleanupValue(selected.value);
       });
 
       var new_expense = {
