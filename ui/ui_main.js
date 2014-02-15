@@ -152,11 +152,9 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service'])
 
       var value;
       if($scope.value.indexOf('$') !== -1) {
-        var no_dollar = $scope.value.slice(1);
-        value = parseFloat(no_dollar) * 100;
-      } else {
-        value = parseFloat($scope.value) * 100;
+        value = $scope.value.slice(1);
       }
+      value = Math.round(parseFloat(value) * 100);
 
       var new_expense = {
         title: $scope.title,
