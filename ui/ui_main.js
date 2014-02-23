@@ -178,7 +178,7 @@ angular.module('main', ['ngRoute', 'expense_service', 'user_service', 'ui.bootst
     }
 
     function cleanupValue(value) {
-      if (value.startsWith('$')) {
+      if (value.substring(0, 1) == '$') {
         value = value.slice(1);
       }
       return parseFloat(value) * 100;

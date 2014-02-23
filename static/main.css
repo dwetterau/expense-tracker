@@ -37,3 +37,28 @@ ul.participant-list {
 .contact-selector > div.contact-selected {
     background-color: rgb(0, 168, 255);
 }
+
+/* Styling the range selectors on creation */
+input[type=range] {
+    border-radius: 3px;
+    background-color: #ccc;
+    border: 1px solid black;
+    height: 34px;
+    -webkit-appearance: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+    height: 34px;
+}
+
+input[type=range]::-moz-range-track {
+    border-radius: 3px;
+    background-color: #ccc;
+    border: 1px solid black;
+    height: 34px;
+    appearance: none;
+}
+
+input[type=range]::-moz-range-thumb {
+    height: 34px;
+}
