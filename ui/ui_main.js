@@ -182,7 +182,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       if (value.substring(0, 1) == '$') {
         value = value.slice(1);
       }
-      return parseFloat(value) * 100;
+      return Math.round(parseFloat(value) * 100);
     }
 
     $scope.updateFromTotalValue = function() {
@@ -234,9 +234,6 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         var contact = $scope.contacts.filter(function(contact) {
           return selected.name == contact.name;
         })[0];
-        console.log(contact);
-        console.log(selected);
-        console.log($scope.contacts);
         // TODO - throw error if no such contact exists
         participants[contact.id] = cleanupValue(selected.value);
       });

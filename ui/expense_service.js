@@ -23,7 +23,7 @@ angular.module('expense_service', [])
         return $http.post('/api/add_contact', {email: email});
       },
       renderValue: function(value) {
-        return '$' + value / 100;
+        return '$' + (value / 100).toFixed(2);
       }
     };
   });
