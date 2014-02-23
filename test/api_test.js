@@ -50,10 +50,24 @@ describe('api', function() {
     it('should create an expense on /api/create_expense', function(done) {
       make_request('POST', '/api/create_expense', {
         title: 'New Expense Title',
-        value: 12,
         description: 'Arst',
         owner_id: 1,
-        participants: []
+        participants: {}
+      }).then(function(result) {
+        assert(result);
+        assert(result.id !== undefined);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should create an expense with participants', function(done) {
+      make_request('POST', '/api/create_expense', {
+        title: 'Having participants',
+        description: 'Arst',
+        owner_id: 1,
+        participants: {2: 200}
       }).then(function(result) {
         assert(result);
         assert(result.id !== undefined);

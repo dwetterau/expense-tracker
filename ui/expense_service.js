@@ -21,6 +21,9 @@ angular.module('expense_service', [])
       },
       add_contact: function(email) {
         return $http.post('/api/add_contact', {email: email});
+      },
+      renderValue: function(value) {
+        return '$' + (value / 100).toFixed(2);
       }
     };
   });

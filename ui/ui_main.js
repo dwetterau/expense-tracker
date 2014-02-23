@@ -1,4 +1,4 @@
-angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service', 'alert_service'])
+angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service', 'alert_service', 'ui.bootstrap'])
   .controller('indexController', function($scope, expenses) {
     $scope.refresh = function() {
       expenses.get_expenses()
@@ -87,13 +87,43 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
     $scope.load_expense();
   })
-  .controller('expenseController', function(expenses, $scope) {
+  .controller('expenseController', function(expenses, $scope, users) {
     $scope.isOwner = function() {
       return $scope.data && $scope.user_id == $scope.data.owner_id;
     };
-    $scope.renderValue = function(value) {
-      return '$' + value / 100;
+
+    // Find the sum of values for participants that are waiting
+    $scope.valueWaiting = function() {
+      return $scope.data.participants.reduce(function(a, b) {
+        if (b.status == 'Waiting') {
+          return a + b.value;
+        } else {
+          return a;
+        }
+      }, 0);
     };
+
+    // Find the participant associated with this user
+    var viewer;
+    $scope.viewerParticipant = function() {
+      if (viewer) {
+        return viewer;
+      }
+      if (!$scope.data) {
+        return undefined;
+      }
+      $scope.data.participants.some(function(participant) {
+        if (participant.id != users.user_data.id) {
+          return false;
+        }
+        viewer = participant;
+        return true;
+      });
+      return viewer;
+    };
+
+    $scope.renderValue = expenses.renderValue;
+
     $scope.markPaid = function(user_id, expense_id) {
       expenses.pay_expense(expense_id, user_id)
         .success(function() {
@@ -135,7 +165,8 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
   })
   .controller('createExpenseController', function($scope, expenses) {
-    $scope.selected_contacts = [];
+    $scope.selectedContacts = [{proportion: 50}];
+    $scope.totalProportions = 50;
 
     function getContacts() {
       expenses.get_contacts()
@@ -146,20 +177,69 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
           $scope.error = 'There was an error retrieving your contacts: ' + err;
         });
     }
-    $scope.submit = function() {
-      var participants = $scope.selected_contacts.map(function(participant) {
-        return participant.id;
+
+    function cleanupValue(value) {
+      if (value.substring(0, 1) == '$') {
+        value = value.slice(1);
+      }
+      return Math.round(parseFloat(value) * 100);
+    }
+
+    $scope.updateFromTotalValue = function() {
+      $scope.totalProportions = 0;
+      angular.forEach($scope.selectedContacts, function(contact) {
+        if (contact.hasOwnProperty('proportion')) {
+          $scope.totalProportions += parseFloat(contact.proportion);
+        }
       });
 
-      var value;
-      if($scope.value.indexOf('$') !== -1) {
-        value = $scope.value.slice(1);
+      if ($scope.totalProportions === 0) {
+        $scope.totalProportions = 1;
       }
-      value = Math.round(parseFloat(value) * 100);
+      var proportionValue = cleanupValue($scope.value) / $scope.totalProportions;
+      angular.forEach($scope.selectedContacts, function(contact) {
+        var individualValue = Math.ceil(proportionValue * contact.proportion);
+        contact.value = expenses.renderValue(individualValue);
+      });
+    };
+
+    $scope.changeSubValue = function() {
+      var sum = 0;
+      angular.forEach($scope.selectedContacts, function(contact) {
+        if (contact.hasOwnProperty('value')) {
+          sum += cleanupValue(contact.value);
+        }
+      });
+      angular.forEach($scope.selectedContacts, function(contact) {
+        contact.proportion = Math.round(cleanupValue(contact.value) / sum * 100);
+      });
+
+      $scope.value = expenses.renderValue(sum);
+    };
+
+    $scope.add = function() {
+      $scope.selectedContacts.push({proportion: 50});
+      $scope.updateFromTotalValue();
+    };
+
+    $scope.delete = function(index) {
+      $scope.selectedContacts.splice(index, 1);
+      $scope.updateFromTotalValue();
+    };
+
+    $scope.submit = function() {
+      var participants = {};
+      angular.forEach($scope.selectedContacts, function(selected) {
+        // TODO - multiple contacts with same name
+        var contact = $scope.contacts.filter(function(contact) {
+          return selected.name == contact.name;
+        })[0];
+        // TODO - throw error if no such contact exists
+        participants[contact.id] = cleanupValue(selected.value);
+      });
 
       var new_expense = {
         title: $scope.title,
-        value: value,
         description: $scope.description,
         participants: participants
       };
@@ -175,21 +255,6 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
 
     $scope.cancel = function() {
       window.location = '#/';
-    };
-
-
-    $scope.toggleContact = function(contact) {
-      var index = $scope.selected_contacts.indexOf(contact);
-      if (index != -1) {
-        $scope.selected_contacts.splice(index, 1);
-      } else {
-        $scope.selected_contacts.push(contact);
-      }
-    };
-
-    $scope.contactClass = function(contact) {
-      var selected = $scope.selected_contacts.indexOf(contact) != -1;
-      return selected ? 'contact-selected' : 'contact-deselected';
     };
 
     getContacts();

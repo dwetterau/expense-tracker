@@ -162,26 +162,25 @@ exports.install_routes = function(app) {
 
   app.post('/api/create_expense', auth.check_auth, function(req, res) {
     var user = new User(req.session.user);
-    var participants = req.body.participants.map(function(participant_id) {
-      return new User({ id: participant_id });
-    });
     var expense = new Expense({
       title: req.body.title,
-      value: req.body.value,
       description: req.body.description,
       owner_id: user.id
     });
     var expense_done = expense.save();
 
     expense_done.then(function() {
-      var participants_done = participants.map(function(participant) {
+      var status_promises = [];
+      for (var participant_id in req.body.participants) {
         var status = new ExpenseStatus({
-          user_id: participant.id,
+          user_id: participant_id,
           expense_id: expense.id,
-          status: expenses.expense_states.WAITING
+          status: expenses.expense_states.WAITING,
+          value: req.body.participants[participant_id]
         });
-        return status.save();
-      });
+        status_promises.push(status.save());
+      }
+      return Q.all(status_promises);
     }).then(function() {
       res.send({id: expense.id});
     }).catch(function(err) {
