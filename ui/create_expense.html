@@ -28,6 +28,22 @@
   <div class="form-group">
     <label class="col-md-2 control-label"> Participants </label>
     <div class="col-md-10">
+      <!-- Owner participant entry -->
+      <div class="row">
+        <span class="col-md-3"> {{ owner.name }} </span>
+        <span class="col-md-3">
+          <input type="range"
+                 ng-model="ownerProportion"
+                 ng-change="updateFromTotalValue()"/>
+        </span>
+        <span class="col-md-2">
+          <input ng-model="ownerValue"
+                 type="text"
+                 class="form-control"
+                 placeholder="Value"
+                 ng-change="changeSubValue()"/>
+        </span>
+      </div>
       <div class="row" ng-repeat="contact in selectedContacts">
         <span class="col-md-3">
           <input ng-model="contact.name"

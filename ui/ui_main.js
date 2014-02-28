@@ -164,9 +164,11 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       templateUrl: 'ui/expense.html'
     };
   })
-  .controller('createExpenseController', function($scope, expenses) {
+  .controller('createExpenseController', function($scope, expenses, users) {
     $scope.selectedContacts = [{proportion: 50}];
-    $scope.totalProportions = 50;
+    $scope.totalProportions = 100;
+    $scope.owner = users.user_data;
+    $scope.ownerProportion = 50;
 
     function getContacts() {
       expenses.get_contacts()
@@ -192,27 +194,34 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
           $scope.totalProportions += parseFloat(contact.proportion);
         }
       });
+      $scope.totalProportions += parseFloat($scope.ownerProportion);
 
       if ($scope.totalProportions === 0) {
         $scope.totalProportions = 1;
       }
-      var proportionValue = cleanupValue($scope.value) / $scope.totalProportions;
+      var proportionValue = cleanupValue($scope.value || '') / $scope.totalProportions;
       angular.forEach($scope.selectedContacts, function(contact) {
         var individualValue = Math.ceil(proportionValue * contact.proportion);
         contact.value = expenses.renderValue(individualValue);
       });
+      $scope.ownerValue = expenses.renderValue(proportionValue * $scope.ownerProportion);
     };
 
     $scope.changeSubValue = function() {
-      var sum = 0;
+      var sum = $scope.ownerValue;
       angular.forEach($scope.selectedContacts, function(contact) {
         if (contact.hasOwnProperty('value')) {
           sum += cleanupValue(contact.value);
         }
       });
+
       angular.forEach($scope.selectedContacts, function(contact) {
         contact.proportion = Math.round(cleanupValue(contact.value) / sum * 100);
       });
+
+      $scope.ownerProportion = Math.round(
+        cleanupValue($scope.ownerProportion) / sum * 100
+      );
 
       $scope.value = expenses.renderValue(sum);
     };
