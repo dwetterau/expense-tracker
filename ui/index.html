@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app="main">
+<html ng-app="main" ng-controller="rootController">
   <head>
     <base href="/">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,7 +16,7 @@
     <title>Expenses</title>
   </head>
   <body>
-    <nav class="navbar" ng-controller="navigationController">
+    <nav class="navbar">
       <ul class="nav navbar-nav navbar-left" ng-show="isLoggedIn">
         <li> <a href="/"> Home </a> </li>
         <li> <a href="/create_expense"> Create Expense</a> </li>

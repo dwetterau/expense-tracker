@@ -1,5 +1,13 @@
 angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service', 'alert_service', 'ui.bootstrap'])
-  .controller('indexController', function($scope, expenses) {
+  .controller('rootController', ['$rootScope', 'users', function($rootScope, users) {
+    $rootScope.isLoggedIn = users.logged_in();
+    if (!users.logged_in()) {
+      users.populate_data().then(function() {
+        $rootScope.isLoggedIn = users.logged_in();
+      });
+    }
+  }])
+  .controller('indexController', ['$scope', 'expenses', function($scope, expenses) {
     $scope.refresh = function() {
       expenses.get_expenses()
         .success(function (data) {
@@ -20,47 +28,26 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
 
     $scope.refresh();
-  })
-  .controller('navigationController', function($scope, $location, users) {
-    $scope.noRedirect = function(path) {
-      var public_paths = ['/login', '/create_account'];
-      return public_paths.some(function(element) {
-        return path.indexOf(element) != -1;
-      });
-    };
-    $scope.isLoggedIn = false;
-
-    if (users.logged_in()) {
-      $scope.isLoggedIn = true;
-    } else if (!users.logged_in() && !$scope.noRedirect($location.path())) {
-      users.populate_data().then(function() {
-        $scope.isLoggedIn = true;
-      }, function() {
-        window.location = '/login';
-      });
-    } else {
-      $scope.isLoggedIn = false;
-    }
-  })
-  .controller('loginController', function($http, $scope, users, alerts) {
+  }])
+  .controller('loginController', ['$http', '$scope', 'users', 'alerts', '$location', function($http, $scope, users, alerts, $location) {
     alerts.setupAlerts($scope);
     $scope.submit = function() {
       users.login($scope.email, $scope.password)
         .success(function(data) {
           alerts.addAlert("Logged in successfully", false);
-          window.location = '/';
+          $location.url('/');
         })
         .error(function(data) {
           alerts.addAlert(data.err, true);
       });
     };
-  })
-  .controller('logoutController', function(users) {
+  }])
+  .controller('logoutController', ['users', '$location', function(users, $location) {
     users.logout().success(function() {
-      window.location = '/';
+      $location.url('/');
     });
-  })
-  .controller('createAccountController', function($scope, users, alerts) {
+  }])
+  .controller('createAccountController', ['$scope', 'users', 'alerts', '$location', function($scope, users, alerts, $location) {
     alerts.setupAlerts($scope);
     $scope.submit = function() {
       users.create_account({
@@ -70,13 +57,13 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         secret: $scope.secret
       }).success(function() {
         alerts.addAlert('New account created', false);
-        window.location = '/login';
+        $location.url('/login');
       }).error(function(data) {
         alerts.addAlert(data.err, true);
       });
     };
-  })
-  .controller('expenseViewController', function($scope, $routeParams, expenses) {
+  }])
+  .controller('expenseViewController', ['$scope', '$routeParams', 'expenses', function($scope, $routeParams, expenses) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
       expenses.get_expense(expense_id)
@@ -86,7 +73,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         });
     };
     $scope.load_expense();
-  })
+  }])
   .controller('expenseController', function(expenses, $scope, users) {
     $scope.isOwner = function() {
       return $scope.data && $scope.user_id == $scope.data.owner_id;
@@ -164,7 +151,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       templateUrl: 'ui/expense.html'
     };
   })
-  .controller('createExpenseController', function($scope, expenses, users) {
+  .controller('createExpenseController', function($scope, expenses, users, $location) {
     $scope.selectedContacts = [{proportion: 50}];
     $scope.totalProportions = 100;
     $scope.owner = users.user_data;
@@ -255,7 +242,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       expenses.create_expense(new_expense)
         .success(function(response) {
           var id = response.id;
-          window.location = '#/expense/' + id;
+          $location.url('#/expense/' + id);
         })
         .error(function(err) {
           alert('Expense could not be created: ' + err);
@@ -263,7 +250,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
 
     $scope.cancel = function() {
-      window.location = '#/';
+      $location.url('#/');
     };
 
     getContacts();
@@ -274,6 +261,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       expenses.add_contact($scope.email)
         .success(function() {
           alerts.addAlert("Added new contact", false);
+          $location.url('#/');
         })
         .error(function(data) {
           alerts.addAlert(data.err, true);

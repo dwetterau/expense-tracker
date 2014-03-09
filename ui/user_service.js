@@ -31,4 +31,17 @@ angular.module('user_service', [])
       }
     };
     return user;
-  });
+  })
+  .config(['$httpProvider', function($httpProvider) {
+    $httpProvider.interceptors.push(
+      ['$q', '$location', function($q, $location) {
+        return {
+          responseError: function(response) {
+            if (response.status === 401) {
+              $location.url('/login');
+            }
+            return $q.reject(response);
+          }
+        };
+      }]);
+  }]);
