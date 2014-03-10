@@ -30,9 +30,11 @@ describe('expenses', function() {
   });
 
   describe('viewing', function() {
+    var baseBrowser = new Browser({site: local_url});
+    baseBrowser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+
     it('should have the correct content on index view', function(done) {
-      var browser = new Browser({site: local_url});
-      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      var browser = baseBrowser;
       browser.visit('/')
         .then(function() {
           assert(browser.success);
@@ -48,8 +50,7 @@ describe('expenses', function() {
     });
 
     it('should have the correct content on expense view', function(done) {
-      var browser = new Browser({site: local_url});
-      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      var browser = baseBrowser;
       browser.visit('/expense/1')
         .then(function() {
           assert(browser.success);
@@ -63,9 +64,7 @@ describe('expenses', function() {
     });
 
     it('should be able to create an expense', function(done) {
-      this.timeout(10000);
-      var browser = new Browser({site: local_url});
-      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      var browser = baseBrowser;
       browser.visit('/create_expense')
         .then(function() {
           browser.fill('#title', 'Test Created')
@@ -88,8 +87,7 @@ describe('expenses', function() {
     });
 
     it('should correctly adjust the value upon changing the proportion', function(done) {
-      var browser = new Browser({site: local_url});
-      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      var browser = baseBrowser;
       browser.visit('/create_expense')
         .then(function() {
           browser.fill('#value', '$100.00');
@@ -107,8 +105,7 @@ describe('expenses', function() {
     });
 
     it('should correctly adjust the value upon changing the total', function(done) {
-      var browser = new Browser({site: local_url});
-      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      var browser = baseBrowser;
       browser.visit('/create_expense')
         .then(function() {
           browser.fill('#value', '$100.00');
@@ -126,8 +123,7 @@ describe('expenses', function() {
     });
 
     it('should correctly adjust the proportion upon changing the value', function(done) {
-      var browser = new Browser({site: local_url});
-      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      var browser = baseBrowser;
       browser.visit('/create_expense')
         .then(function() {
           browser.fill('#value', '$100.00');
@@ -145,8 +141,7 @@ describe('expenses', function() {
     });
 
     it('should correctly render new value', function(done) {
-      var browser = new Browser({site: local_url});
-      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      var browser = baseBrowser;
       browser.visit('/create_expense')
         .then(function() {
           browser.fill('#value', '100');
