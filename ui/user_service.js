@@ -38,7 +38,12 @@ angular.module('user_service', [])
         return {
           responseError: function(response) {
             if (response.status === 401) {
-              $location.url('/login');
+              var noLogin = ['/login', '/create_account'].some(function(path) {
+                return $location.url().indexOf(path) != -1;
+              });
+              if (!noLogin) {
+                $location.url('/login');
+              }
             }
             return $q.reject(response);
           }

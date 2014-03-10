@@ -6,6 +6,8 @@ var BookshelfStore = require('../bookshelf_session').BookshelfStore;
 
 var port = 12345;
 
+exports.port = port;
+
 exports.start_server = function() {
   var app = express();
   app.use(express.bodyParser());
