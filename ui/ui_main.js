@@ -43,8 +43,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
   }])
   .controller('logoutController', ['users', '$location', function(users, $location) {
-    users.logout().success(function() {
-      $location.url('/');
+    users.logout().success(function() {$location.url('/');
     });
   }])
   .controller('createAccountController', ['$scope', 'users', 'alerts', '$location', function($scope, users, alerts, $location) {
@@ -149,6 +148,19 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         user_id: '=userId'
       },
       templateUrl: '/ui/expense.html'
+    };
+  })
+  .controller('addContactController', function(expenses, alerts, $scope) {
+    alerts.setupAlerts($scope);
+    $scope.submit = function() {
+      expenses.add_contact($scope.email)
+        .success(function() {
+          alerts.addAlert("Added new contact", false);
+          $location.url('/');
+        })
+        .error(function(data) {
+          alerts.addAlert(data.err, true);
+        });
     };
   })
   .config(function($routeProvider, $locationProvider) {

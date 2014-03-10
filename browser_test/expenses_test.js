@@ -93,11 +93,11 @@ describe('expenses', function() {
           browser.fill('#value', '$100.00');
           return browser.wait();
         }).then(function() {
-          assert.equal(browser.query('[ng-model=ownerValue]').value, '$50.00');
-          browser.fill('[ng-model=ownerProportion]', 100);
+          assert.equal(browser.query('[ng-model="participant.value"]').value, '$50.00');
+          browser.fill('[ng-model="participant.proportion"]', 100);
           return browser.wait();
         }).then(function() {
-          assert.equal(browser.query('[ng-model=ownerValue]').value, '$66.67');
+          assert.equal(browser.query('[ng-model="participant.value"]').value, '$66.67');
           done()
         }).catch(function(err) {
           done(err);
@@ -111,11 +111,11 @@ describe('expenses', function() {
           browser.fill('#value', '$100.00');
           return browser.wait();
         }).then(function() {
-          assert.equal(browser.query('[ng-model=ownerValue]').value, '$50.00');
+          assert.equal(browser.query('[ng-model="participant.value"]').value, '$50.00');
           browser.fill('#value', '$200.00');
           return browser.wait();
         }).then(function() {
-          assert.equal(browser.query('[ng-model=ownerValue]').value, '$100.00');
+          assert.equal(browser.query('[ng-model="participant.value"]').value, '$100.00');
           done()
         }).catch(function(err) {
           done(err);
@@ -129,37 +129,16 @@ describe('expenses', function() {
           browser.fill('#value', '$100.00');
           return browser.wait();
         }).then(function() {
-          assert.equal(browser.query('[ng-model=ownerValue]').value, '$50.00');
-          browser.fill('[ng-model=ownerValue]', '$100.00');
+          assert.equal(browser.query('[ng-model="participant.value"]').value, '$50.00');
+          browser.fill('[ng-model="participant.value"]', '$100.00');
           return browser.wait();
         }).then(function() {
-          assert.equal(browser.query('[ng-model=ownerProportion]').value, 67);
+          assert.equal(browser.query('[ng-model="participant.proportion"]').value, 67);
           done()
         }).catch(function(err) {
           done(err);
         });
     });
-
-    it('should correctly render new value', function(done) {
-      var browser = baseBrowser;
-      browser.visit('/create_expense')
-        .then(function() {
-          browser.fill('#value', '100');
-          return browser.wait();
-        }).then(function() {
-          // Assert that 100 -> $100.00
-          assert.equal(browser.query('#value').value, '$100.00');
-          browser.fill('[ng-model=ownerValue]', '100');
-          return browser.wait();
-        }).then(function() {
-          // Assert that 100 -> $100.00
-          assert.equal(browser.query('[ng-model=ownerValue]').value, '$100.00');
-          done()
-        }).catch(function(err) {
-          done(err);
-        });
-    });
-
   });
 
 });

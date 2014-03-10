@@ -1,9 +1,22 @@
 angular.module('expenseCreate', ['user_service', 'expense_service', 'alert_service', 'ui.bootstrap'])
-  .controller('createExpenseController', function($scope, expenses, users, $location) {
-    $scope.selectedContacts = [{proportion: 50}];
-    $scope.totalProportions = 100;
+  .controller('createExpenseController', ['$scope', 'expenses', 'users', '$location', 'alerts', function($scope, expenses, users, $location, alerts) {
+    alerts.setupAlerts($scope);
     $scope.owner = users.user_data;
-    $scope.ownerProportion = 50;
+    $scope.participants = [
+      {owner: true,
+       proportion: 50,
+       name: $scope.owner.name
+      },
+      {proportion: 50}
+    ];
+    if (!users.user_data.name) {
+      users.populate_data()
+        .then(function() {
+          $scope.owner = users.user_data;
+          $scope.participants[0].name = $scope.owner.name;
+        });
+    }
+    $scope.totalProportions = 100;
 
     function getContacts() {
       expenses.get_contacts()
@@ -11,7 +24,7 @@ angular.module('expenseCreate', ['user_service', 'expense_service', 'alert_servi
           $scope.contacts = data;
         })
         .error(function(err) {
-          $scope.error = 'There was an error retrieving your contacts: ' + err;
+          alerts.addAlert('There was an error retrieving your contacts: ' + err, true);
         });
     }
 
@@ -24,62 +37,59 @@ angular.module('expenseCreate', ['user_service', 'expense_service', 'alert_servi
 
     $scope.updateFromTotalValue = function() {
       $scope.totalProportions = 0;
-      angular.forEach($scope.selectedContacts, function(contact) {
+      angular.forEach($scope.participants, function(contact) {
         if (contact.hasOwnProperty('proportion')) {
           $scope.totalProportions += parseFloat(contact.proportion);
         }
       });
-      $scope.totalProportions += parseFloat($scope.ownerProportion);
 
       if ($scope.totalProportions === 0) {
         $scope.totalProportions = 1;
       }
       var proportionValue = cleanupValue($scope.value || '') / $scope.totalProportions;
-      angular.forEach($scope.selectedContacts, function(contact) {
-        var individualValue = Math.ceil(proportionValue * contact.proportion);
-        contact.value = expenses.renderValue(individualValue);
+      angular.forEach($scope.participants, function(participant) {
+        var individualValue = Math.ceil(proportionValue * participant.proportion);
+        participant.value = expenses.renderValue(individualValue);
       });
-      $scope.ownerValue = expenses.renderValue(proportionValue * $scope.ownerProportion);
     };
 
     $scope.changeSubValue = function() {
-      var sum = cleanupValue($scope.ownerValue);
-      angular.forEach($scope.selectedContacts, function(contact) {
+      var sum = 0;
+      angular.forEach($scope.participants, function(contact) {
         if (contact.hasOwnProperty('value')) {
           sum += cleanupValue(contact.value);
         }
       });
 
-      angular.forEach($scope.selectedContacts, function(contact) {
+      angular.forEach($scope.participants, function(contact) {
         contact.proportion = Math.round(cleanupValue(contact.value) / sum * 100);
       });
-
-      $scope.ownerProportion = Math.round(
-        cleanupValue($scope.ownerValue) / sum * 100
-      );
 
       $scope.value = expenses.renderValue(sum);
     };
 
     $scope.add = function() {
-      $scope.selectedContacts.push({proportion: 50});
+      $scope.participants.push({proportion: 50});
       $scope.updateFromTotalValue();
     };
 
     $scope.delete = function(index) {
-      $scope.selectedContacts.splice(index, 1);
+      $scope.participants.splice(index, 1);
       $scope.updateFromTotalValue();
     };
 
     $scope.submit = function() {
       var participants = {};
-      angular.forEach($scope.selectedContacts, function(selected) {
+      angular.forEach($scope.participants, function(participant) {
+        if (participant.owner) {
+          return;
+        }
         // TODO - multiple contacts with same name
         var contact = $scope.contacts.filter(function(contact) {
-          return selected.name == contact.name;
+          return participant.name == contact.name;
         })[0];
         // TODO - throw error if no such contact exists
-        participants[contact.id] = cleanupValue(selected.value);
+        participants[contact.id] = cleanupValue(participant.value);
       });
 
       var new_expense = {
@@ -87,13 +97,14 @@ angular.module('expenseCreate', ['user_service', 'expense_service', 'alert_servi
         description: $scope.description,
         participants: participants
       };
+
       expenses.create_expense(new_expense)
         .success(function(response) {
           var id = response.id;
           $location.url('/expense/' + id);
         })
         .error(function(err) {
-          alert('Expense could not be created: ' + err);
+          alerts.addAlert('Expense could not be created: ' + err, true);
         });
     };
 
@@ -102,17 +113,4 @@ angular.module('expenseCreate', ['user_service', 'expense_service', 'alert_servi
     };
 
     getContacts();
-  })
-  .controller('addContactController', function(expenses, alerts, $scope) {
-    alerts.setupAlerts($scope);
-    $scope.submit = function() {
-      expenses.add_contact($scope.email)
-        .success(function() {
-          alerts.addAlert("Added new contact", false);
-          $location.url('/');
-        })
-        .error(function(data) {
-          alerts.addAlert(data.err, true);
-        });
-    };
-  })
+  }]);
