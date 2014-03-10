@@ -148,7 +148,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         data: '=data',
         user_id: '=userId'
       },
-      templateUrl: 'ui/expense.html'
+      templateUrl: '/ui/expense.html'
     };
   })
   .controller('createExpenseController', function($scope, expenses, users, $location) {
@@ -242,7 +242,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       expenses.create_expense(new_expense)
         .success(function(response) {
           var id = response.id;
-          $location.url('#/expense/' + id);
+          $location.url('/expense/' + id);
         })
         .error(function(err) {
           alert('Expense could not be created: ' + err);
@@ -250,7 +250,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
 
     $scope.cancel = function() {
-      $location.url('#/');
+      $location.url('/');
     };
 
     getContacts();
@@ -261,7 +261,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       expenses.add_contact($scope.email)
         .success(function() {
           alerts.addAlert("Added new contact", false);
-          $location.url('#/');
+          $location.url('/');
         })
         .error(function(data) {
           alerts.addAlert(data.err, true);

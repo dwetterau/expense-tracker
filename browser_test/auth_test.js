@@ -3,28 +3,25 @@ var assert = require('assert');
 var Browser = require('zombie');
 var test_server = require('../test/test_server');
 var load_test_data = require('../test/load_test_data');
-var test_data = require('../test/test_data');
-var routes = require('../routes');
 
 var local_url = 'http://localhost:' + test_server.port;
 
 describe('auth', function() {
-  var appses = test_server.start_server();
-  var app = appses[0];
-  var server = appses[1];
+
+  var close_func;
 
   before(function(done) {
-    load_test_data.install_test_data().then(function() {
-      routes.install_routes(app);
-    }).then(function() {
-      done();
-    }).catch(function(err) {
-      done(err);
-    });
+    test_server.start_with_data()
+      .then(function(close) {
+        close_func = close;
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
   });
 
   after(function(done) {
-    server.close();
+    close_func && close_func();
     load_test_data.reset().then(function() {
       done();
     }).catch(function(err) {

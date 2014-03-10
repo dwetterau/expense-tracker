@@ -48,9 +48,8 @@
         <span class="col-md-3">
           <input ng-model="contact.name"
                  typeahead="c.name for c in contacts | filter:$viewValue"
-                 typeahead-editable="false"
                  placeholder="Participant Name"
-                 class="form-control" />
+                 class="form-control participant-name" />
         </span>
         <span class="col-md-3">
           <input type="range"

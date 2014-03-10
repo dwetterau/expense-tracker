@@ -53,3 +53,17 @@ exports.make_request = function(method, path, data) {
 
   return def.promise;
 };
+
+var load_test_data = require('./load_test_data');
+var routes = require('../routes');
+exports.start_with_data = function() {
+  // Install test data, install routes, start server
+  // Returns the close function
+  var appses = exports.start_server();
+  var app = appses[0];
+  var server = appses[1];
+  return load_test_data.install_test_data().then(function() {
+    routes.install_routes(app);
+    return server.close.bind(server);
+  });
+};

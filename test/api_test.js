@@ -4,30 +4,25 @@ var assert = require('assert');
 var db = require('../db');
 var load_test_data = require('./load_test_data');
 var test_server = require('./test_server');
-var routes = require('../routes');
-var test_data = require('./test_data');
 var ExpenseStatus = require('../expenses').ExpenseStatus;
 
 describe('api', function() {
 
-  var appses = test_server.start_server();
-  var app = appses[0];
-  var server = appses[1];
   var make_request = test_server.make_request;
+  var close_func;
 
   before(function(done) {
-    // Install test data, install routes, start server
-    load_test_data.install_test_data().then(function() {
-      routes.install_routes(app);
-    }).then(function() {
-      done();
-    }).catch(function(err) {
-      done(err);
-    });
+    test_server.start_with_data()
+      .then(function(close) {
+        close_func = close;
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
   });
 
   after(function(done) {
-    server.close();
+    close_func && close_func();
     load_test_data.reset().then(function() {
       done();
     }).catch(function(err) {
