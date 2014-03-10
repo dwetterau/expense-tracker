@@ -7,6 +7,7 @@ var load_test_data = require('../test/load_test_data');
 var local_url = 'http://localhost:' + test_server.port;
 
 describe('auth', function() {
+  this.timeout(10000);
 
   var close_func;
 
@@ -52,7 +53,6 @@ describe('auth', function() {
   });
 
   describe('login', function() {
-    this.timeout(10000);
     it('should allow a login', function(done) {
       var browser = new Browser();
       browser.visit(local_url + '/create_account')

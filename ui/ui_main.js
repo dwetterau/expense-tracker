@@ -195,7 +195,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
 
     $scope.changeSubValue = function() {
-      var sum = $scope.ownerValue;
+      var sum = cleanupValue($scope.ownerValue);
       angular.forEach($scope.selectedContacts, function(contact) {
         if (contact.hasOwnProperty('value')) {
           sum += cleanupValue(contact.value);
@@ -207,7 +207,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       });
 
       $scope.ownerProportion = Math.round(
-        cleanupValue($scope.ownerProportion) / sum * 100
+        cleanupValue($scope.ownerValue) / sum * 100
       );
 
       $scope.value = expenses.renderValue(sum);

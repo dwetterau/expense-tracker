@@ -7,7 +7,7 @@ var load_test_data = require('../test/load_test_data');
 var local_url = 'http://localhost:' + test_server.port;
 
 describe('expenses', function() {
-
+  this.timeout(10000);
   var close_func;
 
   before(function(done) {
@@ -86,6 +86,85 @@ describe('expenses', function() {
           done(err);
         });
     });
+
+    it('should correctly adjust the value upon changing the proportion', function(done) {
+      var browser = new Browser({site: local_url});
+      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      browser.visit('/create_expense')
+        .then(function() {
+          browser.fill('#value', '$100.00');
+          return browser.wait();
+        }).then(function() {
+          assert.equal(browser.query('[ng-model=ownerValue]').value, '$50.00');
+          browser.fill('[ng-model=ownerProportion]', 100);
+          return browser.wait();
+        }).then(function() {
+          assert.equal(browser.query('[ng-model=ownerValue]').value, '$66.67');
+          done()
+        }).catch(function(err) {
+          done(err);
+        });
+    });
+
+    it('should correctly adjust the value upon changing the total', function(done) {
+      var browser = new Browser({site: local_url});
+      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      browser.visit('/create_expense')
+        .then(function() {
+          browser.fill('#value', '$100.00');
+          return browser.wait();
+        }).then(function() {
+          assert.equal(browser.query('[ng-model=ownerValue]').value, '$50.00');
+          browser.fill('#value', '$200.00');
+          return browser.wait();
+        }).then(function() {
+          assert.equal(browser.query('[ng-model=ownerValue]').value, '$100.00');
+          done()
+        }).catch(function(err) {
+          done(err);
+        });
+    });
+
+    it('should correctly adjust the proportion upon changing the value', function(done) {
+      var browser = new Browser({site: local_url});
+      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      browser.visit('/create_expense')
+        .then(function() {
+          browser.fill('#value', '$100.00');
+          return browser.wait();
+        }).then(function() {
+          assert.equal(browser.query('[ng-model=ownerValue]').value, '$50.00');
+          browser.fill('[ng-model=ownerValue]', '$100.00');
+          return browser.wait();
+        }).then(function() {
+          assert.equal(browser.query('[ng-model=ownerProportion]').value, 67);
+          done()
+        }).catch(function(err) {
+          done(err);
+        });
+    });
+
+    it('should correctly render new value', function(done) {
+      var browser = new Browser({site: local_url});
+      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      browser.visit('/create_expense')
+        .then(function() {
+          browser.fill('#value', '100');
+          return browser.wait();
+        }).then(function() {
+          // Assert that 100 -> $100.00
+          assert.equal(browser.query('#value').value, '$100.00');
+          browser.fill('[ng-model=ownerValue]', '100');
+          return browser.wait();
+        }).then(function() {
+          // Assert that 100 -> $100.00
+          assert.equal(browser.query('[ng-model=ownerValue]').value, '$100.00');
+          done()
+        }).catch(function(err) {
+          done(err);
+        });
+    });
+
   });
 
 });
