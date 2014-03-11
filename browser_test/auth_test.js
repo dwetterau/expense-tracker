@@ -71,7 +71,7 @@ describe('auth', function() {
         })
         .then(function() {
           assert.equal(browser.location.pathname, '/');
-          done()
+          done();
         }).catch(function(err) {
           done(err);
         });

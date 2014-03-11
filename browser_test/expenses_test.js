@@ -42,7 +42,7 @@ describe('expenses', function() {
           assert.equal(first.textContent, ' Test title1 ');
           var second = browser.queryAll('expense a')[1];
           assert.equal(second.textContent, ' Test title2 ');
-          done()
+          done();
         })
         .catch(function(err) {
           done(err);
@@ -98,7 +98,7 @@ describe('expenses', function() {
           return browser.wait();
         }).then(function() {
           assert.equal(browser.query('[ng-model="participant.value"]').value, '$66.67');
-          done()
+          done();
         }).catch(function(err) {
           done(err);
         });
@@ -116,7 +116,7 @@ describe('expenses', function() {
           return browser.wait();
         }).then(function() {
           assert.equal(browser.query('[ng-model="participant.value"]').value, '$100.00');
-          done()
+          done();
         }).catch(function(err) {
           done(err);
         });
@@ -134,7 +134,7 @@ describe('expenses', function() {
           return browser.wait();
         }).then(function() {
           assert.equal(browser.query('[ng-model="participant.proportion"]').value, 67);
-          done()
+          done();
         }).catch(function(err) {
           done(err);
         });
