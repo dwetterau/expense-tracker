@@ -1,3 +1,5 @@
+require('angular/angular');
+
 angular.module('user_service', [])
   // A service for handling user session data and login / logout calls
   .factory('users', function($http) {

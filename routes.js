@@ -17,14 +17,14 @@ function send_error(res, error) {
   var message = error.message;
   // checks for errors from the db
   if (error.clientError) {
-    message = "An error occurred"
+    message = "An error occurred";
   }
   res.send(500, {status: 'error',
                  err: message});
 }
 
 function rewrite_url(url) {
-  var valid_prefixes = ['/ui', '/api', '/images', '/thumb'];
+  var valid_prefixes = ['/ui', '/api', '/images', '/thumb', '/build'];
   if (valid_prefixes.some(function(element) {
       return url.substr(0, element.length) == element;
   })) {
@@ -226,4 +226,5 @@ exports.install_routes = function(app) {
   });
 
   app.use('/ui', express.static(__dirname + '/ui'));
+  app.use('/build', express.static(__dirname + '/build'));
 };

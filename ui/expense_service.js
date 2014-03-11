@@ -1,3 +1,5 @@
+require('angular/angular');
+
 angular.module('expense_service', [])
 // Curse google and their factories & nonsense
   .factory('expenses', function($http) {

@@ -1,3 +1,11 @@
+require('angular/angular');
+require('angular-route/angular-route');
+require('angular-ui-bootstrap/ui-bootstrap');
+require('./expense_service');
+require('./user_service');
+require('./alert_service');
+require('./create');
+
 angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service', 'alert_service', 'ui.bootstrap', 'expenseCreate'])
   .controller('rootController', ['$rootScope', 'users', function($rootScope, users) {
     $rootScope.isLoggedIn = users.logged_in();
