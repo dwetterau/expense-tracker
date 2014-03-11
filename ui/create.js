@@ -1,5 +1,5 @@
 require('angular/angular');
-require('angular-ui-bootstrap/ui-bootstrap');
+require('angular-ui-bootstrap/ui-bootstrap-tpls');
 
 angular.module('expenseCreate', ['user_service', 'expense_service', 'alert_service', 'ui.bootstrap'])
   .controller('createExpenseController', ['$scope', 'expenses', 'users', '$location', 'alerts', function($scope, expenses, users, $location, alerts) {

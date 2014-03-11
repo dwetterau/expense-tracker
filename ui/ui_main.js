@@ -1,6 +1,6 @@
 require('angular/angular');
 require('angular-route/angular-route');
-require('angular-ui-bootstrap/ui-bootstrap');
+require('angular-ui-bootstrap/ui-bootstrap-tpls');
 require('./expense_service');
 require('./user_service');
 require('./alert_service');
