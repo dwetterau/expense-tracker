@@ -6,13 +6,15 @@ var load_test_data = require('./load_test_data');
 var test_server = require('./test_server');
 var ExpenseStatus = require('../expenses').ExpenseStatus;
 
+var port = 12345;
+
 describe('api', function() {
 
-  var make_request = test_server.make_request;
+  var make_request = test_server.make_request.bind(null, port);
   var close_func;
 
   before(function(done) {
-    test_server.start_with_data()
+    test_server.start_with_data(port)
       .then(function(close) {
         close_func = close;
         done();

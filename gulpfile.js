@@ -11,6 +11,8 @@ var nodemon = require('gulp-nodemon');
 var path = require('path');
 var mold = require('mold-source-map');
 var root = path.join(__dirname, 'ui');
+// For testing
+var mocha = require('gulp-mocha');
 
 gulp.task('watch-scripts', function() {
   var bundler = watchify('./ui/ui_main.js');
@@ -37,4 +39,16 @@ gulp.task('scripts', function() {
     .pipe(gulp.dest('./ui'));
 });
 
+gulp.task('server-test', function() {
+  return gulp.src('test/*_test.js')
+    .pipe(mocha());
+});
+
+gulp.task('browser-test', function() {
+  return gulp.src('browser_test/*_test.js')
+    .pipe(mocha());
+});
+
+
 gulp.task('dev', ['nodemon', 'watch-scripts']);
+gulp.task('test', ['server-test', 'browser-test']);

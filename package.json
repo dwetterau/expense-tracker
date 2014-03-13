@@ -24,7 +24,9 @@
     "vinyl-source-stream": "^0.1.1",
     "browserify": "^3.32.1",
     "gulp-nodemon": "^1.0.2",
-    "mold-source-map": "^0.3.0"
+    "mold-source-map": "^0.3.0",
+    "mocha": "^1.17.1",
+    "gulp-mocha": "^0.4.1"
   },
   "napa": {
     "angular": "angular/bower-angular",

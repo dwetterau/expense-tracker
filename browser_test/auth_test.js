@@ -4,7 +4,9 @@ var Browser = require('zombie');
 var test_server = require('../test/test_server');
 var load_test_data = require('../test/load_test_data');
 
-var local_url = 'http://localhost:' + test_server.port;
+var port = 12346;
+var local_url = 'http://localhost:' + port;
+
 
 describe('auth', function() {
   this.timeout(10000);
@@ -12,7 +14,7 @@ describe('auth', function() {
   var close_func;
 
   before(function(done) {
-    test_server.start_with_data()
+    test_server.start_with_data(port)
       .then(function(close) {
         close_func = close;
         done();

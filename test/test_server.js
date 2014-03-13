@@ -4,11 +4,7 @@ var Q = require('q');
 
 var BookshelfStore = require('../bookshelf_session').BookshelfStore;
 
-var port = 12345;
-
-exports.port = port;
-
-exports.start_server = function() {
+exports.start_server = function(port) {
   var app = express();
   app.use(express.bodyParser());
   app.use(express.cookieParser());
@@ -21,7 +17,7 @@ exports.start_server = function() {
   return [app, app.listen(port)];
 };
 
-exports.make_request = function(method, path, data) {
+exports.make_request = function(port, method, path, data) {
   var length = data ? JSON.stringify(data).length : 0;
   var options = {
     port: port,
@@ -56,10 +52,11 @@ exports.make_request = function(method, path, data) {
 
 var load_test_data = require('./load_test_data');
 var routes = require('../routes');
-exports.start_with_data = function() {
+
+exports.start_with_data = function(port) {
   // Install test data, install routes, start server
   // Returns the close function
-  var appses = exports.start_server();
+  var appses = exports.start_server(port);
   var app = appses[0];
   var server = appses[1];
   return load_test_data.install_test_data().then(function() {
