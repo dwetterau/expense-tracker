@@ -81,7 +81,8 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
     $scope.load_expense();
   }])
-  .controller('expenseController', function(expenses, $scope, users) {
+  .controller('expenseController', ['expenses', '$scope', 'users', function(expenses, $scope, users) {
+    console.log('expenseController');
     $scope.isOwner = function() {
       return $scope.data && $scope.user_id == $scope.data.owner_id;
     };
@@ -147,7 +148,21 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       return filter_participants('Paid');
     };
 
-  })
+    $scope.squareCashLink = function() {
+      var owner_email = $scope.data.owner.email;
+      var value = expenses.renderValue($scope.viewerParticipant().value);
+      var description = $scope.data.description;
+      var body = description ? '&body=' + description : '';
+      // Note: Zombie's dom implementation doesn't play very
+      // well with Angular url sanitization of a mailto link. This will result
+      // in zombie throwing an error and not injecting the link.
+      var fullLink = 'mailto:' + owner_email +
+        '?cc=cash@square.com' +
+        '&subject=' + value +
+        body;
+      return fullLink;
+    };
+  }])
   .directive('expense', function() {
     return {
       restrict: 'E',
@@ -158,7 +173,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       templateUrl: '/ui/expense.html'
     };
   })
-  .controller('addContactController', function(expenses, alerts, $scope) {
+  .controller('addContactController', ['expenses', 'alerts', '$scope', function(expenses, alerts, $scope) {
     alerts.setupAlerts($scope);
     $scope.submit = function() {
       expenses.add_contact($scope.email)
@@ -170,8 +185,8 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
           alerts.addAlert(data.err, true);
         });
     };
-  })
-  .config(function($routeProvider, $locationProvider) {
+  }])
+  .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
     $locationProvider.html5Mode(true);
     $routeProvider
       .when('/', {
@@ -205,4 +220,4 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       .otherwise({
         redirectTo: '/'
       });
-  });
+  }]);

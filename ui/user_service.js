@@ -2,7 +2,7 @@ require('angular/angular');
 
 angular.module('user_service', [])
   // A service for handling user session data and login / logout calls
-  .factory('users', function($http) {
+  .factory('users', ['$http', function($http) {
     var user = {
       user_data : {
         id: -1,
@@ -33,7 +33,7 @@ angular.module('user_service', [])
       }
     };
     return user;
-  })
+  }])
   .config(['$httpProvider', function($httpProvider) {
     $httpProvider.interceptors.push(
       ['$q', '$location', function($q, $location) {

@@ -3,6 +3,8 @@ var watchify = require('watchify');
 var source = require('vinyl-source-stream');
 var browserify = require('browserify');
 var nodemon = require('gulp-nodemon');
+var uglify = require('gulp-uglify');
+var streamify = require('gulp-streamify');
 
 /* Currently, there's some issue with Firefox's sourceMaps
    that makes it so that they don't work when using absolute
@@ -31,11 +33,19 @@ gulp.task('nodemon', function() {
   return nodemon({script: 'main.js'});
 });
 
-gulp.task('scripts', function() {
+gulp.task('dev-scripts', function() {
   var bundler = browserify('./ui/ui_main.js');
   return bundler.bundle({debug: true})
     .pipe(mold.transformSourcesRelativeTo(root))
     .pipe(source('bundle.js'))
+    .pipe(gulp.dest('./ui'));
+});
+
+gulp.task('prod-scripts', function() {
+  var bundler = browserify('./ui/ui_main.js');
+  return bundler.bundle()
+    .pipe(source('bundle.js'))
+    .pipe(streamify(uglify()))
     .pipe(gulp.dest('./ui'));
 });
 
@@ -51,4 +61,5 @@ gulp.task('browser-test', function() {
 
 
 gulp.task('dev', ['nodemon', 'watch-scripts']);
+gulp.task('prod', ['prod-scripts', 'nodemon']);
 gulp.task('test', ['server-test', 'browser-test']);

@@ -14,6 +14,7 @@
 
     <p ng-if="viewerParticipant() && viewerParticipant().status == 'Waiting'">
       <b> You owe: {{ renderValue(viewerParticipant().value) }} </b>
+      <a ng-href="{{ squareCashLink() }}" target="_blank"> Pay with Square Cash </a>
     </p>
 
     <p ng-if="viewerParticipant() && viewerParticipant().status != 'Waiting'">
