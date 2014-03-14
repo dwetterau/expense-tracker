@@ -24,7 +24,7 @@ function send_error(res, error) {
 }
 
 function rewrite_url(url) {
-  var valid_prefixes = ['/ui', '/api', '/images', '/thumb', '/build'];
+  var valid_prefixes = ['/static', '/ui', '/api', '/images', '/thumb', '/build'];
   if (valid_prefixes.some(function(element) {
       return url.substr(0, element.length) == element;
   })) {
@@ -34,12 +34,9 @@ function rewrite_url(url) {
   return '/ui/index.html';
 }
 
-exports.install_routes = function(app) {
-  app.use(function(req, res, next) {
-    req.url = rewrite_url(req.url);
-    next();
-  });
+exports.rewrite_url = rewrite_url;
 
+exports.install_routes = function(app) {
   // Main route
   app.get('/', express.static(__dirname + '/ui'));
 
@@ -225,6 +222,4 @@ exports.install_routes = function(app) {
     res.send(req.session.user);
   });
 
-  app.use('/ui', express.static(__dirname + '/ui'));
-  app.use('/build', express.static(__dirname + '/build'));
 };

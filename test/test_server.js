@@ -3,18 +3,12 @@ var express = require('express');
 var Q = require('q');
 
 var BookshelfStore = require('../bookshelf_session').BookshelfStore;
+var startServer = require('../start_server');
 
 exports.start_server = function(port) {
   var app = express();
-  app.use(express.bodyParser());
-  app.use(express.cookieParser());
-  app.use(
-    express.session({
-      secret: 'secrets',
-      store: new BookshelfStore()
-    })
-  );
-  return [app, app.listen(port)];
+  var server = startServer(app, port);
+  return [app, server];
 };
 
 exports.make_request = function(port, method, path, data) {

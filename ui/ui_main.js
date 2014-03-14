@@ -37,12 +37,13 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
 
     $scope.refresh();
   }])
-  .controller('loginController', ['$http', '$scope', 'users', 'alerts', '$location', function($http, $scope, users, alerts, $location) {
+  .controller('loginController', ['$http', '$scope', 'users', 'alerts', '$location', '$rootScope', function($http, $scope, users, alerts, $location, $rootScope) {
     alerts.setupAlerts($scope);
     $scope.submit = function() {
       users.login($scope.email, $scope.password)
         .success(function(data) {
           alerts.addAlert("Logged in successfully", false);
+          $rootScope.isLoggedIn = true;
           $location.url('/');
         })
         .error(function(data) {
@@ -50,8 +51,10 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       });
     };
   }])
-  .controller('logoutController', ['users', '$location', function(users, $location) {
-    users.logout().success(function() {$location.url('/');
+  .controller('logoutController', ['users', '$location', '$rootScope', function(users, $location, $rootScope) {
+    users.logout().success(function() {
+      $rootScope.isLoggedIn = false;
+      $location.url('/');
     });
   }])
   .controller('createAccountController', ['$scope', 'users', 'alerts', '$location', function($scope, users, alerts, $location) {
@@ -82,7 +85,6 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     $scope.load_expense();
   }])
   .controller('expenseController', ['expenses', '$scope', 'users', function(expenses, $scope, users) {
-    console.log('expenseController');
     $scope.isOwner = function() {
       return $scope.data && $scope.user_id == $scope.data.owner_id;
     };

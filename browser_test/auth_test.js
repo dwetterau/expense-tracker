@@ -73,8 +73,31 @@ describe('auth', function() {
         })
         .then(function() {
           assert.equal(browser.location.pathname, '/');
+          var oldNav = browser.query('.navbar [ng-show="!isLoggedIn"]');
+          assert(oldNav.className.indexOf('ng-hide') != -1);
           done();
         }).catch(function(err) {
+          done(err);
+        });
+    });
+  });
+
+  describe('logout', function() {
+    it('should switch navbars on logout', function(done) {
+      var browser = new Browser({site: local_url});
+      browser.setCookie({name: 'connect.sid', domain: 'localhost', value: 'abcde'});
+      browser.visit('/')
+        .then(function() {
+          return browser.clickLink('[href="/logout"]');
+        })
+        .then(function() {
+          var oldNav = browser.query('.navbar [ng-show="isLoggedIn"]');
+          var newNav = browser.query('.navbar [ng-show="!isLoggedIn"]');
+          assert(oldNav.className.indexOf('ng-hide') != -1);
+          assert(newNav.className.indexOf('ng-hide') == -1);
+          done();
+        })
+        .catch(function(err) {
           done(err);
         });
     });
