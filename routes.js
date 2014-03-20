@@ -24,7 +24,7 @@ function send_error(res, error) {
 }
 
 function rewrite_url(url) {
-  var valid_prefixes = ['/static', '/ui', '/api', '/images', '/thumb', '/build'];
+  var valid_prefixes = ['/static', '/ui', '/api', '/images', '/thumb', '/build', '/fonts'];
   if (valid_prefixes.some(function(element) {
       return url.substr(0, element.length) == element;
   })) {
