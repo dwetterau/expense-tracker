@@ -7,7 +7,6 @@ var load_test_data = require('../test/load_test_data');
 var port = 12346;
 var local_url = 'http://localhost:' + port;
 
-
 describe('auth', function() {
   this.timeout(10000);
 

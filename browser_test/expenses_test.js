@@ -140,6 +140,18 @@ describe('expenses', function() {
           done(err);
         });
     });
+
+    it('should redirect upon going to a nonexistent expense', function(done) {
+      var browser = baseBrowser;
+      browser.visit('/expenses/500')
+        .then(function() {
+          assert.equal(browser.location.pathname, '/');
+          done();
+        }).catch(function(err) {
+          done(err);
+        });
+    });
+
   });
 
 });

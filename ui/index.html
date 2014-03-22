@@ -25,5 +25,12 @@
       </ul>
       </nav>
     <div class="container" ng-view></div>
+    <div>
+      <alert ng-repeat="alert in alerts"
+             type="alert.type"
+             close="alert.close($index)">
+        {{alert.message}}
+      </alert>
+    </div>
   </body>
 </html>

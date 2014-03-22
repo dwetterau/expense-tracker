@@ -7,7 +7,8 @@ require('./alert_service');
 require('./create');
 
 angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service', 'alert_service', 'ui.bootstrap', 'expenseCreate'])
-  .controller('rootController', ['$rootScope', 'users', function($rootScope, users) {
+  .controller('rootController', ['$rootScope', 'users', 'alerts', function($rootScope, users, alerts) {
+    alerts.setupAlerts($rootScope);
     $rootScope.isLoggedIn = users.logged_in();
     if (!users.logged_in()) {
       users.populate_data().then(function() {
@@ -38,7 +39,6 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     $scope.refresh();
   }])
   .controller('loginController', ['$http', '$scope', 'users', 'alerts', '$location', '$rootScope', function($http, $scope, users, alerts, $location, $rootScope) {
-    alerts.setupAlerts($scope);
     $scope.submit = function() {
       users.login($scope.email, $scope.password)
         .success(function(data) {
@@ -73,13 +73,16 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       });
     };
   }])
-  .controller('expenseViewController', ['$scope', '$routeParams', 'expenses', function($scope, $routeParams, expenses) {
+  .controller('expenseViewController', ['$scope', '$routeParams', 'expenses', 'alerts', '$location', function($scope, $routeParams, expenses, alerts, $location) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
       expenses.get_expense(expense_id)
         .success(function(data) {
           $scope.user_id = data.user_id;
           $scope.expense = data;
+        }).error(function(data) {
+          alerts.addAlert(data.err, true);
+          $location.url('/');
         });
     };
     $scope.load_expense();
