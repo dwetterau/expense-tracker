@@ -1,3 +1,5 @@
+require('angular/angular');
+
 angular.module('alert_service', [])
   // A service for handling user session data and login / logout calls
   .factory('alerts', function() {

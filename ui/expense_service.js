@@ -1,6 +1,8 @@
+require('angular/angular');
+
 angular.module('expense_service', [])
 // Curse google and their factories & nonsense
-  .factory('expenses', function($http) {
+  .factory('expenses', ['$http', function($http) {
     return {
       get_expenses: function() {
         return $http.get('/api/expenses');
@@ -26,4 +28,4 @@ angular.module('expense_service', [])
         return '$' + (value / 100).toFixed(2);
       }
     };
-  });
+  }]);
