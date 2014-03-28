@@ -58,7 +58,6 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     });
   }])
   .controller('createAccountController', ['$scope', 'users', 'alerts', '$location', function($scope, users, alerts, $location) {
-    alerts.setupAlerts($scope);
     $scope.submit = function() {
       users.create_account({
         name: $scope.name,
@@ -179,7 +178,6 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
   })
   .controller('addContactController', ['expenses', 'alerts', '$scope', function(expenses, alerts, $scope) {
-    alerts.setupAlerts($scope);
     $scope.submit = function() {
       expenses.add_contact($scope.email)
         .success(function() {
