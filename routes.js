@@ -225,17 +225,22 @@ exports.install_routes = function(app) {
       owner_id: user.id
     });
     var expense_done = expense.save();
-
+    var participant_emails = [];
     expense_done.then(function() {
       var status_promises = [];
       for (var participant_id in req.body.participants) {
+        if (!req.body.participants.hasOwnProperty(participant_id)) {
+            continue;
+        }
+        var participant = req.body.participants[participant_id];
         var status = new ExpenseStatus({
           user_id: participant_id,
           expense_id: expense.id,
           status: expenses.expense_states.WAITING,
-          value: req.body.participants[participant_id]
+          value: participant.value
         });
         status_promises.push(status.save());
+        participant_emails.push(participant.email);
       }
       return Q.all(status_promises);
     }).then(function() {
@@ -243,9 +248,9 @@ exports.install_routes = function(app) {
       var new_expense_email_desc = {
         type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
         sender: user.get('email'),
-        receiver: participants.join(","),
+        receiver: participant_emails.join(","),
         data: JSON.stringify({
-          sender: user.get('email'),
+          creator: user.get('name'),
           expense_link: settings.hostname + '/expense/' + expense.get('id')
         }),
         sent: false
@@ -255,8 +260,10 @@ exports.install_routes = function(app) {
     }).then(function() {
       res.send({id: expense.id});
     }).catch(function(err) {
+      console.log(req.body.participants);
+      console.error(err);
       console.log(err);
-      res.send(500, "Could not create expense");
+      res.send(500, "Could not create expense" + err.message);
     });
   });
 

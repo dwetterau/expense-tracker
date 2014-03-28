@@ -203,7 +203,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       templateUrl: '/ui/expense.html'
     };
   })
-  .controller('addContactController', ['expenses', 'alerts', '$scope', function(expenses, alerts, $scope) {
+  .controller('addContactController', ['expenses', 'alerts', '$scope', '$location', function(expenses, alerts, $scope, $location) {
     $scope.submit = function() {
       expenses.add_contact($scope.email)
         .success(function() {
