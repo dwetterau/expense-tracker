@@ -4,26 +4,6 @@ var emails = require('../emails');
 var load_test_data = require('./load_test_data');
 var test_data = require('./test_data');
 var Q = require('q');
-/*
-var test_data.emails[0] = {
-  sender: 'a@a.com',
-  receiver: 'b@b.com',
-  type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-  data : JSON.stringify({subject: 'some data'}),
-  sent: false
-};
-
-var test_data.emails[1] = {
-  sender: 'b@b.com',
-  receiver: 'a@a.com',
-  type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
-  data : JSON.stringify({subject: 'some data'}),
-  sent: false
-};
-
-// Email 3 has already been sent
-var test_data.emails[2] = JSON.parse(JSON.stringify(test_data.emails[0]));
-test_data.emails[2].sent = true;*/
 
 describe('emails', function() {
   before(function(done) {
