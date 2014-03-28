@@ -1,6 +1,7 @@
 var handlebars = require("handlebars");
 var nodemailer = require("nodemailer");
 var emails = require("./emails");
+var settings = require('./settings');
 var Q = require('q');
 
 // Email template includes
@@ -73,5 +74,5 @@ setInterval(function() {
   }, function(err) {
     console.log("Lost connection with email database", err);
   });
-}, 5000);
+}, settings.email_check_interval);
 
