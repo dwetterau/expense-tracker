@@ -12,6 +12,7 @@
     <div class="col-sm-10">
       <input class="form-control"
              type="text" ng-model="value" required="required" id="value"
+             ng-change="updateFromTotalValue()"
              placeholder="Example: $5.00"/>
     </div>
   </div>
@@ -25,20 +26,54 @@
     </div>
   </div>
   <div class="form-group">
-    <label class="col-sm-2 control-label"> Participants </label>
-    <div class="contact-selector col-sm-10">
-      <div ng-repeat="contact in contacts"
-           ng-class="contactClass(contact)"
-           ng-click="toggleContact(contact)">
-        {{ contact.name }}
+    <label class="col-md-2 control-label"> Participants </label>
+    <div class="col-md-10">
+      <div class="row" ng-repeat="participant in participants">
+        <span class="col-md-3">
+          <span ng-if="participant.owner"> {{ participant.name }} </span>
+          <input ng-model="participant.name"
+                 ng-if="!participant.owner"
+                 typeahead="c.name for c in contacts | filter:$viewValue"
+                 placeholder="Participant Name"
+                 class="form-control participant-name" />
+        </span>
+        <span class="col-md-3">
+          <input type="range"
+                 ng-model="participant.proportion"
+                 ng-change="updateFromTotalValue()"/>
+        </span>
+        <span class="col-md-2">
+          <input ng-model="participant.value"
+                 type="text"
+                 class="form-control"
+                 placeholder="Value"
+                 ng-change="changeSubValue()"/>
+        </span>
+        <span class="col-md-3">
+          <button class="btn btn-danger"
+                  ng-show="$index > 1"
+                  ng-click="delete($index)"
+                  class="delete">
+            Delete
+          </button>
+        </span>
       </div>
     </div>
   </div>
-</div>
 
-<div class="form-group">
-  <div class="col-sm-10 col-sm-offset-2">
-    <button class="btn btn-success" ng-click="submit()"> Done </button>
-    <button class="btn btn-default" ng-click="cancel()"> Cancel </button>
+  <div class="form-group">
+    <div class="col-sm-10 col-md-offset-2">
+      <button class="btn btn-success"
+              ng-click="add()">
+        Add Participant
+      </button>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <div class="col-sm-10 col-sm-offset-2">
+      <button class="btn btn-success" ng-click="submit()"> Done </button>
+      <button class="btn btn-default" ng-click="cancel()"> Cancel </button>
+    </div>
   </div>
 </div>

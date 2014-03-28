@@ -148,8 +148,12 @@ var User = db.bookshelf.Model.extend({
     if (data.hasOwnProperty('_pivot_status')) {
       data.status = expenses.format_status(data._pivot_status);
     }
+    if (data.hasOwnProperty('_pivot_value')) {
+      data.value = data._pivot_value;
+    }
     ['_pivot_status', '_pivot_id',
-     '_pivot_expense_id', '_pivot_user_id'].forEach(function(property) {
+     '_pivot_expense_id', '_pivot_user_id',
+     '_pivot_value'].forEach(function(property) {
        if(data.hasOwnProperty(property)) {
          delete data[property];
        }

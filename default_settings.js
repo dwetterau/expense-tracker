@@ -1,4 +1,3 @@
-
 if (process.env.NODE_ENV == 'testing') {
   exports.database_client = 'sqlite';
   exports.database_connection = {

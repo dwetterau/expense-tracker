@@ -4,30 +4,27 @@ var assert = require('assert');
 var db = require('../db');
 var load_test_data = require('./load_test_data');
 var test_server = require('./test_server');
-var routes = require('../routes');
-var test_data = require('./test_data');
 var ExpenseStatus = require('../expenses').ExpenseStatus;
+
+var port = 12345;
 
 describe('api', function() {
 
-  var appses = test_server.start_server();
-  var app = appses[0];
-  var server = appses[1];
-  var make_request = test_server.make_request;
+  var make_request = test_server.make_request.bind(null, port);
+  var close_func;
 
   before(function(done) {
-    // Install test data, install routes, start server
-    load_test_data.install_test_data().then(function() {
-      routes.install_routes(app);
-    }).then(function() {
-      done();
-    }).catch(function(err) {
-      done(err);
-    });
+    test_server.start_with_data(port)
+      .then(function(close) {
+        close_func = close;
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
   });
 
   after(function(done) {
-    server.close();
+    close_func && close_func();
     load_test_data.reset().then(function() {
       done();
     }).catch(function(err) {
@@ -50,10 +47,24 @@ describe('api', function() {
     it('should create an expense on /api/create_expense', function(done) {
       make_request('POST', '/api/create_expense', {
         title: 'New Expense Title',
-        value: 12,
         description: 'Arst',
         owner_id: 1,
-        participants: []
+        participants: {}
+      }).then(function(result) {
+        assert(result);
+        assert(result.id !== undefined);
+        done();
+      }).catch(function(err) {
+        done(err);
+      });
+    });
+
+    it('should create an expense with participants', function(done) {
+      make_request('POST', '/api/create_expense', {
+        title: 'Having participants',
+        description: 'Arst',
+        owner_id: 1,
+        participants: {2: 200}
       }).then(function(result) {
         assert(result);
         assert(result.id !== undefined);

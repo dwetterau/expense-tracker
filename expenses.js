@@ -34,7 +34,8 @@ var Expense = deletable.Deletable.extend({
   participants: function() {
     return this.belongsToMany(User, 'expense_status')
       .through(ExpenseStatus)
-      .withPivot('status');
+      .withPivot('status')
+      .withPivot('value');
   },
 
   getWithAllParticipants: function() {

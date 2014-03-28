@@ -1,5 +1,22 @@
-angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service', 'alert_service'])
-  .controller('indexController', function($scope, expenses) {
+require('angular/angular');
+require('angular-route/angular-route');
+require('angular-ui-bootstrap/ui-bootstrap-tpls');
+require('./expense_service');
+require('./user_service');
+require('./alert_service');
+require('./create');
+
+angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_service', 'alert_service', 'ui.bootstrap', 'expenseCreate'])
+  .controller('rootController', ['$rootScope', 'users', 'alerts', function($rootScope, users, alerts) {
+    alerts.setupAlerts($rootScope);
+    $rootScope.isLoggedIn = users.logged_in();
+    if (!users.logged_in()) {
+      users.populate_data().then(function() {
+        $rootScope.isLoggedIn = users.logged_in();
+      });
+    }
+  }])
+  .controller('indexController', ['$scope', 'expenses', function($scope, expenses) {
     $scope.refresh = function() {
       expenses.get_expenses()
         .success(function (data) {
@@ -20,48 +37,27 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
     };
 
     $scope.refresh();
-  })
-  .controller('navigationController', function($scope, $location, users) {
-    $scope.noRedirect = function(path) {
-      var public_paths = ['/login', '/create_account'];
-      return public_paths.some(function(element) {
-        return path.indexOf(element) != -1;
-      });
-    };
-    $scope.isLoggedIn = false;
-
-    if (users.logged_in()) {
-      $scope.isLoggedIn = true;
-    } else if (!users.logged_in() && !$scope.noRedirect($location.path())) {
-      users.populate_data().then(function() {
-        $scope.isLoggedIn = true;
-      }, function() {
-        window.location = '/login';
-      });
-    } else {
-      $scope.isLoggedIn = false;
-    }
-  })
-  .controller('loginController', function($http, $scope, users, alerts) {
-    alerts.setupAlerts($scope);
+  }])
+  .controller('loginController', ['$http', '$scope', 'users', 'alerts', '$location', '$rootScope', function($http, $scope, users, alerts, $location, $rootScope) {
     $scope.submit = function() {
       users.login($scope.email, $scope.password)
         .success(function(data) {
           alerts.addAlert("Logged in successfully", false);
-          window.location = '/';
+          $rootScope.isLoggedIn = true;
+          $location.url('/');
         })
         .error(function(data) {
           alerts.addAlert(data.err, true);
       });
     };
-  })
-  .controller('logoutController', function(users) {
+  }])
+  .controller('logoutController', ['users', '$location', '$rootScope', function(users, $location, $rootScope) {
     users.logout().success(function() {
-      window.location = '/';
+      $rootScope.isLoggedIn = false;
+      $location.url('/');
     });
-  })
-  .controller('createAccountController', function($scope, users, alerts) {
-    alerts.setupAlerts($scope);
+  }])
+  .controller('createAccountController', ['$scope', 'users', 'alerts', '$location', function($scope, users, alerts, $location) {
     $scope.submit = function() {
       users.create_account({
         name: $scope.name,
@@ -70,14 +66,13 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         secret: $scope.secret
       }).success(function() {
         alerts.addAlert('New account created', false);
-        window.location = '/login';
+        $location.url('/login');
       }).error(function(data) {
         alerts.addAlert(data.err, true);
       });
     };
-  })
-  .controller('changePasswordController', function($scope, users, alerts) {
-    alerts.setupAlerts($scope);
+  }])
+  .controller('changePasswordController', ['$scope', 'users', 'alerts', function($scope, users, alerts) {
     $scope.submit = function() {
       users.change_password({
         password: $scope.password,
@@ -89,9 +84,8 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         alerts.addAlert(data.err, true);
       });
     };
-  })
-  .controller('resetPasswordController', function($scope, users, alerts) {
-    alerts.setupAlerts($scope);
+  }])
+  .controller('resetPasswordController', ['$scope', 'users', 'alerts', function($scope, users, alerts) {
     $scope.submit = function() {
       users.reset_password({
         name: $scope.name,
@@ -103,25 +97,58 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         alerts.addAlert(data.err, true);
       });
     };
-  })
-  .controller('expenseViewController', function($scope, $routeParams, expenses) {
+  }])
+  .controller('expenseViewController', ['$scope', '$routeParams', 'expenses', 'alerts', '$location', function($scope, $routeParams, expenses, alerts, $location) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
       expenses.get_expense(expense_id)
         .success(function(data) {
           $scope.user_id = data.user_id;
           $scope.expense = data;
+        }).error(function(data) {
+          alerts.addAlert(data.err, true);
+          $location.url('/');
         });
     };
     $scope.load_expense();
-  })
-  .controller('expenseController', function(expenses, $scope) {
+  }])
+  .controller('expenseController', ['expenses', '$scope', 'users', function(expenses, $scope, users) {
     $scope.isOwner = function() {
       return $scope.data && $scope.user_id == $scope.data.owner_id;
     };
-    $scope.renderValue = function(value) {
-      return '$' + value / 100;
+
+    // Find the sum of values for participants that are waiting
+    $scope.valueWaiting = function() {
+      return $scope.data.participants.reduce(function(a, b) {
+        if (b.status == 'Waiting') {
+          return a + b.value;
+        } else {
+          return a;
+        }
+      }, 0);
     };
+
+    // Find the participant associated with this user
+    var viewer;
+    $scope.viewerParticipant = function() {
+      if (viewer) {
+        return viewer;
+      }
+      if (!$scope.data) {
+        return undefined;
+      }
+      $scope.data.participants.some(function(participant) {
+        if (participant.id != users.user_data.id) {
+          return false;
+        }
+        viewer = participant;
+        return true;
+      });
+      return viewer;
+    };
+
+    $scope.renderValue = expenses.renderValue;
+
     $scope.markPaid = function(user_id, expense_id) {
       expenses.pay_expense(expense_id, user_id)
         .success(function() {
@@ -151,7 +178,21 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       return filter_participants('Paid');
     };
 
-  })
+    $scope.squareCashLink = function() {
+      var owner_email = $scope.data.owner.email;
+      var value = expenses.renderValue($scope.viewerParticipant().value);
+      var description = $scope.data.description;
+      var body = description ? '&body=' + description : '';
+      // Note: Zombie's dom implementation doesn't play very
+      // well with Angular url sanitization of a mailto link. This will result
+      // in zombie throwing an error and not injecting the link.
+      var fullLink = 'mailto:' + owner_email +
+        '?cc=cash@square.com' +
+        '&subject=' + value +
+        body;
+      return fullLink;
+    };
+  }])
   .directive('expense', function() {
     return {
       restrict: 'E',
@@ -159,84 +200,22 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
         data: '=data',
         user_id: '=userId'
       },
-      templateUrl: 'ui/expense.html'
+      templateUrl: '/ui/expense.html'
     };
   })
-  .controller('createExpenseController', function($scope, expenses) {
-    $scope.selected_contacts = [];
-
-    function getContacts() {
-      expenses.get_contacts()
-        .success(function(data) {
-          $scope.contacts = data;
-        })
-        .error(function(err) {
-          $scope.error = 'There was an error retrieving your contacts: ' + err;
-        });
-    }
-    $scope.submit = function() {
-      var participants = $scope.selected_contacts.map(function(participant) {
-        return participant.id;
-      });
-
-      var value;
-      if($scope.value.indexOf('$') !== -1) {
-        var no_dollar = $scope.value.slice(1);
-        value = parseFloat(no_dollar) * 100;
-      } else {
-        value = parseFloat($scope.value) * 100;
-      }
-
-      var new_expense = {
-        title: $scope.title,
-        value: value,
-        description: $scope.description,
-        participants: participants
-      };
-      expenses.create_expense(new_expense)
-        .success(function(response) {
-          var id = response.id;
-          window.location = '#/expense/' + id;
-        })
-        .error(function(err) {
-          alert('Expense could not be created: ' + err);
-        });
-    };
-
-    $scope.cancel = function() {
-      window.location = '#/';
-    };
-
-
-    $scope.toggleContact = function(contact) {
-      var index = $scope.selected_contacts.indexOf(contact);
-      if (index != -1) {
-        $scope.selected_contacts.splice(index, 1);
-      } else {
-        $scope.selected_contacts.push(contact);
-      }
-    };
-
-    $scope.contactClass = function(contact) {
-      var selected = $scope.selected_contacts.indexOf(contact) != -1;
-      return selected ? 'contact-selected' : 'contact-deselected';
-    };
-
-    getContacts();
-  })
-  .controller('addContactController', function(expenses, alerts, $scope) {
-    alerts.setupAlerts($scope);
+  .controller('addContactController', ['expenses', 'alerts', '$scope', function(expenses, alerts, $scope) {
     $scope.submit = function() {
       expenses.add_contact($scope.email)
         .success(function() {
           alerts.addAlert("Added new contact", false);
+          $location.url('/');
         })
         .error(function(data) {
           alerts.addAlert(data.err, true);
         });
     };
-  })
-  .config(function($routeProvider, $locationProvider) {
+  }])
+  .config(['$routeProvider', '$locationProvider', function($routeProvider, $locationProvider) {
     $locationProvider.html5Mode(true);
     $routeProvider
       .when('/', {
@@ -278,4 +257,4 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       .otherwise({
         redirectTo: '/'
       });
-  });
+  }]);

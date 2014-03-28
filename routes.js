@@ -21,14 +21,14 @@ function send_error(res, error) {
   var message = error.message;
   // checks for errors from the db
   if (error.clientError) {
-    message = "An error occurred"
+    message = "An error occurred";
   }
   res.send(500, {status: 'error',
                  err: message});
 }
 
 function rewrite_url(url) {
-  var valid_prefixes = ['/ui', '/api', '/images', '/thumb'];
+  var valid_prefixes = ['/static', '/ui', '/api', '/images', '/thumb', '/build', '/fonts'];
   if (valid_prefixes.some(function(element) {
       return url.substr(0, element.length) == element;
   })) {
@@ -38,12 +38,9 @@ function rewrite_url(url) {
   return '/ui/index.html';
 }
 
-exports.install_routes = function(app) {
-  app.use(function(req, res, next) {
-    req.url = rewrite_url(req.url);
-    next();
-  });
+exports.rewrite_url = rewrite_url;
 
+exports.install_routes = function(app) {
   // Main route
   app.get('/', express.static(__dirname + '/ui'));
 
@@ -222,26 +219,25 @@ exports.install_routes = function(app) {
 
   app.post('/api/create_expense', auth.check_auth, function(req, res) {
     var user = new User(req.session.user);
-    var participants = req.body.participants.map(function(participant_id) {
-      return new User({ id: participant_id });
-    });
     var expense = new Expense({
       title: req.body.title,
-      value: req.body.value,
       description: req.body.description,
       owner_id: user.id
     });
     var expense_done = expense.save();
 
     expense_done.then(function() {
-      var participants_done = participants.map(function(participant) {
+      var status_promises = [];
+      for (var participant_id in req.body.participants) {
         var status = new ExpenseStatus({
-          user_id: participant.id,
+          user_id: participant_id,
           expense_id: expense.id,
-          status: expenses.expense_states.WAITING
+          status: expenses.expense_states.WAITING,
+          value: req.body.participants[participant_id]
         });
-        return status.save();
-      });
+        status_promises.push(status.save());
+      }
+      return Q.all(status_promises);
     }).then(function() {
       // Create an email alert for the new expense
       var new_expense_email_desc = {
@@ -301,5 +297,4 @@ exports.install_routes = function(app) {
     res.send(req.session.user);
   });
 
-  app.use('/ui', express.static(__dirname + '/ui'));
 };
