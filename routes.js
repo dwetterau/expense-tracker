@@ -260,10 +260,7 @@ exports.install_routes = function(app) {
     }).then(function() {
       res.send({id: expense.id});
     }).catch(function(err) {
-      console.log(req.body.participants);
-      console.error(err);
-      console.log(err);
-      res.send(500, "Could not create expense" + err.message);
+      res.send(500, "Could not create expense");
     });
   });
 
