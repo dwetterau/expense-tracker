@@ -29,13 +29,11 @@ var User = db.bookshelf.Model.extend({
   },
 
   salt_and_hash: function() {
-    var password = this.get('password');
     var salt = auth.generate_salt(128);
     this.set('salt', salt);
-    return auth.hash_password(password, salt)
+    return auth.hash_password(this.get('password'), salt)
       .then(function(hash_result) {
         this.set('password', hash_result);
-        return password;
       }.bind(this));
   },
 
@@ -54,13 +52,11 @@ var User = db.bookshelf.Model.extend({
   },
 
   reset_password: function(name) {
-    // TODO: Change this to an actual security question
-    if (!this.get('name') || this.get('name').toLowerCase() != name.toLowerCase()) {
-      throw new Error("Incorrect name or email");
-    }
     var new_password = auth.random_password(10);
     this.set('password', new_password);
-    return this.salt_and_hash();
+    return this.salt_and_hash().then(function() {
+      return new_password;
+    });
   },
 
   status: function() {

@@ -143,10 +143,9 @@ exports.install_routes = function(app) {
       return;
     }
     var email = req.body.email;
-    var name = req.body.name;
     var user = new User({email: email});
     user.fetch().then(function() {
-      return user.reset_password(name);
+      return user.reset_password();
     }).then(function(new_password) {
       // save the email before the user, if the email fails we don't want to actually change
       var email_data = {
@@ -250,7 +249,7 @@ exports.install_routes = function(app) {
         sender: user.get('email'),
         receiver: participant_emails.join(","),
         data: JSON.stringify({
-          creator: user.get('name'),
+          owner: user.get('name'),
           expense_link: settings.hostname + '/expense/' + expense.get('id')
         }),
         sent: false

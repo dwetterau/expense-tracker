@@ -12,10 +12,8 @@ var Email = db.bookshelf.Model.extend({
   hasTimestamps: ['created_at', 'updated_at'],
 
   mark_sent: function() {
-    var deferred = Q.defer();
     if (this.get('sent')) {
-      deferred.reject(new Error('Email already sent'));
-      return deferred.promise;
+      return Q.reject(new Error('Email already sent'));
     }
     this.set('sent', true);
     return this.save();

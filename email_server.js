@@ -11,7 +11,9 @@ var user_emails = require('./email_views/user_emails');
 var email_templates = [expense_emails, user_emails];
 
 var smtpTransport = nodemailer.createTransport("SMTP", {
-  service: "Gmail",
+  host: "smtp.gmail.com", // hostname
+  secureConnection: true, // use SSL
+  port: 465, // port for secure SMTP
   auth: {
     user: "expensenotifier@gmail.com",
     pass: "ce3f5508acd9"
@@ -22,7 +24,7 @@ function getSubjectAndBody(email) {
   // find the right map based off the type
   var template;
   email_templates.forEach(function(template_file) {
-    if (template_file.subject_map[email.get('type')] != undefined) {
+    if (template_file.subject_map.hasOwnProperty(email.get('type'))) {
       template = template_file;
     }
   });
@@ -45,7 +47,7 @@ setInterval(function() {
   var unsent_emails = new emails.Emails();
   unsent_emails.get_unsent_emails().then(function() {
     if (!unsent_emails || unsent_emails.length == 0) {
-      return;
+      return Q.resolve();
     }
     console.log("Found", unsent_emails.length,
         "email" + (unsent_emails.length != 1 ? "s" : "") + " to send.");
@@ -59,14 +61,13 @@ setInterval(function() {
         html: subjectAndBody.body
       };
       smtpTransport.sendMail(mailOptions, function(err) {
-        if (!err) {
-          markSentPromises.push(email.mark_sent());
-        } else {
-          console.log("Failed to send email", email.email_id);
+        if (err) {
+          console.log("Failed to actually send email", email.email_id);
         }
+        markSentPromises.push(email.mark_sent());
       });
     });
-    Q.all(markSentPromises).then(function() {
+    return Q.all(markSentPromises).then(function() {
       console.log("Successfully sent emails.");
     }, function(err) {
       console.log("Failed to mark some sent emails as sent:", err);
