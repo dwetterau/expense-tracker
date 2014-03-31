@@ -7,7 +7,6 @@ var Q = require('q');
 
 describe('emails', function() {
   before(function(done) {
-    this.timeout(1000000);
     load_test_data.install_test_data()
       .then(function() {
         done();

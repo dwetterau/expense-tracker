@@ -231,15 +231,18 @@ exports.install_routes = function(app) {
         if (!req.body.participants.hasOwnProperty(participant_id)) {
             continue;
         }
-        var participant = req.body.participants[participant_id];
+        var participant_value = req.body.participants[participant_id];
         var status = new ExpenseStatus({
           user_id: participant_id,
           expense_id: expense.id,
           status: expenses.expense_states.WAITING,
-          value: participant.value
+          value: participant_value
         });
-        status_promises.push(status.save());
-        participant_emails.push(participant.email);
+        var participant = new User({id: participant_id});
+        status_promises.push(participant.fetch().then(function() {
+            participant_emails.push(participant.get('email'));
+            return status.save();
+        }));
       }
       return Q.all(status_promises);
     }).then(function() {

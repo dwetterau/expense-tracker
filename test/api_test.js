@@ -64,7 +64,7 @@ describe('api', function() {
         title: 'Having participants',
         description: 'Arst',
         owner_id: 1,
-        participants: {2: {value: 200, email: "test@test.com"}}
+        participants: {2: 200}
       }).then(function(result) {
         assert(result);
         assert(result.id !== undefined);

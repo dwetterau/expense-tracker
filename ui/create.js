@@ -92,10 +92,7 @@ angular.module('expenseCreate', ['user_service', 'expense_service', 'alert_servi
           return participant.name == contact.name;
         })[0];
         // TODO - throw error if no such contact exists
-        participants[contact.id] = {
-            value: cleanupValue(participant.value),
-            email: contact.email
-        };
+        participants[contact.id] = cleanupValue(participant.value);
       });
 
       var new_expense = {
