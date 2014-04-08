@@ -36,6 +36,16 @@ function hash_password(password, salt) {
   return deferred.promise;
 }
 
+function random_password(len) {
+  var new_password = "";
+  var possible_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*_";
+  for (var i = 0; i < len; i++) {
+    new_password += possible_chars.charAt(Math.floor(Math.random() * possible_chars.length));
+  }
+  return new_password;
+}
+
 exports.check_auth = check_auth;
 exports.generate_salt = generate_salt;
 exports.hash_password = hash_password;
+exports.random_password = random_password;

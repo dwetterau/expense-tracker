@@ -4,6 +4,7 @@ var db = require('../db');
 var test_data = require('./test_data');
 
 var models = [
+  require('../emails').Email,
   require('../expenses').Expense,
   require('../expenses').ExpenseStatus,
   require('../bookshelf_session').Session,

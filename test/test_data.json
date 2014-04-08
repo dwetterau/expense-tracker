@@ -74,5 +74,31 @@
       "user_id": 1,
       "contact_id": 2
     }
+  ],
+  "emails": [
+    {
+      "id": 1,
+      "sender": "a@a.com",
+      "receiver": "b@b.com",
+      "type": 1,
+      "data" : "{\"subject\": \"some data\"}",
+      "sent": false
+    },
+    {
+      "id": 2,
+      "sender": "b@b.com",
+      "receiver": "a@a.com",
+      "type": 1,
+      "data" : "{\"subject\": \"some data\"}",
+      "sent": false
+    },
+    {
+      "id": 3,
+      "sender": "a@a.com",
+      "receiver": "b@b.com",
+      "type": 1,
+      "data" : "{\"subject\": \"some data\"}",
+      "sent": true
+    }
   ]
 }

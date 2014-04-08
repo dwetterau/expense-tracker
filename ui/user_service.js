@@ -30,6 +30,12 @@ angular.module('user_service', [])
       },
       create_account: function(new_user) {
         return $http.post('/api/create_account', new_user);
+      },
+      change_password: function(change_req) {
+        return $http.post('/api/change_password', change_req);
+      },
+      reset_password: function(reset_req) {
+        return $http.post('/api/reset_password', reset_req);
       }
     };
     return user;

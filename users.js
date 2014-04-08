@@ -37,6 +37,28 @@ var User = db.bookshelf.Model.extend({
       }.bind(this));
   },
 
+  change_password: function(password, new_password) {
+    return auth.hash_password(password, this.get('salt')).then(
+      function(hashed_password) {
+        if (this.get('password') == hashed_password) {
+          // set new password and salt_and_hash
+          this.set('password', new_password);
+          return this.salt_and_hash();
+        } else {
+          throw new Error("Incorrect current password");
+        }
+      }.bind(this)
+    );
+  },
+
+  reset_password: function(name) {
+    var new_password = auth.random_password(10);
+    this.set('password', new_password);
+    return this.salt_and_hash().then(function() {
+      return new_password;
+    });
+  },
+
   status: function() {
     // returns the status of the user on the expense, if this was
     // retrieved relative to an expense.
@@ -144,7 +166,6 @@ var User = db.bookshelf.Model.extend({
       throw new Error("Invalid email or password");
     });
   }
-
 });
 
 

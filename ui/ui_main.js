@@ -72,6 +72,32 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       });
     };
   }])
+  .controller('changePasswordController', ['$scope', 'users', 'alerts', function($scope, users, alerts) {
+    $scope.submit = function() {
+      users.change_password({
+        password: $scope.password,
+        new_password: $scope.new_password,
+        new_password_2: $scope.new_password_2
+      }).success(function() {
+        alerts.addAlert('Password changed successfully', false);
+      }).error(function(data) {
+        alerts.addAlert(data.err, true);
+      });
+    };
+  }])
+  .controller('resetPasswordController', ['$scope', 'users', 'alerts', function($scope, users, alerts) {
+    $scope.submit = function() {
+      users.reset_password({
+        name: $scope.name,
+        email: $scope.email,
+        secret: $scope.secret
+      }).success(function() {
+        alerts.addAlert('Password reset, your new password is being sent to your email address', false);
+      }).error(function(data) {
+        alerts.addAlert(data.err, true);
+      });
+    };
+  }])
   .controller('expenseViewController', ['$scope', '$routeParams', 'expenses', 'alerts', '$location', function($scope, $routeParams, expenses, alerts, $location) {
     var expense_id = $routeParams.expense_id;
     $scope.load_expense = function() {
@@ -177,7 +203,7 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       templateUrl: '/ui/expense.html'
     };
   })
-  .controller('addContactController', ['expenses', 'alerts', '$scope', function(expenses, alerts, $scope) {
+  .controller('addContactController', ['expenses', 'alerts', '$scope', '$location', function(expenses, alerts, $scope, $location) {
     $scope.submit = function() {
       expenses.add_contact($scope.email)
         .success(function() {
@@ -207,6 +233,14 @@ angular.module('main', ['ngRoute', 'ui.bootstrap', 'expense_service', 'user_serv
       .when('/create_account', {
         templateUrl: '/ui/create_account.html',
         controller: 'createAccountController'
+      })
+      .when('/change_password', {
+        templateUrl: '/ui/change_password.html',
+        controller: 'changePasswordController'
+      })
+      .when('/reset_password', {
+        templateUrl: '/ui/reset_password.html',
+        controller: 'resetPasswordController'
       })
       .when('/expense/:expense_id', {
         templateUrl: '/ui/expense_view.html',

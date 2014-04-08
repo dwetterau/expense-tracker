@@ -9,7 +9,7 @@ var bookshelf = bookshelf.initialize({
 });
 
 module.exports = {
-  bookshelf: bookshelf,
+  bookshelf: bookshelf
 };
 
 settings.after_init && settings.after_init();

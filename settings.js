@@ -18,8 +18,11 @@ if (process.env.NODE_ENV == 'testing') {
     host: 'localhost',
     port: 5432,
     dialect: 'postgres',
-    native: true,
+    native: true
   };
+  // This is used to construct links in emails
+  exports.hostname = 'https://expenses.adamf.co';
+  exports.email_check_interval = 5000;
 }
 // Set to true in order to see all queries issued
 exports.debug = false;

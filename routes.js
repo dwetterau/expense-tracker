@@ -10,7 +10,11 @@ var images = require('./images');
 var Image = images.Image;
 
 var users = require('./users');
+var settings = require('./settings');
 var User = users.User;
+
+var emails= require('./emails');
+var Email = emails.Email;
 
 // Error sending
 function send_error(res, error) {
@@ -111,6 +115,61 @@ exports.install_routes = function(app) {
     });
   });
 
+  app.post('/api/change_password', auth.check_auth, function(req, res) {
+    var email = req.session.user.email;
+    var password = req.body.password;
+    var new_password = req.body.new_password;
+    var new_password_2 = req.body.new_password_2;
+    if (new_password != new_password_2) {
+      send_error(res, new Error("New passwords must match"));
+      return;
+    }
+    var user = new User({email: email});
+    user.fetch().then(function() {
+      return user.change_password(password, new_password);
+    }).then(function() {
+      return user.save();
+    }).then(function() {
+      res.send({status: 'ok'});
+    }, function(err) {
+        send_error(res, err);
+    });
+  });
+
+  app.post('/api/reset_password', function(req, res) {
+    var secret = req.body.secret;
+    if (secret != '0xDEADBEEFCAFE') {
+      send_error(res, new Error("Incorrect secret value, try again"));
+      return;
+    }
+    var email = req.body.email;
+    var user = new User({email: email});
+    user.fetch().then(function() {
+      return user.reset_password();
+    }).then(function(new_password) {
+      // save the email before the user, if the email fails we don't want to actually change
+      var email_data = {
+        name: user.get('name'),
+        password: new_password
+      };
+      var reset_password_email_desc = {
+        type: emails.email_types.RESET_PASSWORD,
+        sender: email,
+        receiver: email,
+        data: JSON.stringify(email_data),
+        sent: false
+      };
+      var reset_password_email = new Email(reset_password_email_desc);
+      return reset_password_email.save();
+    }).then(function() {
+      return user.save();
+    }).then(function() {
+      res.send({status: 'ok'});
+    }).catch(function(err) {
+      send_error(res, err);
+    });
+  });
+
   app.get('/api/expenses', auth.check_auth, function(req, res) {
     var user = new User(req.session.user);
     var owned_expenses = user.owned_expenses();
@@ -165,19 +224,41 @@ exports.install_routes = function(app) {
       owner_id: user.id
     });
     var expense_done = expense.save();
-
+    var participant_emails = [];
     expense_done.then(function() {
       var status_promises = [];
       for (var participant_id in req.body.participants) {
+        if (!req.body.participants.hasOwnProperty(participant_id)) {
+            continue;
+        }
+        var participant_value = req.body.participants[participant_id];
         var status = new ExpenseStatus({
           user_id: participant_id,
           expense_id: expense.id,
           status: expenses.expense_states.WAITING,
-          value: req.body.participants[participant_id]
+          value: participant_value
         });
-        status_promises.push(status.save());
+        var participant = new User({id: participant_id});
+        status_promises.push(participant.fetch().then(function() {
+            participant_emails.push(participant.get('email'));
+            return status.save();
+        }));
       }
       return Q.all(status_promises);
+    }).then(function() {
+      // Create an email alert for the new expense
+      var new_expense_email_desc = {
+        type: emails.email_types.NEW_EXPENSE_NOTIFICATION,
+        sender: user.get('email'),
+        receiver: participant_emails.join(","),
+        data: JSON.stringify({
+          owner: user.get('name'),
+          expense_link: settings.hostname + '/expense/' + expense.get('id')
+        }),
+        sent: false
+      };
+      var new_expense_email = new Email(new_expense_email_desc);
+      return new_expense_email.save();
     }).then(function() {
       res.send({id: expense.id});
     }).catch(function(err) {

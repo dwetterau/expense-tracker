@@ -16,7 +16,6 @@ Q.longStackSupport = true;
 
 describe('expenses', function() {
   before(function(done) {
-    this.timeout(1000000);
     load_test_data.install_test_data()
       .then(function() {
         done();
@@ -34,7 +33,7 @@ describe('expenses', function() {
   });
 
   describe('participants', function() {
-    it('should allow an owner to be retreived correctly', function(done) {
+    it('should allow an owner to be retrieved correctly', function(done) {
       var e = new Expense({title: 't',
                            owner_id: 1
                           });

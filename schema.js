@@ -41,6 +41,20 @@ exports.create_expense_status = function() {
   });
 };
 
+exports.create_emails = function() {
+  return knex.schema.createTable('emails', function(table) {
+    table.increments('id');
+    table.text('sender').notNullable();
+    table.text('receiver').notNullable();
+    table.integer('type').notNullable();
+    table.text('data').notNullable();
+    table.boolean('sent').notNullable();
+    table.timestamps();
+  }).then(function() {
+    return knex.raw('CREATE INDEX pending_emails on emails (sent)');
+  });
+};
+
 exports.create_images = function() {
   return knex.schema.createTable('images', function(table) {
     table.increments('id');
@@ -81,6 +95,7 @@ exports.add_all = function() {
     exports.create_expenses(),
     exports.create_expense_status(),
     exports.create_images(),
+    exports.create_emails(),
     exports.create_sessions(),
     exports.create_contacts()
   ]);
