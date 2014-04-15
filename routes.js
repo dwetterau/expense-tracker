@@ -226,6 +226,18 @@ exports.install_routes = function(app) {
     var expense_done = expense.save();
     var participant_emails = [];
     expense_done.then(function() {
+        var participant_fetches = [];
+        for (var participant_id in req.body.participants) {
+            if (!req.body.participants.hasOwnProperty(participant_id)) {
+                continue;
+            }
+            var participant = new User({id: participant_id});
+            participant_fetches.push(participant.fetch().then(function(participant) {
+                participant_emails.push(participant.get('email'));
+            }))
+        }
+        return Q.all(participant_fetches);
+    }).then(function() {
       var status_promises = [];
       for (var participant_id in req.body.participants) {
         if (!req.body.participants.hasOwnProperty(participant_id)) {
@@ -238,11 +250,7 @@ exports.install_routes = function(app) {
           status: expenses.expense_states.WAITING,
           value: participant_value
         });
-        var participant = new User({id: participant_id});
-        status_promises.push(participant.fetch().then(function() {
-            participant_emails.push(participant.get('email'));
-            return status.save();
-        }));
+        status_promises.push(status.save());
       }
       return Q.all(status_promises);
     }).then(function() {
