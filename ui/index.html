@@ -10,24 +10,28 @@
     <title>Expenses</title>
   </head>
   <body>
-    <nav class="navbar">
-      <ul class="nav navbar-nav navbar-left" ng-show="isLoggedIn">
-        <li> <a href="/"> Home </a> </li>
-        <li> <a href="/create_expense"> Create Expense</a> </li>
-        <li> <a href="/add_contact"> Add Contact </a> </li>
-      </ul>
-      <ul class="nav navbar-nav navbar-left" ng-show="!isLoggedIn">
+    <nav class="navbar navbar-default navbar-static-top">
+      <div class="container">
+        <a class="navbar-brand" href="/"> Expenses </a>
+        <ul class="nav navbar-nav" ng-show="isLoggedIn">
+          <li> <a href="/create_expense"> Create Expense</a> </li>
+          <li> <a href="/add_contact"> Add Contact </a> </li>
+        </ul>
+        <ul class="nav navbar-nav" ng-show="!isLoggedIn">
           <li> <a href="/login"> Login </a> </li>
           <li> <a href="/create_account"> Create Account</a> </li>
-          <li> <a href="/reset_password"> Forgot Password</a> </li>
-      </ul>
-      <ul class="nav navbar-nav navbar-right" ng-show="isLoggedIn">
-        <li> <a href="/change_password"> Change Password </a> </li>
-        <li> <a href="/logout"> Logout </a> </li>
-      </ul>
-      </nav>
+        </ul>
+        <ul class="nav navbar-nav navbar-right" ng-show="!isLoggedIn">
+            <li> <a href="/reset_password"> Reset Password</a> </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right" ng-show="isLoggedIn">
+          <li> <a href="/change_password"> Change Password </a> </li>
+          <li> <a href="/logout"> Logout </a> </li>
+        </ul>
+      </div>
+    </nav>
     <div class="container" ng-view></div>
-    <div>
+    <div class="container">
       <alert ng-repeat="alert in alerts"
              type="alert.type"
              close="alert.close($index)">
