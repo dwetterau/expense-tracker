@@ -3,7 +3,7 @@ Expense Tracker
 
 This project was the third iteration on an idea by [Adam Faulkner](https://github.com/adamfaulkner) and myself to simplify how expenses like bills are tracked between roommates. We ran this website for our house of 5 people for a year.
 
-![Screenshot](http://imgur.com/O58A2zn)
+![Screenshot](http://imgur.com/O58A2zn.jpg)
 
 ### Features
 Below is a list of some of the features that we implemented for this website.
